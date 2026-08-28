@@ -61,6 +61,10 @@ define('SMTP_SECURE', '${SMTP_SECURE:-tls}');
 define('SMTP_FROM_EMAIL', '${SMTP_FROM_EMAIL}');
 define('SMTP_FROM_NAME', 'RRHH ICAFAL');
 
+// v6.3: si esta definida, el correo sale por la API HTTPS de Brevo en
+// vez de SMTP (necesario en hostings que bloquean los puertos salientes).
+define('BREVO_API_KEY', '${BREVO_API_KEY}');
+
 define('TOKEN_PRIVADO_HORAS_VALIDEZ', 72);
 define('TOKEN_SUBSANACION_HORAS_VALIDEZ', 72);
 define('CODIGO_SEGUIMIENTO_LARGO', 6);

@@ -388,15 +388,18 @@ function notificarContratacionExitosa(PDO $pdo, array $postulacion): void
     ]);
     $qrPng = (new \chillerlan\QRCode\QRCode($opciones))->render($urlValidacion);
 
+    // v6.3: se embebe como data URI en vez de CID -- funciona igual con
+    // PHPMailer/SMTP que con la API HTTPS de Brevo (que no soporta
+    // imagenes referenciadas por CID en un correo transaccional simple).
+    $qrDataUri = 'data:image/png;base64,' . base64_encode($qrPng);
+
     $nombreCompleto = $postulacion['nombre_completo'];
     $cargo = $postulacion['nombre_cargo'];
-    $html = (function () use ($nombreCompleto, $cargo) {
+    $html = (function () use ($nombreCompleto, $cargo, $qrDataUri) {
         return require __DIR__ . '/../mailer/templates/contratacion_exitosa_qr.php';
     })();
 
-    Mailer::enviar($postulacion['correo'], $nombreCompleto, 'Proceso de contratación exitoso - ICAFAL', $html, [
-        ['cid' => 'qr_acceso', 'datos' => $qrPng, 'nombre' => 'qr_acceso.png'],
-    ]);
+    Mailer::enviar($postulacion['correo'], $nombreCompleto, 'Proceso de contratación exitoso - ICAFAL', $html);
 }
 
 /**

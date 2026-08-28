@@ -24,6 +24,11 @@ define('SMTP_SECURE', 'tls'); // 'tls' o 'ssl'
 define('SMTP_FROM_EMAIL', 'notificaciones@tuempresa.cl');
 define('SMTP_FROM_NAME', 'RRHH ICAFAL');
 
+// --- Envio via API HTTPS (opcional) -----------------------------------
+// Si se define no vacia, el correo sale por la API de Brevo en vez de
+// SMTP -- util en hostings que bloquean los puertos SMTP salientes.
+define('BREVO_API_KEY', '');
+
 // --- Reglas de negocio ---------------------------------------------------
 define('TOKEN_PRIVADO_HORAS_VALIDEZ', 72); // horas de validez del link privado
 define('TOKEN_SUBSANACION_HORAS_VALIDEZ', 72); // horas de validez del link para corregir un documento rechazado

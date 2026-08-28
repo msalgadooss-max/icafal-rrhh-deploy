@@ -1,9 +1,11 @@
 <?php
 /**
- * Envoltorio de envio de correo. Usa PHPMailer via SMTP si esta
- * instalado (composer install), y si no, cae automaticamente a la
- * funcion mail() nativa de PHP para que el sistema siga funcionando en
- * hosting sin Composer.
+ * Envoltorio de envio de correo. Orden de prioridad:
+ *   1) Brevo (API HTTPS) si BREVO_API_KEY esta configurada -- necesario
+ *      en hostings que bloquean los puertos SMTP salientes (25/465/587),
+ *      algo comun en planes gratuitos (ver v6.3).
+ *   2) PHPMailer via SMTP si esta instalado (composer install).
+ *   3) La funcion mail() nativa de PHP, como ultimo recurso.
  */
 
 require_once __DIR__ . '/../config/config.php';
@@ -16,21 +18,64 @@ if (file_exists($vendorAutoload)) {
 final class Mailer
 {
     /**
-     * @param array<int, array{cid: string, datos: string, nombre?: string, tipo?: string}> $imagenesEmbebidas
-     *        Imágenes embebidas por CID (ej. un QR), referenciadas en el HTML como
-     *        <img src="cid:el_cid_elegido">. Solo funcionan con PHPMailer -- se
-     *        ignoran silenciosamente si el sistema cae al fallback de mail() nativo.
      * @return bool true si el correo se encolo/envio correctamente.
      */
-    public static function enviar(string $destinatario, string $nombreDestinatario, string $asunto, string $htmlBody, array $imagenesEmbebidas = []): bool
+    public static function enviar(string $destinatario, string $nombreDestinatario, string $asunto, string $htmlBody): bool
     {
+        if (defined('BREVO_API_KEY') && BREVO_API_KEY !== '') {
+            return self::enviarConBrevo($destinatario, $nombreDestinatario, $asunto, $htmlBody);
+        }
         if (class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-            return self::enviarConPhpMailer($destinatario, $nombreDestinatario, $asunto, $htmlBody, $imagenesEmbebidas);
+            return self::enviarConPhpMailer($destinatario, $nombreDestinatario, $asunto, $htmlBody);
         }
         return self::enviarConMailNativo($destinatario, $asunto, $htmlBody);
     }
 
-    private static function enviarConPhpMailer(string $destinatario, string $nombre, string $asunto, string $html, array $imagenesEmbebidas = []): bool
+    /**
+     * v6.3 - Envio via la API HTTPS de Brevo (puerto 443, nunca
+     * bloqueado por firewalls de hosting). No requiere ninguna
+     * extension de PHP extra: usa file_get_contents con un contexto
+     * HTTPS, que funciona con la instalacion por defecto de PHP.
+     */
+    private static function enviarConBrevo(string $destinatario, string $nombre, string $asunto, string $html): bool
+    {
+        $payload = json_encode([
+            'sender' => ['name' => SMTP_FROM_NAME, 'email' => SMTP_FROM_EMAIL],
+            'to' => [['email' => $destinatario, 'name' => $nombre]],
+            'subject' => $asunto,
+            'htmlContent' => $html,
+        ], JSON_UNESCAPED_UNICODE);
+
+        $contexto = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => implode("\r\n", [
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                    'api-key: ' . BREVO_API_KEY,
+                ]),
+                'content' => $payload,
+                'timeout' => 10,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        $respuesta = @file_get_contents('https://api.brevo.com/v3/smtp/email', false, $contexto);
+        $codigo = 0;
+        foreach ($http_response_header ?? [] as $cabecera) {
+            if (preg_match('#^HTTP/\S+\s(\d+)#', $cabecera, $m)) {
+                $codigo = (int)$m[1];
+            }
+        }
+
+        if ($codigo < 200 || $codigo >= 300) {
+            error_log('Mailer (Brevo) error: HTTP ' . $codigo . ' - ' . ($respuesta ?: 'sin respuesta'));
+            return false;
+        }
+        return true;
+    }
+
+    private static function enviarConPhpMailer(string $destinatario, string $nombre, string $asunto, string $html): bool
     {
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
         try {
@@ -58,16 +103,6 @@ final class Mailer
 
             $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
             $mail->addAddress($destinatario, $nombre);
-
-            foreach ($imagenesEmbebidas as $img) {
-                $mail->addStringEmbeddedImage(
-                    $img['datos'],
-                    $img['cid'],
-                    $img['nombre'] ?? 'imagen.png',
-                    \PHPMailer\PHPMailer\PHPMailer::ENCODING_BASE64,
-                    $img['tipo'] ?? 'image/png'
-                );
-            }
 
             $mail->isHTML(true);
             $mail->Subject = $asunto;

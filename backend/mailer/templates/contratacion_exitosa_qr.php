@@ -4,7 +4,7 @@
  * contratación (estado -> 'Contratado'). Incluye el QR de acceso
  * embebido (vía CID, ver Mailer::enviar) que debe presentar en
  * Portería para poder ingresar a la obra.
- * Variables esperadas: $nombreCompleto, $cargo
+ * Variables esperadas: $nombreCompleto, $cargo, $qrDataUri
  */
 return <<<HTML
 <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#1f2937">
@@ -16,7 +16,7 @@ return <<<HTML
 
   <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px;text-align:center;margin:20px 0">
     <p style="margin:0 0 12px;font-weight:bold;color:#15803d">Tu código de acceso a la obra</p>
-    <img src="cid:qr_acceso" alt="Código QR de acceso" width="180" height="180" style="display:block;margin:0 auto;background:#fff;padding:8px;border-radius:8px">
+    <img src="{$qrDataUri}" alt="Código QR de acceso" width="180" height="180" style="display:block;margin:0 auto;background:#fff;padding:8px;border-radius:8px">
     <p style="margin:12px 0 0;font-size:13px;color:#166534">Muestra este código en Portería para poder ingresar a la obra.</p>
   </div>
 
