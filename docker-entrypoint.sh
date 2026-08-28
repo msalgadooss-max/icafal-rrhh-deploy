@@ -14,13 +14,24 @@ fi
 echo "[entrypoint] Iniciando MariaDB..."
 mysqld_safe --datadir="$DATADIR" --skip-networking=0 --bind-address=127.0.0.1 &
 
-# --- 2) Espera a que acepte conexiones -----------------------------------
+# --- 2) Espera a que acepte conexiones (por el socket local) -------------
 for i in $(seq 1 30); do
-  if mysqladmin ping -h127.0.0.1 --silent 2>/dev/null; then
+  if mysqladmin ping --silent 2>/dev/null; then
     break
   fi
   sleep 1
 done
+
+# --- 2.5) MariaDB deja a root autenticado SOLO por socket local por -----
+#           defecto -- el propio PHP (PDO, via TCP a 127.0.0.1) y los
+#           comandos de abajo necesitan una cuenta que acepte conexion
+#           por red. Esto se hace una sola vez, por el socket local
+#           (donde root SI puede entrar sin clave).
+mysql -uroot <<'SQL'
+CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+SQL
 
 # --- 3) Crea el esquema + datos semilla si la base aun no existe --------
 if ! mysql -h127.0.0.1 -uroot -e "USE icafal_rrhh" 2>/dev/null; then
