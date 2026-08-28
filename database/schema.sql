@@ -388,6 +388,30 @@ CREATE TABLE dev_accesos (
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ---------------------------------------------------------------------
+-- Tabla: dev_qr_accesos (v6.4)
+-- Enlaces de acceso directo ("magic link") generados desde el panel de
+-- Desarrollador: quien escanea el QR entra directo al dashboard del rol
+-- indicado, sin pedir correo/clave. Pensado para repartir por WhatsApp
+-- o imprimir en una demo -- multiuso mientras no expire, nunca para un
+-- rol Desarrollador (ver dev/qr_login.php).
+-- ---------------------------------------------------------------------
+CREATE TABLE dev_qr_accesos (
+    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    token               VARCHAR(64) NOT NULL UNIQUE,
+    usuario_objetivo_id INT UNSIGNED NOT NULL,
+    creado_por          INT UNSIGNED NULL,
+    expira_at           DATETIME NOT NULL,
+    creado_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_qracceso_objetivo
+        FOREIGN KEY (usuario_objetivo_id) REFERENCES usuarios(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_qracceso_creador
+        FOREIGN KEY (creado_por) REFERENCES usuarios(id)
+        ON DELETE SET NULL,
+    INDEX idx_qracceso_token (token)
+) ENGINE=InnoDB;
+
 -- =====================================================================
 -- TRIGGERS
 -- =====================================================================

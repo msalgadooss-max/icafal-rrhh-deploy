@@ -30,10 +30,13 @@ const ETIQUETAS_ROL = {
   mostrarQr();
 })();
 
+let USUARIOS_INTERNOS = [];
+
 async function cargarUsuarios() {
   const cont = document.getElementById('lista-usuarios');
   try {
     const data = await apiFetch('/dev/listar_usuarios.php');
+    USUARIOS_INTERNOS = data.usuarios;
     cont.innerHTML = data.usuarios.map(u => `
       <button onclick="entrarComo(${u.id})"
               class="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 text-left hover:border-blue-400 hover:bg-blue-50 transition">
@@ -43,6 +46,10 @@ async function cargarUsuarios() {
         </span>
         <span class="text-blue-600 text-xs font-semibold">Entrar →</span>
       </button>`).join('');
+
+    const selectRol = document.getElementById('rol-qr');
+    selectRol.innerHTML = data.usuarios.map(u =>
+      `<option value="${u.id}">${ETIQUETAS_ROL[u.rol] || u.rol} (${u.nombre})</option>`).join('');
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }
@@ -85,6 +92,23 @@ function mostrarQr() {
   // eslint-disable-next-line no-undef
   new QRCode(document.getElementById('qr'), { text: url, width: 200, height: 200 });
 }
+
+// --- v6.4: QR de acceso directo por rol (sin correo ni clave) --------------
+document.getElementById('btn-generar-qr-rol').addEventListener('click', async () => {
+  const usuarioId = Number(document.getElementById('rol-qr').value);
+  if (!usuarioId) return;
+  try {
+    const data = await apiFetch('/dev/generar_qr_acceso.php', { method: 'POST', body: { usuario_id: usuarioId } });
+    document.getElementById('resultado-qr-rol').classList.remove('hidden');
+    document.getElementById('titulo-qr-rol').textContent = `${ETIQUETAS_ROL[data.rol] || data.rol} — ${data.nombre}`;
+    document.getElementById('url-qr-rol').textContent = data.url;
+    document.getElementById('qr-rol').innerHTML = '';
+    // eslint-disable-next-line no-undef
+    new QRCode(document.getElementById('qr-rol'), { text: data.url, width: 200, height: 200 });
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+});
 
 document.getElementById('form-enviar-link').addEventListener('submit', async (e) => {
   e.preventDefault();

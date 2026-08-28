@@ -38,12 +38,37 @@
       <div class="flex gap-1 border-b border-gray-200 mb-4" id="tabs">
         <button data-tab="qr" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Código QR</button>
         <button data-tab="correo" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Enviar por correo</button>
+        <button data-tab="roles" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">QR de acceso por rol</button>
       </div>
 
       <div id="panel-qr" class="tab-panel text-center py-4">
         <p class="text-sm text-gray-600 mb-4">Cualquiera que escanee este QR llega directo al formulario de postulación.</p>
         <div id="qr" class="inline-block bg-white p-4 border border-gray-200 rounded-lg"></div>
         <p id="url-postulacion" class="text-xs text-gray-400 mt-3 break-all"></p>
+      </div>
+
+      <div id="panel-roles" class="tab-panel hidden py-4">
+        <p class="text-sm text-gray-600 mb-4 max-w-lg">
+          Genera un QR de acceso directo para un rol interno: quien lo escanea entra
+          derecho a ese dashboard, sin pedir correo ni clave. Válido por 7 días y se
+          puede volver a escanear las veces que sea.
+        </p>
+        <div class="flex flex-wrap items-end gap-3 mb-5">
+          <div class="flex-1 min-w-[220px]">
+            <label class="block text-xs text-gray-600 mb-1">Rol</label>
+            <select id="rol-qr" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="">Cargando...</option>
+            </select>
+          </div>
+          <button id="btn-generar-qr-rol" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+            Generar QR
+          </button>
+        </div>
+        <div id="resultado-qr-rol" class="text-center hidden">
+          <p id="titulo-qr-rol" class="text-sm font-semibold text-gray-800 mb-3"></p>
+          <div id="qr-rol" class="inline-block bg-white p-4 border border-gray-200 rounded-lg"></div>
+          <p id="url-qr-rol" class="text-xs text-gray-400 mt-3 break-all max-w-md mx-auto"></p>
+        </div>
       </div>
 
       <div id="panel-correo" class="tab-panel hidden max-w-sm mx-auto py-2">
