@@ -1,13 +1,15 @@
 <?php
 /**
- * v3.1 - Administrador de Contrato autoriza la contratación.
- * Ya NO espera a que el postulante termine su Etapa 2: autoriza en
- * base a lo que aprobó Jefe_Terreno (datos Etapa 1 + CV), en paralelo
- * a que el postulante sigue llenando sus datos. Marca
- * admin_autorizado_at y, si el postulante YA había terminado antes,
- * el cambio de estado a 'Aprobado_admin' (y el aviso al JAO) ocurre
- * de inmediato; si no, queda pendiente y se completa solo apenas el
- * postulante termine (ver intentarAvanzarAAprobadoAdmin()).
+ * v6.5 - Administrador de Contrato autoriza la contratación. Vuelve al
+ * orden SECUENCIAL: recien aqui se le otorga al postulante el acceso a
+ * Etapa 2 (token + correo "tu contratación ha sido autorizada, completa
+ * tus datos"). Antes de esto, el postulante no tiene ningun link -- ya
+ * no se cruza en paralelo con que el postulante llene sus datos.
+ *
+ * Sigue existiendo intentarAvanzarAAprobadoAdmin() porque el paso
+ * siguiente (JAO) igual depende de dos condiciones (admin_autorizado_at
+ * Y que exista datos_contratacion), solo que ahora la primera SIEMPRE
+ * ocurre antes que la segunda por diseño.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -29,11 +31,7 @@ $pdo->beginTransaction();
 
 try {
     $stmtCheck = $pdo->prepare(
-        'SELECT estado, admin_autorizado_at,
-                (SELECT COUNT(*) FROM datos_contratacion d WHERE d.postulacion_id = postulaciones.id) AS tiene_datos
-           FROM postulaciones
-          WHERE id = :id
-          FOR UPDATE'
+        'SELECT estado, admin_autorizado_at FROM postulaciones WHERE id = :id FOR UPDATE'
     );
     $stmtCheck->execute(['id' => $postulacionId]);
     $postulacion = $stmtCheck->fetch();
@@ -56,7 +54,9 @@ try {
     $stmt->execute(['uid' => $usuario['id'], 'id' => $postulacionId]);
     registrarLog($pdo, $postulacionId, $usuario['id'], 'Administrador de Contrato autorizó la contratación.');
 
-    intentarAvanzarAAprobadoAdmin($pdo, $postulacionId);
+    // v6.5: aqui es donde el postulante recibe por primera vez el
+    // acceso a Etapa 2 -- antes de esto no tenia ningun token.
+    otorgarAccesoEtapa2($pdo, $postulacionId, $usuario['id']);
 
     $pdo->commit();
 } catch (RuntimeException $e) {
@@ -69,9 +69,4 @@ try {
     responderError('No fue posible autorizar la contratación.', 500);
 }
 
-$yaCompleto = (int)$postulacion['tiene_datos'] > 0;
-responderOk([
-    'mensaje' => $yaCompleto
-        ? 'Contratación autorizada. El postulante ya había completado sus datos: se notificó al Jefe Administrativo.'
-        : 'Contratación autorizada. En cuanto el postulante termine de completar sus datos, se notificará automáticamente al Jefe Administrativo.',
-]);
+responderOk(['mensaje' => 'Contratación autorizada. Se le envió al postulante el enlace para completar sus datos.']);

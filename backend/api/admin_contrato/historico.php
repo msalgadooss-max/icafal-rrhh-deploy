@@ -7,17 +7,18 @@
  * autorizó) hasta que el JAO finalizó -- ese es el ciclo completo que
  * pidió el usuario.
  *
- * v5.2 - Además del tiempo total, se desglosa en 3 tramos (todos en
- * horas Y minutos, no solo horas, para trazar el tiempo con precisión):
- *   - "postulante": desde que Terreno aprobó hasta que el postulante
- *     completó su Etapa 2 (datos_contratacion.creado_at).
+ * v6.5 - Desglose en 3 tramos SECUENCIALES (todos en horas Y minutos,
+ * no solo horas, para trazar el tiempo con precisión):
  *   - "admin": desde que Terreno aprobó hasta que Admin_Contrato
- *     autorizó (admin_autorizado_at). Estos dos primeros tramos corren
- *     EN PARALELO -- el pipeline solo sigue cuando ambos terminan.
- *   - "jao": desde que la postulación realmente entró a 'Aprobado_admin'
- *     (el punto de encuentro de los dos tramos paralelos) hasta que se
- *     finalizó la contratación. Este es secuencial, después de los dos
- *     anteriores.
+ *     autorizó (admin_autorizado_at). Es justo esa autorización la que
+ *     le da al postulante el acceso a Etapa 2.
+ *   - "postulante": desde que Admin_Contrato autorizó hasta que el
+ *     postulante completó su Etapa 2 (datos_contratacion.creado_at).
+ *     Antes (v3.1-v6.4, flujo en paralelo) este tramo se medía desde
+ *     la aprobación de Terreno; ahora se mide desde la autorización del
+ *     Administrador porque el postulante no puede ni empezar antes.
+ *   - "jao": desde que la postulación entró a 'Aprobado_admin' hasta
+ *     que se finalizó la contratación.
  * La fecha de aprobación de Terreno y la de entrada a 'Aprobado_admin'
  * se leen de trazabilidad_logs (mismo patrón que terreno/historico.php).
  */
@@ -104,7 +105,7 @@ $nTotal = $nPostulante = $nAdmin = $nJao = 0;
 
 foreach ($filas as &$f) {
     $minTotal = minutosEntre($f['fecha_aprobacion_terreno'], $f['fecha_contratado']);
-    $minPostulante = minutosEntre($f['fecha_aprobacion_terreno'], $f['fecha_datos_completados']);
+    $minPostulante = minutosEntre($f['admin_autorizado_at'], $f['fecha_datos_completados']);
     $minAdmin = minutosEntre($f['fecha_aprobacion_terreno'], $f['admin_autorizado_at']);
     $minJao = minutosEntre($f['fecha_aprobado_admin'], $f['fecha_contratado']);
 

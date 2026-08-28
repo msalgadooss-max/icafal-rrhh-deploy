@@ -65,14 +65,15 @@ responderOk([
         'rechazado'          => $estadoActual === 'Rechazado',
         'en_banco'           => $enBanco,
         'retencion_hasta'    => $enBanco ? fechaRetencionBanco($postulacion['creado_at']) : null,
-        // v3.1: Admin_Contrato y el postulante avanzan en paralelo --
-        // esta bandera permite iluminar "Datos completados" en la
+        // v6.5: esta bandera permite iluminar "Datos completados" en la
         // linea de tiempo aunque el `estado` en si todavia no haya
-        // llegado a 'Aprobado_admin' (falta que autorice el otro lado).
+        // llegado a 'Aprobado_admin' (falta que el JAO reciba y procese).
         'etapa2_completada'  => (bool)$postulacion['etapa2_completada'],
-        // v4.1: misma logica que la bandera anterior, pero para el otro
-        // camino paralelo (Admin_Contrato autorizando) -- ilumina
-        // "Autorización Administrador de contrato" en la linea de tiempo.
+        // v6.5: ilumina "Autorización Administrador de contrato" en la
+        // linea de tiempo -- en el flujo secuencial esto SIEMPRE se
+        // enciende antes que 'etapa2_completada', porque es justo esta
+        // autorización la que le entrega al postulante el acceso a
+        // Etapa 2 (ver admin_contrato/autorizar.php).
         'admin_autorizado'   => $postulacion['admin_autorizado_at'] !== null,
         // v5: aviso de respaldo por si el correo de rechazo no llega --
         // el link de subsanación real igual se manda solo por correo,

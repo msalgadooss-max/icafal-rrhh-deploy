@@ -63,9 +63,12 @@ try {
         'Invitada desde el Banco de Postulantes a un cupo de "' . $cargo['nombre_cargo'] . '".'
     );
 
-    // v3: al igual que una aprobacion normal, esto ya deja a la persona
-    // con acceso a la Etapa 2 (token + correo).
-    otorgarAccesoEtapa2($pdo, $postulacionId, $usuario['id']);
+    // v6.5: igual que una aprobacion normal desde la Etapa 1, esto YA NO
+    // da acceso directo a Etapa 2 -- queda igual de "Pre_aprobado_terreno"
+    // esperando que Admin_Contrato autorice primero.
+    fijarUsuarioContextoBD($pdo, $usuario['id']);
+    $stmtEstado = $pdo->prepare('UPDATE postulaciones SET estado = "Pre_aprobado_terreno" WHERE id = :id AND estado = "En_banco"');
+    $stmtEstado->execute(['id' => $postulacionId]);
 
     $pdo->commit();
 } catch (RuntimeException $e) {
@@ -78,4 +81,4 @@ try {
     responderError('No fue posible invitar a esta persona.', 500);
 }
 
-responderOk(['mensaje' => 'Persona invitada al proceso. Se le envió el enlace para completar sus datos.']);
+responderOk(['mensaje' => 'Persona invitada al proceso. Pasó a revisión del Administrador de Contrato.']);

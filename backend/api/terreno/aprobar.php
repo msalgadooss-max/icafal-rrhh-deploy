@@ -1,13 +1,15 @@
 <?php
 /**
- * Jefe de Terreno aprueba una postulacion 'Pendiente'.
+ * Jefe de Terreno pre-aprueba una postulacion 'Pendiente'.
  * Cambio de estado: Pendiente -> Pre_aprobado_terreno.
  *
- * v3: esta aprobacion YA otorga el acceso a la Etapa 2 (genera el
- * token privado y envia el correo con el link) -- antes ese paso lo
- * hacia Admin_Contrato al "autorizar". Ahora Admin_Contrato revisa la
- * ficha con los datos y documentos YA completos, en vez de autorizar
- * a ciegas antes de que existan.
+ * v6.5 - Vuelve al orden secuencial: esta pre-aprobacion YA NO le da
+ * acceso a Etapa 2 al postulante. Ahora hace falta ADEMAS que
+ * Admin_Contrato autorice (ver admin_contrato/autorizar.php) -- recien
+ * ahi se genera el token y se le envia al postulante el correo para
+ * completar sus datos. Mientras tanto, la postulacion queda visible
+ * para Admin_Contrato en su pestaña "Por Autorizar", pero el postulante
+ * no recibe nada todavia.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -41,7 +43,9 @@ try {
         throw new RuntimeException('La postulación ya no está en estado Pendiente.|409');
     }
 
-    otorgarAccesoEtapa2($pdo, $postulacionId, $usuario['id']);
+    fijarUsuarioContextoBD($pdo, $usuario['id']);
+    $stmt = $pdo->prepare('UPDATE postulaciones SET estado = "Pre_aprobado_terreno" WHERE id = :id AND estado = "Pendiente"');
+    $stmt->execute(['id' => $postulacionId]);
 
     $pdo->commit();
 } catch (RuntimeException $e) {
@@ -54,4 +58,4 @@ try {
     responderError('No fue posible aprobar la postulación.', 500);
 }
 
-responderOk(['mensaje' => 'Postulación aprobada. Se envió al postulante el enlace para completar sus datos.']);
+responderOk(['mensaje' => 'Postulación pre-aprobada. Pasó a revisión del Administrador de Contrato.']);

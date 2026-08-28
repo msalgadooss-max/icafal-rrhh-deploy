@@ -136,14 +136,14 @@ function ordenEstadosActivos(): array
 }
 
 /**
- * v3.1: punto de encuentro de los dos caminos paralelos que arrancan
- * cuando Jefe_Terreno aprueba: Admin_Contrato autorizando (marca
- * admin_autorizado_at) y el postulante llenando la Etapa 2 (se detecta
- * por la existencia de su fila en datos_contratacion). Cualquiera de
- * las dos acciones llama esta funcion al terminar; solo cuando AMBAS
- * ya ocurrieron, la postulacion avanza a 'Aprobado_admin' y se notifica
- * al JAO. Si solo una ocurrio, no pasa nada mas -- la otra parte sigue
- * su curso sin bloquearse ni esperar.
+ * v6.5: se llama cuando el postulante termina su Etapa 2. Verifica que
+ * Admin_Contrato ya haya autorizado (admin_autorizado_at) -- con el
+ * flujo SECUENCIAL actual esto siempre es cierto, porque el postulante
+ * no puede ni empezar la Etapa 2 sin que Admin_Contrato autorice
+ * primero (ver admin_contrato/autorizar.php). Se deja esta doble
+ * verificacion de todos modos como defensa: si algun dia se necesita
+ * volver al flujo en paralelo, esta funcion ya sabe manejarlo sin
+ * cambios.
  */
 function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
 {
@@ -181,12 +181,16 @@ function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
 }
 
 /**
- * v3: punto unico donde una postulacion recibe acceso a la Fase 2
- * (datos personales/bancarios + documentos). Genera el token,
- * actualiza el estado a 'Pre_aprobado_terreno' y envia el correo con
- * el link privado. Lo llaman terreno/aprobar.php y
- * terreno/banco_invitar.php -- ambos son "la primera vez que alguien
- * queda habilitado para avanzar", solo que por caminos distintos.
+ * v6.5: punto unico donde una postulacion recibe acceso a la Fase 2
+ * (datos personales/bancarios + documentos). Genera el token, deja el
+ * estado en 'Pre_aprobado_terreno' (ya lo estaba) y envia el correo con
+ * el link privado. La llama admin_contrato/autorizar.php -- el flujo
+ * volvio a ser SECUENCIAL: Terreno pre-aprueba primero (sin dar acceso
+ * todavia), Admin_Contrato autoriza despues, y recien ahi el postulante
+ * se entera que puede continuar. (Antes, en v3.1, esto lo llamaban
+ * terreno/aprobar.php y terreno/banco_invitar.php para correr en
+ * paralelo con la autorizacion del administrador; ver git history si
+ * hace falta volver a ese modelo.)
  */
 function otorgarAccesoEtapa2(PDO $pdo, int $postulacionId, int $usuarioId): void
 {

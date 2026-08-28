@@ -3,8 +3,8 @@
  * v4.1 - Plantilla de correo enviado a Prevencionista y Jefe_Bodega en
  * el mismo momento en que se notifica al JAO (ver
  * functions.php::notificarPrevencionYBodega()): cuando la postulacion
- * junta las dos condiciones del flujo en paralelo (Admin_Contrato
- * autorizo Y el postulante completo su Etapa 2) y pasa a
+ * junta las dos condiciones del flujo (Admin_Contrato autorizo Y el
+ * postulante completo su Etapa 2, en ese orden desde v6.5) y pasa a
  * 'Aprobado_admin'. Prevencion solo necesita saber que viene una nueva
  * persona para agendar la induccion; Bodega ademas necesita las tallas
  * para preparar el kit de EPP (calzado y overol).

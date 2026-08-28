@@ -171,10 +171,12 @@ try {
     // Sin usuario logueado: la accion la origina el propio postulante.
     fijarUsuarioContextoBD($pdo, null);
 
-    // v3.1: el token se invalida SIEMPRE (es de un solo uso), pero el
-    // estado NO cambia aqui directamente -- este es uno de los dos
-    // caminos paralelos (el otro es que Admin_Contrato autorice). El
-    // estado avanza a 'Aprobado_admin' recien cuando ambos terminan.
+    // v6.5: el token se invalida SIEMPRE (es de un solo uso), pero el
+    // estado NO cambia aqui directamente -- en el flujo secuencial,
+    // Admin_Contrato ya autorizó antes de que este token existiera
+    // siquiera (ver admin_contrato/autorizar.php), así que solo falta
+    // que intentarAvanzarAAprobadoAdmin() confirme esa condición (que
+    // en la práctica siempre es true a esta altura) para avanzar.
     $stmtUpdate = $pdo->prepare(
         'UPDATE postulaciones SET token_privado = NULL, token_expira_at = NULL WHERE id = :id'
     );

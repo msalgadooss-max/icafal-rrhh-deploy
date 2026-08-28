@@ -109,18 +109,18 @@ function renderResultado(p) {
 function timelineHtml(p) {
   const idxActual = p.orden_estados.indexOf(p.estado);
 
-  // v3.1/v4.1: Admin_Contrato y el postulante avanzan en paralelo, así
-  // que "Datos completados" y "Autorización Administrador de contrato"
-  // no son parte de `orden_estados` (no son estados reales) -- se
-  // insertan como pasos visuales aparte, justo después de
-  // "Pre-aprobado por Jefe de Terreno", encendidos por sus propias
-  // banderas en vez de por el índice del estado.
+  // v6.5: flujo SECUENCIAL -- "Autorización Administrador de contrato" y
+  // "Datos completados por el postulante" no son parte de `orden_estados`
+  // (no son estados reales) -- se insertan como pasos visuales aparte,
+  // justo después de "Pre-aprobado por Jefe de Terreno". El Administrador
+  // autoriza PRIMERO (recién ahí el postulante recibe el acceso a Etapa
+  // 2), así que ese paso siempre se enciende antes que el segundo.
   const pasos = [];
   p.orden_estados.forEach((estado, idx) => {
     pasos.push({ etiqueta: ETIQUETAS_ESTADO[estado], completado: idx <= idxActual });
     if (estado === 'Pre_aprobado_terreno') {
-      pasos.push({ etiqueta: 'Datos completados por el postulante', completado: p.etapa2_completada || idx < idxActual });
       pasos.push({ etiqueta: 'Autorización Administrador de contrato', completado: p.admin_autorizado || idx < idxActual });
+      pasos.push({ etiqueta: 'Datos completados por el postulante', completado: p.etapa2_completada || idx < idxActual });
     }
   });
 

@@ -1,8 +1,9 @@
 /**
- * v3.1: Admin_Contrato autoriza en PARALELO a que el postulante llena
- * su Etapa 2 -- no espera a que termine, y no necesita ver sus
- * documentos de Etapa 2 (eso lo revisa el JAO más adelante). Solo ve
- * lo que Jefe_Terreno ya aprobó: datos básicos + CV.
+ * v6.5: Admin_Contrato autoriza PRIMERO -- recién en ese momento el
+ * postulante recibe el enlace de Etapa 2. Esta lista solo ve lo que
+ * Jefe_Terreno ya pre-aprobó: datos básicos + CV. No necesita ver
+ * documentos de Etapa 2 (eso lo revisa el JAO más adelante, una vez
+ * el postulante los completa).
  */
 (async () => {
   const usuario = await protegerDashboard('Admin_Contrato');
@@ -36,6 +37,42 @@ function cambiarTab(tab) {
     AUTORIZADO_CARGADO = true;
     cargarAutorizados();
   }
+  if (tab === 'estado_proceso') {
+    renderEstadoProcesoTabla(); // pinta con lo último que ya cargó el widget "Estado en vivo"
+  }
+}
+
+// --- v6.5: pestaña "Estado del proceso" (cada trabajador individualizado) -
+// Reutiliza la misma data que el widget "Estado en vivo" (estado-vivo.js),
+// que ya se refresca solo cada 10s -- no pide un endpoint aparte.
+function onEstadoVivoActualizado() {
+  const panel = document.getElementById('panel-estado_proceso');
+  if (panel && !panel.classList.contains('hidden')) renderEstadoProcesoTabla();
+}
+
+function renderEstadoProcesoTabla() {
+  const tbody = document.getElementById('tbody-estado-proceso');
+  const vacio = document.getElementById('estado-proceso-vacio');
+  if (!tbody) return;
+  const trabajadores = ESTADO_VIVO_ULTIMO || [];
+  if (!trabajadores.length) {
+    tbody.innerHTML = '';
+    if (vacio) vacio.classList.remove('hidden');
+    return;
+  }
+  if (vacio) vacio.classList.add('hidden');
+  tbody.innerHTML = trabajadores.map(t => `
+    <tr class="border-t ${t.pendiente_de_ti ? 'bg-amber-50' : ''}">
+      <td class="px-4 py-3 font-medium text-gray-900">${t.nombre_completo}</td>
+      <td class="px-4 py-3">${t.nombre_cargo}</td>
+      <td class="px-4 py-3">
+        <span class="text-xs font-medium ${t.contratado ? 'text-green-700' : 'text-blue-700'}">${t.fase}</span>
+        ${t.pendiente_de_ti ? '<span class="ml-2 text-[11px] font-semibold text-amber-700">👉 Pendiente en tu bandeja</span>' : ''}
+      </td>
+      <td class="px-4 py-3 text-right">
+        <button class="text-xs font-semibold text-blue-600 underline" onclick="abrirDetalleTrabajador(${t.id})">Ver pasos</button>
+      </td>
+    </tr>`).join('');
 }
 
 async function cargarLista() {
@@ -58,9 +95,6 @@ async function cargarLista() {
         <td class="px-4 py-3">${p.tiene_cv
           ? `<a href="${API_BASE_URL}/documentos/ver.php?postulacion_id=${p.id}&tipo=cv" target="_blank" class="text-blue-600 font-medium underline">Ver CV</a>`
           : '<span class="text-gray-400 text-xs">Sin CV</span>'}</td>
-        <td class="px-4 py-3">${p.postulante_ya_completo
-          ? '<span class="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-md font-medium">✓ Ya completó Etapa 2</span>'
-          : '<span class="text-xs text-gray-400">Aún llenando sus datos</span>'}</td>
         <td class="px-4 py-3 text-right space-x-2">
           <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="autorizar(${p.id})">Autorizar Contratación</button>
           <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="rechazar(${p.id})">Rechazar</button>
@@ -72,7 +106,7 @@ async function cargarLista() {
 }
 
 async function autorizar(id) {
-  if (!confirm('¿Autorizar la contratación? No hace falta esperar a que el postulante termine sus datos.')) return;
+  if (!confirm('¿Autorizar esta contratación? Se le enviará al postulante el enlace para completar sus datos (Etapa 2).')) return;
   try {
     const data = await apiFetch('/admin_contrato/autorizar.php', { method: 'POST', body: { postulacion_id: id } });
     mostrarAlerta('alerta', data.mensaje, 'exito');

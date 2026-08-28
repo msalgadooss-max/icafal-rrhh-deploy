@@ -1,17 +1,20 @@
 <?php
 /**
- * v3.4 - "Estado en vivo": una vista compacta, igual para todos los
- * roles internos, que muestra en qué fase visual está cada trabajador
- * activo (estilo rastreo de pedido). No expone NINGÚN dato sensible de
- * datos_contratacion -- solo nombre, cargo y una etiqueta de fase, así
- * que es seguro mostrarlo tal cual en Terreno, Admin_Contrato, JAO y
- * Gerencia por igual.
+ * v6.5 - "Estado en vivo" / "Estado del proceso": una vista compacta,
+ * igual para todos los roles internos, que muestra en qué fase visual
+ * está cada trabajador activo (estilo rastreo de pedido). No expone
+ * NINGÚN dato sensible de datos_contratacion -- solo nombre, cargo y
+ * una etiqueta de fase, así que es seguro mostrarlo tal cual en
+ * Terreno, Admin_Contrato, JAO y Gerencia por igual. También alimenta
+ * la pestaña "Estado del proceso" de Admin_Contrato (misma data, vista
+ * en tabla completa en vez de widget resumido).
  *
- * La fase se calcula, no se guarda: combina el `estado` con las dos
- * banderas del flujo en paralelo (admin_autorizado_at y si ya existe
- * su fila en datos_contratacion) para poder decir, por ejemplo,
- * "cargando documentos" vs "esperando al Administrador" aunque ambas
- * compartan el mismo `estado` de base ('Pre_aprobado_terreno').
+ * La fase se calcula, no se guarda: combina el `estado` con
+ * admin_autorizado_at y si ya existe su fila en datos_contratacion.
+ * Desde v6.5 el flujo es SECUENCIAL (ya no en paralelo): el postulante
+ * no puede tener datos_contratacion sin que admin_autorizado_at ya
+ * esté puesto, porque es justo esa autorización la que le entrega el
+ * acceso a Etapa 2 (ver admin_contrato/autorizar.php).
  */
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/auth.php';
@@ -49,10 +52,9 @@ function faseVisual(array $p): string
     return match ($p['estado']) {
         'Pendiente' => 'Postulación recibida, esperando revisión de Terreno',
         'Pre_aprobado_terreno' => match (true) {
-            $completo && $autorizado => 'A punto de pasar a cierre', // caso raro: join aun no corrio
-            $completo && !$autorizado => 'En aprobación del Administrador',
-            !$completo && $autorizado => 'Terminando de cargar documentos',
-            default => 'En carga de documentos y datos',
+            !$autorizado => 'Esperando autorización del Administrador de Contrato',
+            $completo => 'A punto de pasar a cierre', // caso raro: join aun no corrio
+            default => 'Autorizado, completando datos y documentos (Etapa 2)',
         },
         'Aprobado_admin' => 'En revisión Jefe Administrativo',
         'Induccion_ok' => 'Inducción de seguridad realizada',
@@ -110,14 +112,14 @@ function pasosProgreso(array $p): array
     foreach ($orden as $idx => $estado) {
         $pasos[] = ['etiqueta' => $etiquetas[$estado] ?? $estado, 'completado' => $idxActual !== false && $idx <= $idxActual];
         if ($estado === 'Pre_aprobado_terreno') {
-            // v4.1: dos hitos sinteticos (no son estados reales) porque
-            // Admin_Contrato y el postulante trabajan en paralelo -- ver
-            // intentarAvanzarAAprobadoAdmin(). Pueden completarse en
-            // cualquier orden; ambos deben estar listos antes de que la
-            // postulacion realmente pase a 'Aprobado_admin'.
+            // v6.5: dos hitos sinteticos (no son estados reales), ahora en
+            // orden SECUENCIAL real: Admin_Contrato autoriza PRIMERO, y
+            // recien ahi el postulante recibe el acceso a Etapa 2 (ver
+            // admin_contrato/autorizar.php). intentarAvanzarAAprobadoAdmin()
+            // igual valida ambas condiciones antes de pasar a 'Aprobado_admin'.
             $yaSuperado = $idxActual !== false && $idx < $idxActual;
-            $pasos[] = ['etiqueta' => 'Datos completados por el postulante', 'completado' => $completo || $yaSuperado];
             $pasos[] = ['etiqueta' => 'Autorización Administrador de contrato', 'completado' => $autorizadoAdmin || $yaSuperado];
+            $pasos[] = ['etiqueta' => 'Datos completados por el postulante', 'completado' => $completo || $yaSuperado];
         }
     }
     return $pasos;

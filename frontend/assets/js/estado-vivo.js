@@ -68,6 +68,12 @@ async function cargarEstadoVivo() {
       const actualizado = data.trabajadores.find(t => t.id === idAbierto);
       if (actualizado) renderDetalleTrabajador(actualizado);
     }
+
+    // v6.5: hook opcional para dashboards que además muestran esta misma
+    // data en una tabla completa (ej. pestaña "Estado del proceso" de
+    // Admin_Contrato) -- se define solo ahí, así este archivo compartido
+    // no depende de ningún dashboard en particular.
+    if (typeof onEstadoVivoActualizado === 'function') onEstadoVivoActualizado();
   } catch (err) {
     // silencioso: no queremos que un widget secundario tape el resto del dashboard
     lista.innerHTML = '<p class="text-sm text-gray-400 py-2">No se pudo cargar el estado en vivo.</p>';
