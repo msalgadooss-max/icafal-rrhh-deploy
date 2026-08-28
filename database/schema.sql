@@ -29,27 +29,6 @@ CREATE TABLE cargos (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
--- Tabla: solicitudes_cupo (v4)
--- Bitacora de cada solicitud de cupos que hace Jefe_Terreno para un
--- cargo especifico (ej. "necesito 8 Jornal Concretero"). Cada fila
--- aprobada suma su "cantidad" a cargos.cupos_totales y cupos_activos.
--- Se registra por separado de trazabilidad_logs porque es un evento a
--- nivel de CARGO, no de una postulacion puntual.
--- ---------------------------------------------------------------------
-CREATE TABLE solicitudes_cupo (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cargo_id    INT UNSIGNED NOT NULL,
-    cantidad    INT UNSIGNED NOT NULL,
-    usuario_id  INT UNSIGNED NULL,
-    creado_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_solicitud_cargo
-        FOREIGN KEY (cargo_id) REFERENCES cargos(id),
-    CONSTRAINT fk_solicitud_usuario
-        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-        ON DELETE SET NULL
-) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------------
 -- Tabla: usuarios
 -- Usuarios internos del sistema (no incluye a los postulantes).
 -- password: hash bcrypt generado con password_hash() de PHP.
@@ -76,6 +55,27 @@ CREATE TABLE usuarios (
     creado_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                         ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- Tabla: solicitudes_cupo (v4)
+-- Bitacora de cada solicitud de cupos que hace Jefe_Terreno para un
+-- cargo especifico (ej. "necesito 8 Jornal Concretero"). Cada fila
+-- aprobada suma su "cantidad" a cargos.cupos_totales y cupos_activos.
+-- Se registra por separado de trazabilidad_logs porque es un evento a
+-- nivel de CARGO, no de una postulacion puntual.
+-- ---------------------------------------------------------------------
+CREATE TABLE solicitudes_cupo (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    cargo_id    INT UNSIGNED NOT NULL,
+    cantidad    INT UNSIGNED NOT NULL,
+    usuario_id  INT UNSIGNED NULL,
+    creado_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_solicitud_cargo
+        FOREIGN KEY (cargo_id) REFERENCES cargos(id),
+    CONSTRAINT fk_solicitud_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
