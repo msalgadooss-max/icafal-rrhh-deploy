@@ -238,6 +238,20 @@ function mostrarAlertaSuave(mensaje) {
   setTimeout(() => { alertaDiv.innerHTML = ''; }, 5000);
 }
 
+// v6.6: red de seguridad -- se detectó que en algunos celulares (autofill
+// de fecha de nacimiento o teléfono de Chrome/Android) el navegador puede
+// lanzar un error nativo en inglés ("The string did not match the
+// expected pattern") que dejaba al postulante literalmente atascado, sin
+// ningún mensaje que le dijera qué hacer. autocomplete="off" en esos
+// campos debería evitarlo, pero esto asegura que si de todos modos ocurre
+// algún error inesperado, el postulante vea un aviso claro en vez de
+// quedar bloqueado en silencio.
+window.addEventListener('error', (e) => {
+  if (form && !form.classList.contains('hidden')) {
+    mostrarAlertaSuave('Hubo un problema inesperado con uno de los campos. Si no puedes avanzar, intenta recargar la página (tus datos de texto ya escritos se recuperan solos) o vuelve a intentarlo desde otro navegador.');
+  }
+});
+
 // --- v5.1/v5.2: wizard de 4 pasos ------------------------------------------
 const NOMBRES_PASO = { 1: 'Datos personales', 2: 'Previsión y banco', 3: 'Documentos', 4: 'Revisar y confirmar' };
 

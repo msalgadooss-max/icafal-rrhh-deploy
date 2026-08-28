@@ -36,7 +36,7 @@
       quien revisa y aprueba lo que se envía al final.
     </div>
 
-    <form id="form-datos" class="bg-white shadow-sm rounded-xl p-5 space-y-4 hidden">
+    <form id="form-datos" autocomplete="off" class="bg-white shadow-sm rounded-xl p-5 space-y-4 hidden">
 
       <!-- PASO 1: Datos personales y domicilio -->
       <div class="paso space-y-4" data-paso="1">
@@ -44,7 +44,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha nacimiento</label>
-            <input id="fecha_nacimiento" type="date" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+            <input id="fecha_nacimiento" type="date" autocomplete="off" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
@@ -142,7 +142,7 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-            <input id="contacto_emergencia_telefono" type="tel" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+            <input id="contacto_emergencia_telefono" type="tel" autocomplete="off" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
           </div>
         </div>
 
