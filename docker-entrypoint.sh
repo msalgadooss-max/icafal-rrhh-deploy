@@ -57,7 +57,7 @@ define('SMTP_HOST', '${SMTP_HOST}');
 define('SMTP_PORT', ${SMTP_PORT:-587});
 define('SMTP_USER', '${SMTP_USER}');
 define('SMTP_PASS', '${SMTP_PASS}');
-define('SMTP_SECURE', 'tls');
+define('SMTP_SECURE', '${SMTP_SECURE:-tls}');
 define('SMTP_FROM_EMAIL', '${SMTP_FROM_EMAIL}');
 define('SMTP_FROM_NAME', 'RRHH ICAFAL');
 
