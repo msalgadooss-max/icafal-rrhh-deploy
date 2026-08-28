@@ -21,3 +21,4 @@ node_modules/
 .claude/
 Resumen_Completo_Proyecto_Contratacion.md
 !frontend/assets/img/*.png
+render_logs*.json
