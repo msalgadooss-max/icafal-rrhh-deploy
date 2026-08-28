@@ -30,7 +30,8 @@ $documentoRut = normalizarRut($documentoCrudo);
 
 $pdo = obtenerConexion();
 $stmt = $pdo->prepare(
-    'SELECT p.nombre_completo, p.rut, p.estado, p.codigo_seguimiento, p.creado_at, p.admin_autorizado_at,
+    'SELECT p.id, p.nombre_completo, p.rut, p.estado, p.codigo_seguimiento, p.creado_at, p.admin_autorizado_at,
+            p.token_privado, p.token_expira_at,
             c.nombre_cargo,
             (SELECT COUNT(*) FROM datos_contratacion d WHERE d.postulacion_id = p.id) > 0 AS etapa2_completada,
             (SELECT COUNT(*) FROM postulacion_documentos pd
@@ -55,6 +56,20 @@ $ordenEstados = ordenEstadosActivos();
 $estadoActual = $postulacion['estado'];
 $autorizadoIngreso = in_array($estadoActual, ['EPP_listo', 'Contratado'], true);
 $enBanco = $estadoActual === 'En_banco';
+
+// v6.6: si al postulante no le llegó (o no encuentra) el correo con el
+// enlace de Etapa 2, este mismo módulo de seguimiento -- ya protegido
+// por RUT + código de seguimiento -- le permite continuar sin depender
+// del correo. "puede_completar_etapa2" marca que ya le corresponde
+// (Admin_Contrato autorizó y aún no completa sus datos); "url_etapa2"
+// solo viene si además tiene un token vigente ahora mismo -- si no,
+// el frontend ofrece "generar mi enlace" (ver reenviar_etapa2.php).
+$puedeCompletarEtapa2 = $estadoActual === 'Pre_aprobado_terreno'
+    && $postulacion['admin_autorizado_at'] !== null
+    && !$postulacion['etapa2_completada'];
+$tokenVigente = $postulacion['token_privado'] !== null
+    && $postulacion['token_expira_at'] !== null
+    && strtotime($postulacion['token_expira_at']) > time();
 
 responderOk([
     'postulacion' => [
@@ -84,5 +99,9 @@ responderOk([
         'codigo_seguimiento' => $postulacion['codigo_seguimiento'],
         'autorizado_ingreso' => $autorizadoIngreso,
         'creado_at'          => $postulacion['creado_at'],
+        'puede_completar_etapa2' => $puedeCompletarEtapa2,
+        'url_etapa2' => ($puedeCompletarEtapa2 && $tokenVigente)
+            ? BASE_URL . '/frontend/public/completar.html?token=' . $postulacion['token_privado']
+            : null,
     ],
 ]);

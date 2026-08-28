@@ -191,8 +191,12 @@ function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
  * terreno/aprobar.php y terreno/banco_invitar.php para correr en
  * paralelo con la autorizacion del administrador; ver git history si
  * hace falta volver a ese modelo.)
+ *
+ * v6.6: $usuarioId ahora acepta null -- reenviar_etapa2.php tambien la
+ * llama cuando es el propio postulante (sin sesion interna) quien pide
+ * un enlace nuevo porque el correo original no le llego.
  */
-function otorgarAccesoEtapa2(PDO $pdo, int $postulacionId, int $usuarioId): void
+function otorgarAccesoEtapa2(PDO $pdo, int $postulacionId, ?int $usuarioId): void
 {
     $stmt = $pdo->prepare('SELECT nombre_completo, correo FROM postulaciones WHERE id = :id');
     $stmt->execute(['id' => $postulacionId]);

@@ -24,12 +24,19 @@ formatearRutInput(rutInput);
 const params = new URLSearchParams(window.location.search);
 if (params.get('rut')) rutInput.value = params.get('rut');
 
+// v6.6: se guardan para poder reenviar el enlace de Etapa 2 sin pedirle
+// de nuevo el RUT y el código al postulante.
+let ULTIMO_RUT_CONSULTADO = '';
+let ULTIMO_CODIGO_CONSULTADO = '';
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   alertaDiv.innerHTML = '';
   resultadoDiv.innerHTML = '';
 
   const codigo = document.getElementById('codigo').value.trim().toUpperCase();
+  ULTIMO_RUT_CONSULTADO = rutInput.value;
+  ULTIMO_CODIGO_CONSULTADO = codigo;
 
   try {
     const data = await apiFetch('/public/seguimiento.php', {
@@ -41,6 +48,24 @@ form.addEventListener('submit', async (e) => {
     alertaDiv.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">${err.message}</div>`;
   }
 });
+
+async function reenviarEtapa2() {
+  const btn = document.getElementById('btn-reenviar-etapa2');
+  const zona = document.getElementById('zona-reenviar-etapa2');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+  try {
+    const data = await apiFetch('/public/reenviar_etapa2.php', {
+      method: 'POST',
+      body: { rut: ULTIMO_RUT_CONSULTADO, codigo_seguimiento: ULTIMO_CODIGO_CONSULTADO },
+    });
+    zona.innerHTML = `
+      <p class="text-sm text-blue-800 mb-2">${data.mensaje}</p>
+      <a href="${data.url_etapa2}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Continuar completando mis datos</a>`;
+  } catch (err) {
+    zona.innerHTML = `<p class="text-sm text-red-600">${err.message}</p>`;
+  }
+}
 
 function renderResultado(p) {
   if (p.en_banco) {
@@ -94,10 +119,30 @@ function renderResultado(p) {
     return;
   }
 
+  // v6.6: si ya le corresponde completar Etapa 2, se ofrece continuar
+  // directamente desde aquí -- por si el correo con el enlace no llegó.
+  let bloqueEtapa2 = '';
+  if (p.puede_completar_etapa2) {
+    if (p.url_etapa2) {
+      bloqueEtapa2 = `
+        <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4">
+          <p class="text-sm text-blue-800 font-medium mb-2">Tu contratación fue autorizada. Ya puedes completar tus datos.</p>
+          <a href="${p.url_etapa2}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Continuar completando mis datos</a>
+        </div>`;
+    } else {
+      bloqueEtapa2 = `
+        <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4" id="zona-reenviar-etapa2">
+          <p class="text-sm text-blue-800 font-medium mb-2">Tu contratación fue autorizada. Te enviamos un correo para completar tus datos — si no te llegó, genera tu enlace aquí:</p>
+          <button id="btn-reenviar-etapa2" onclick="reenviarEtapa2()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Generar mi enlace para continuar</button>
+        </div>`;
+    }
+  }
+
   resultadoDiv.innerHTML = `
     <div class="bg-white shadow-sm rounded-xl p-5">
       <p class="font-bold text-gray-900">${p.nombre_completo}</p>
       <p class="text-sm text-gray-500 mb-4">${p.cargo}</p>
+      ${bloqueEtapa2}
       ${p.documento_observado ? `
         <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm text-amber-800">
           ⚠ Hay una observación en uno de tus documentos. Revisa tu correo para ver el detalle y el link para corregirlo.
