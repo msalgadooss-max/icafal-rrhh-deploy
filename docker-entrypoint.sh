@@ -28,10 +28,12 @@ done
 #           por red. Esto se hace una sola vez, por el socket local
 #           (donde root SI puede entrar sin clave).
 mysql -uroot <<'SQL'
+ALTER USER 'root'@'localhost' IDENTIFIED BY '';
 CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 SQL
+echo "[entrypoint] Cuenta root habilitada para conexiones TCP."
 
 # --- 3) Crea el esquema + datos semilla si la base aun no existe --------
 if ! mysql -h127.0.0.1 -uroot -e "USE icafal_rrhh" 2>/dev/null; then
