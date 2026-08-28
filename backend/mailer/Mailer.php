@@ -47,6 +47,14 @@ final class Mailer
             }
             $mail->Port       = SMTP_PORT;
             $mail->CharSet    = 'UTF-8';
+            // v6.3: algunos hostings gratuitos bloquean el puerto SMTP
+            // saliente sin avisar (conexion se queda colgada, no da
+            // error). Con el servidor de desarrollo de PHP (una sola
+            // peticion a la vez) eso congela TODA la app. Un timeout
+            // corto asegura que, si el SMTP no responde, el envio
+            // falle rapido en vez de bloquear el resto del sistema.
+            $mail->Timeout     = 8;
+            $mail->SMTPKeepAlive = false;
 
             $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
             $mail->addAddress($destinatario, $nombre);
