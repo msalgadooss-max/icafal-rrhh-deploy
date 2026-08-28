@@ -19,6 +19,7 @@
     </div>
     <div class="flex items-center gap-4">
       <button onclick="abrirGuia('jao')" class="text-sm text-blue-600 font-medium border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg">📘 Guía de uso</button>
+      <button onclick="abrirFlujo()" class="text-sm text-indigo-600 font-medium border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg">🔀 Ver flujo</button>
       <button onclick="abrirModalExport()" class="bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-lg">
         Exportar Carga Masiva (Excel)
       </button>
@@ -79,6 +80,7 @@
               <th class="px-4 py-3">Nombre</th>
               <th class="px-4 py-3">Cargo</th>
               <th class="px-4 py-3">Exportado</th>
+              <th class="px-4 py-3 text-right">Tiempos</th>
             </tr>
           </thead>
           <tbody id="tbody-contratados"></tbody>
@@ -98,6 +100,7 @@
               <th class="px-4 py-3">Cargo</th>
               <th class="px-4 py-3">Motivo</th>
               <th class="px-4 py-3">Fecha</th>
+              <th class="px-4 py-3 text-right">Tiempos</th>
             </tr>
           </thead>
           <tbody id="tbody-rechazados"></tbody>
@@ -123,6 +126,14 @@
       <button onclick="confirmarExport()" class="mt-4 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
         Exportar seleccionados (Excel)
       </button>
+    </div>
+  </div>
+
+  <!-- v6.7: modal de detalle de tiempos por trabajador -->
+  <div id="modal-tiempos" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this) cerrarDetalleTiempos()">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative max-h-[85vh] overflow-y-auto">
+      <button onclick="cerrarDetalleTiempos()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+      <div id="contenido-tiempos"></div>
     </div>
   </div>
 

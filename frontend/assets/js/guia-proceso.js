@@ -106,3 +106,75 @@ function cerrarGuia() {
   const modal = document.getElementById('guia-proceso-modal');
   if (modal) modal.classList.add('hidden');
 }
+
+// --- v6.7: "Flujo del proceso" -- diagrama visual del pipeline completo ----
+// tal como está hoy (flujo SECUENCIAL: Terreno pre-aprueba, Administrador
+// autoriza, RECIÉN AHÍ el postulante llena Etapa 2, JAO cierra). Mismo
+// contenido para los 3 dashboards -- no depende del rol que lo abre.
+function pasoFlujo(numero, titulo, detalle, opciones = {}) {
+  const { rama = '', ultimo = false } = opciones;
+  return `
+    <div class="flex gap-3">
+      <div class="flex flex-col items-center">
+        <span class="shrink-0 w-8 h-8 rounded-full ${ultimo ? 'bg-green-600' : 'bg-blue-600'} text-white text-sm font-bold flex items-center justify-center">${ultimo ? '✔' : numero}</span>
+        ${!ultimo ? '<span class="w-px flex-1 bg-gray-300 my-1" style="min-height:14px;"></span>' : ''}
+      </div>
+      <div class="pb-6 flex-1">
+        <p class="font-semibold text-gray-900 text-sm">${titulo}</p>
+        <p class="text-xs text-gray-500 mt-0.5">${detalle}</p>
+        ${rama}
+      </div>
+    </div>`;
+}
+
+function ramaFlujo(texto, tipo = 'rechazo') {
+  const estilos = {
+    rechazo: 'bg-red-50 border-red-200 text-red-700',
+    observacion: 'bg-amber-50 border-amber-200 text-amber-800',
+  };
+  const icono = tipo === 'rechazo' ? '✕' : '↺';
+  return `<div class="mt-2 border rounded-lg px-3 py-2 text-xs ${estilos[tipo]}"><b>${icono}</b> ${texto}</div>`;
+}
+
+const FLUJO_DIAGRAMA_HTML = `
+  <p class="text-sm text-gray-600 mb-5">Así funciona hoy el proceso completo, de punta a punta. Las cajas rojas y ámbar son las ramas donde el proceso se desvía de la ruta principal.</p>
+  <div>
+    ${pasoFlujo(1, 'Postulante postula (Etapa 1)', 'Llena datos básicos, sube su CV y su cédula (frente y reverso), desde el formulario público (QR o link).')}
+    ${pasoFlujo(2, 'Jefe de Terreno revisa', 'Ve el CV y decide.', {
+      rama: ramaFlujo('Rechaza → el postulante recibe un correo genérico ("no fue seleccionado en esta etapa"), sin el motivo real. No sigue el proceso.'),
+    })}
+    ${pasoFlujo(3, 'Administrador de Contrato revisa', 'Ve lo mismo que aprobó Terreno y decide.', {
+      rama: ramaFlujo('Rechaza → mismo correo genérico que en el paso anterior. No sigue el proceso.'),
+    })}
+    ${pasoFlujo(4, 'Administrador autoriza → se activa la Etapa 2', 'Este es el paso clave: recién aquí el postulante recibe el correo con el enlace para completar sus datos. Antes de esto, ese enlace no existe.')}
+    ${pasoFlujo(5, 'Postulante completa Etapa 2', 'Datos personales, previsionales, bancarios + documentos: cédula, certificado de AFP, de salud, de residencia y (si aplica) último finiquito.')}
+    ${pasoFlujo(6, 'Jefe Administrativo (JAO) revisa todo', 'Revisa cada documento, verifica que el RUT declarado coincida con la cédula, y completa los datos de nómina.', {
+      rama: ramaFlujo('Observa un documento → el postulante recibe un correo pidiéndole que lo vuelva a subir, y vuelve a este mismo paso apenas lo corrige. El resto de lo ya aprobado no se pierde.', 'observacion'),
+    })}
+    ${pasoFlujo(7, 'Contratado', 'El JAO finaliza: se descuenta el cupo, el postulante recibe un correo de éxito con un QR para presentar en Portería, y (si los módulos están activos) se avisa a Prevención y Bodega.', { ultimo: true })}
+  </div>`;
+
+function abrirFlujo() {
+  let modal = document.getElementById('flujo-proceso-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'flujo-proceso-modal';
+    modal.className = 'hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+    modal.onclick = (e) => { if (e.target === modal) cerrarFlujo(); };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 relative max-h-[85vh] overflow-y-auto">
+      <button onclick="cerrarFlujo()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+      <h2 class="text-lg font-bold text-gray-900 mb-1">Flujo del proceso</h2>
+      ${FLUJO_DIAGRAMA_HTML}
+    </div>`;
+
+  modal.classList.remove('hidden');
+}
+
+function cerrarFlujo() {
+  const modal = document.getElementById('flujo-proceso-modal');
+  if (modal) modal.classList.add('hidden');
+}
