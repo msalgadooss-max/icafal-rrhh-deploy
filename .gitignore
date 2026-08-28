@@ -1,0 +1,23 @@
+# Nunca subir secretos ni datos reales al repositorio (es publico).
+backend/config/config.php
+vendor/
+composer.lock.bak
+backend/uploads/*
+!backend/uploads/.htaccess
+backend/carpetas_postulantes/*
+!backend/carpetas_postulantes/.htaccess
+node_modules/
+*.log
+.DS_Store
+
+# Documentos internos de ICAFAL (planes, analisis, fichas) -- nunca al
+# repositorio publico, no son parte de la aplicacion.
+*.docx
+*.pptx
+*.png
+*.jpg
+*.jpeg
+~$*
+.claude/
+Resumen_Completo_Proyecto_Contratacion.md
+!frontend/assets/img/*.png

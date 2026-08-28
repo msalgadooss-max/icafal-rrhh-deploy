@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso Interno - ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="max-w-sm w-full mx-4">
+    <img src="../assets/img/logo-icafal.png" alt="ICAFAL Ingeniería y Construcción" class="h-14 mx-auto mb-6">
+    <h1 class="text-xl font-bold text-gray-900 text-center mb-6">Acceso Interno RRHH</h1>
+    <div id="alerta"></div>
+    <form id="form-login" class="bg-white shadow-sm rounded-xl p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Correo</label>
+        <input id="correo" type="email" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+        <input id="password" type="password" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+      </div>
+      <button type="submit" id="btn-login"
+              class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg py-3 transition">
+        Ingresar
+      </button>
+    </form>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/login.js"></script>
+</body>
+</html>

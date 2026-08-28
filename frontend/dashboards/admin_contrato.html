@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Administrador de Contrato - ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white border-b px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <img src="../assets/img/logo-icafal.png" alt="ICAFAL" class="h-9">
+      <div>
+        <h1 class="font-bold text-gray-900">Dashboard Administrador de Contrato</h1>
+        <p class="text-xs text-gray-500">Etapa 2 · Autorización en paralelo</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-sm text-gray-600" data-usuario-nombre></span>
+      <button onclick="cerrarSesion()" class="text-sm text-red-600 font-medium">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div id="alerta"></div>
+    <div id="estado-vivo"></div>
+
+    <div class="flex gap-1 border-b border-gray-200 mb-6" id="tabs">
+      <button data-tab="por_autorizar" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Por Autorizar</button>
+      <button data-tab="autorizado" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Autorizado</button>
+    </div>
+
+    <!-- Tab: Por Autorizar -->
+    <section id="panel-por_autorizar" class="tab-panel">
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Correo</th>
+              <th class="px-4 py-3">CV</th>
+              <th class="px-4 py-3">Etapa 2</th>
+              <th class="px-4 py-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-postulaciones"></tbody>
+        </table>
+        <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden">No hay postulaciones pre-aprobadas por revisar.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Personal Autorizado -->
+    <section id="panel-autorizado" class="tab-panel hidden">
+      <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <div class="flex items-center gap-8 flex-wrap">
+          <div>
+            <p class="text-2xl font-bold text-gray-900" id="kpi-promedio">—</p>
+            <p class="text-xs text-gray-500">Promedio total hasta la contratación (desde que Terreno aprueba)</p>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-gray-900" id="kpi-cantidad">—</p>
+            <p class="text-xs text-gray-500">Contratados en el rango filtrado</p>
+          </div>
+        </div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-4 mb-2">Promedio por tramo del proceso</p>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-sm font-bold text-gray-900" id="kpi-promedio-postulante">—</p>
+            <p class="text-[11px] text-gray-500">Postulante llenando Etapa 2</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-sm font-bold text-gray-900" id="kpi-promedio-admin">—</p>
+            <p class="text-[11px] text-gray-500">Administrador autorizando</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-sm font-bold text-gray-900" id="kpi-promedio-jao">—</p>
+            <p class="text-[11px] text-gray-500">JAO hasta finalizar</p>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400 mt-2">Los dos primeros tramos corren en paralelo (el proceso solo sigue cuando ambos terminan); el de JAO empieza recién después.</p>
+      </div>
+
+      <div class="flex flex-wrap items-end gap-3 mb-4">
+        <div><label class="block text-xs text-gray-600 mb-1">Desde</label>
+          <input type="datetime-local" id="desde-autorizado" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
+        <div><label class="block text-xs text-gray-600 mb-1">Hasta</label>
+          <input type="datetime-local" id="hasta-autorizado" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
+        <button class="bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="cargarAutorizados()">Filtrar</button>
+        <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg" onclick="limpiarFiltrosAutorizados()">Limpiar</button>
+        <button class="ml-auto bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="exportarAutorizadosExcel()">Exportar Excel</button>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Estado actual</th>
+              <th class="px-4 py-3">Autorizado el</th>
+              <th class="px-4 py-3">Postulante</th>
+              <th class="px-4 py-3">Admin.</th>
+              <th class="px-4 py-3">JAO</th>
+              <th class="px-4 py-3">Total</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-autorizado"></tbody>
+        </table>
+        <p id="autorizado-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie autorizado todavía en este rango.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/dashboard-common.js"></script>
+  <script src="../assets/js/estado-vivo.js"></script>
+  <script src="../assets/js/dashboard-admin-contrato.js"></script>
+</body>
+</html>

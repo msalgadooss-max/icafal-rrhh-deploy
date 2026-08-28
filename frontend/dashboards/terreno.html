@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Jefe de Terreno - ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white border-b px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <img src="../assets/img/logo-icafal.png" alt="ICAFAL" class="h-9">
+      <div>
+        <h1 class="font-bold text-gray-900">Dashboard Jefe de Terreno</h1>
+        <p class="text-xs text-gray-500">Fase 1 · Aprobación y seguimiento del personal</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-sm text-gray-600" data-usuario-nombre></span>
+      <button onclick="cerrarSesion()" class="text-sm text-red-600 font-medium">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div id="alerta"></div>
+    <div id="estado-vivo"></div>
+    <div id="limite-aprobaciones" class="mb-4"></div>
+
+    <div class="flex gap-1 border-b border-gray-200 mb-6" id="tabs">
+      <button data-tab="postulantes" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Postulantes</button>
+      <button data-tab="banco" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Banco de Postulantes</button>
+      <button data-tab="en_proceso" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Aprobado en Proceso</button>
+      <button data-tab="contratados" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Contratado</button>
+      <button data-tab="cupos" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Solicitar Cupos</button>
+    </div>
+
+    <!-- Tab: Postulantes -->
+    <section id="panel-postulantes" class="tab-panel">
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Comuna</th>
+              <th class="px-4 py-3">Teléfono</th>
+              <th class="px-4 py-3">Recibido</th>
+              <th class="px-4 py-3">CV</th>
+              <th class="px-4 py-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-postulaciones"></tbody>
+        </table>
+        <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden">No hay postulaciones pendientes.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Banco de Postulantes -->
+    <section id="panel-banco" class="tab-panel hidden">
+      <p class="text-xs text-gray-500 mb-3">Personas interesadas en un cargo que no tenía cupo al momento de postular. Invítalas cuando se abra uno.</p>
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo de interés</th>
+              <th class="px-4 py-3">Comuna</th>
+              <th class="px-4 py-3">En banco desde</th>
+              <th class="px-4 py-3">Datos hasta</th>
+              <th class="px-4 py-3 text-right">Invitar a cupo</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-banco"></tbody>
+        </table>
+        <p id="banco-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie en el banco por ahora.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Personal Aprobado en Proceso -->
+    <section id="panel-en_proceso" class="tab-panel hidden">
+      <div id="filtros-en_proceso" class="flex flex-wrap items-end gap-3 mb-4"></div>
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Etapa actual</th>
+              <th class="px-4 py-3">Aprobado por</th>
+              <th class="px-4 py-3">Fecha aprobación</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-en_proceso"></tbody>
+        </table>
+        <p id="en_proceso-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie en proceso por ahora.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Personal Contratado -->
+    <section id="panel-contratados" class="tab-panel hidden">
+      <div id="filtros-contratados" class="flex flex-wrap items-end gap-3 mb-4"></div>
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Aprobado por</th>
+              <th class="px-4 py-3">Fecha aprobación</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-contratados"></tbody>
+        </table>
+        <p id="contratados-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie contratado todavía.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Solicitar Cupos -->
+    <section id="panel-cupos" class="tab-panel hidden">
+      <p class="text-xs text-gray-500 mb-4 max-w-2xl">
+        Cada cargo parte sin cupos: si necesitas, por ejemplo, 8 Jornal Concretero,
+        solicítalo aquí. Los cupos que agregues son los que el postulante ve
+        disponibles al momento de postular.
+      </p>
+      <div class="bg-white rounded-xl shadow-sm p-5 mb-6 max-w-xl">
+        <h2 class="text-sm font-semibold text-gray-700 mb-3">Nueva solicitud de cupos</h2>
+        <form id="form-cupo" class="flex flex-wrap items-end gap-3">
+          <div class="flex-1 min-w-[220px]">
+            <label class="block text-xs text-gray-600 mb-1">Cargo</label>
+            <select id="cupo-cargo" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="">Cargando cargos...</option>
+            </select>
+          </div>
+          <div class="w-32">
+            <label class="block text-xs text-gray-600 mb-1">Cantidad</label>
+            <input id="cupo-cantidad" type="number" min="1" max="500" required
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+            Solicitar cupos
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Cupos totales solicitados</th>
+              <th class="px-4 py-3">Cupos disponibles ahora</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-cupos"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/dashboard-common.js"></script>
+  <script src="../assets/js/estado-vivo.js"></script>
+  <script src="../assets/js/dashboard-terreno.js"></script>
+</body>
+</html>

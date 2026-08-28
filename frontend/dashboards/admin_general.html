@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Jefe Administrativo - ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white border-b px-6 py-4 flex justify-between items-center flex-wrap gap-3">
+    <div class="flex items-center gap-4">
+      <img src="../assets/img/logo-icafal.png" alt="ICAFAL" class="h-9">
+      <div>
+        <h1 class="font-bold text-gray-900">Dashboard Jefe Administrativo</h1>
+        <p class="text-xs text-gray-500">Etapa 3 · Nómina y cierre de contratación</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <button onclick="abrirModalExport()" class="bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+        Exportar Carga Masiva (Excel)
+      </button>
+      <span class="text-sm text-gray-600" data-usuario-nombre></span>
+      <button onclick="cerrarSesion()" class="text-sm text-red-600 font-medium">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-6">
+    <div id="alerta"></div>
+    <div id="estado-vivo"></div>
+
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <p class="text-sm font-semibold text-gray-800">Cierre de remuneraciones</p>
+        <p class="text-xs text-gray-500">Mientras esté activo, "Finalizar Contratación" queda bloqueado. El resto del proceso sigue funcionando normalmente.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="badge-cierre" class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Cargando...</span>
+        <button id="btn-toggle-cierre" onclick="alternarCierre()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-semibold px-3 py-1.5 rounded-lg">Cambiar</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm font-semibold text-gray-800">Contratados vs. rechazados</p>
+        <select id="rango-estadisticas" class="border border-gray-300 rounded-lg px-2 py-1 text-xs">
+          <option value="7">Últimos 7 días</option>
+          <option value="30" selected>Últimos 30 días</option>
+          <option value="0">Todo el historial</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-6">
+        <div class="w-40 h-40 shrink-0"><canvas id="chart-donut"></canvas></div>
+        <div id="leyenda-chart" class="text-sm space-y-1"></div>
+      </div>
+    </div>
+
+    <div class="flex gap-1 border-b border-gray-200 mb-6" id="tabs">
+      <button data-tab="pendientes" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Pendientes de Aprobación</button>
+      <button data-tab="contratados" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Contratados</button>
+      <button data-tab="rechazados" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Rechazados</button>
+    </div>
+
+    <!-- Tab: Pendientes de Aprobación -->
+    <section id="panel-pendientes" class="tab-panel">
+      <div id="lista-postulaciones" class="space-y-4"></div>
+      <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden bg-white rounded-xl shadow-sm">No hay candidatos listos para cierre.</p>
+    </section>
+
+    <!-- Tab: Contratados -->
+    <section id="panel-contratados" class="tab-panel hidden">
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Exportado</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-contratados"></tbody>
+        </table>
+        <p id="contratados-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie contratado todavía.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Rechazados -->
+    <section id="panel-rechazados" class="tab-panel hidden">
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Motivo</th>
+              <th class="px-4 py-3">Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-rechazados"></tbody>
+        </table>
+        <p id="rechazados-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie rechazado todavía.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- v4: modal de seleccion de contratados a exportar -->
+  <div id="modal-export" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this) cerrarModalExport()">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-gray-900">Elegir a quiénes exportar</h3>
+        <button onclick="cerrarModalExport()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+      </div>
+      <div class="flex items-center gap-2 mb-3 text-xs">
+        <button onclick="seleccionarTodosExport(true)" class="text-blue-600 font-medium">Marcar todos</button>
+        <span class="text-gray-300">·</span>
+        <button onclick="seleccionarTodosExport(false)" class="text-blue-600 font-medium">Desmarcar todos</button>
+      </div>
+      <div id="lista-export" class="overflow-y-auto flex-1 space-y-1.5 pr-1"></div>
+      <button onclick="confirmarExport()" class="mt-4 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
+        Exportar seleccionados (Excel)
+      </button>
+    </div>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/dashboard-common.js"></script>
+  <script src="../assets/js/estado-vivo.js"></script>
+  <script src="../assets/js/dashboard-admin-general.js"></script>
+</body>
+</html>

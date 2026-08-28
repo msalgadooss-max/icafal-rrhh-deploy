@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Acceso - Portería ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center">
+  <div class="max-w-sm w-full mx-4 text-center">
+    <img src="../assets/img/logo-icafal.png" alt="ICAFAL Ingeniería y Construcción" class="h-12 mx-auto mb-6">
+    <div id="contenedor">
+      <p class="text-gray-400">Verificando credencial...</p>
+    </div>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    /**
+     * Fase 6 - Pantalla que ve el guardia al escanear el QR del
+     * postulante. Muestra ÚNICAMENTE Nombre, RUT, Cargo y el estado de
+     * acceso (AUTORIZADO / NO AUTORIZADO). Nunca datos de contratación.
+     */
+    const params = new URLSearchParams(window.location.search);
+    const rut = params.get('rut') || '';
+    const codigo = params.get('codigo') || '';
+    const contenedor = document.getElementById('contenedor');
+
+    async function verificar() {
+      if (!rut || !codigo) {
+        contenedor.innerHTML = '<p class="text-red-400 font-bold">Credencial incompleta.</p>';
+        return;
+      }
+      try {
+        const data = await apiFetch(`/porteria/validar.php?rut=${encodeURIComponent(rut)}&codigo=${encodeURIComponent(codigo)}`);
+        const autorizado = data.estado_acceso === 'AUTORIZADO';
+        contenedor.innerHTML = `
+          <div class="${autorizado ? 'bg-green-500' : 'bg-red-600'} rounded-2xl p-8 shadow-2xl">
+            <p class="text-white text-3xl font-extrabold mb-2">${data.estado_acceso}</p>
+            ${data.mensaje ? `<p class="text-white text-sm font-medium mb-4 opacity-90">${data.mensaje}</p>` : ''}
+            <div class="bg-white/10 rounded-xl p-4 text-left space-y-1 mt-2">
+              <p class="text-white text-sm"><span class="opacity-70">Nombre:</span> <strong>${data.nombre_completo}</strong></p>
+              <p class="text-white text-sm"><span class="opacity-70">RUT:</span> <strong>${data.rut}</strong></p>
+              <p class="text-white text-sm"><span class="opacity-70">Cargo:</span> <strong>${data.cargo}</strong></p>
+            </div>
+          </div>`;
+      } catch (err) {
+        contenedor.innerHTML = `<p class="text-red-400 font-bold">${err.message}</p>`;
+      }
+    }
+    verificar();
+  </script>
+</body>
+</html>

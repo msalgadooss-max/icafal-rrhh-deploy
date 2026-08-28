@@ -1,0 +1,62 @@
+<?php
+/**
+ * Fase 6 - Punto de acceso en Portería.
+ * El QR mostrado en el propio celular del postulante (cuando su
+ * seguimiento está en verde) codifica una URL a esta consulta con
+ * rut + codigo_seguimiento. El guardia la escanea con la camara de su
+ * telefono (no requiere login ni app especial) y ve solo lo minimo:
+ * Nombre, RUT, Cargo y Estado. Nunca datos de datos_contratacion.
+ *
+ * Al exigir AMBOS valores (rut + codigo) se evita que alguien adivine
+ * el estado de otra persona solo con su RUT.
+ */
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/rut.php';
+
+exigirMetodo('GET');
+
+// El QR lo genera nuestro propio seguimiento.js con el valor exacto de
+// p.rut tal como quedo guardado -- no hace falta re-normalizar como
+// RUT chileno, que ademas rompería documentos tipo 'Otro'.
+$rut = trim((string)($_GET['rut'] ?? ''));
+$codigo = strtoupper(limpiarTexto($_GET['codigo'] ?? '', 10));
+
+if ($rut === '' || $codigo === '') {
+    responderError('Datos de acceso inválidos.', 422);
+}
+
+$pdo = obtenerConexion();
+$stmt = $pdo->prepare(
+    'SELECT p.nombre_completo, p.rut, p.estado, c.nombre_cargo
+       FROM postulaciones p
+       JOIN cargos c ON c.id = p.cargo_id
+      WHERE p.rut = :rut AND p.codigo_seguimiento = :codigo
+      LIMIT 1'
+);
+$stmt->execute(['rut' => $rut, 'codigo' => $codigo]);
+$postulacion = $stmt->fetch();
+
+if (!$postulacion) {
+    responderError('Credencial no encontrada.', 404);
+}
+
+$autorizado = in_array($postulacion['estado'], ['EPP_listo', 'Contratado'], true);
+
+// v4: 'Contratado' ya no es "ingreso a la obra" sino "proceso completo,
+// falta firmar contrato en oficina JAO" -- mensaje distinto al de
+// 'EPP_listo' (acceso físico a la obra una vez que el EPP está listo).
+$mensaje = null;
+if ($autorizado) {
+    $mensaje = $postulacion['estado'] === 'Contratado'
+        ? 'Proceso realizado exitosamente. Habilitado para ir a oficina JAO a firmar el Contrato.'
+        : 'Ingreso permitido a la obra.';
+}
+
+responderOk([
+    'nombre_completo' => $postulacion['nombre_completo'],
+    'rut'             => $postulacion['rut'],
+    'cargo'           => $postulacion['nombre_cargo'],
+    'estado_acceso'   => $autorizado ? 'AUTORIZADO' : 'NO AUTORIZADO',
+    'mensaje'         => $mensaje,
+]);

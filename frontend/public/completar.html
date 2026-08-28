@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Completar Datos de Contratación - ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-md mx-auto px-4 py-8">
+    <img src="../assets/img/logo-icafal.png" alt="ICAFAL Ingeniería y Construcción" class="h-14 mx-auto mb-4">
+    <h1 class="text-2xl font-bold text-gray-900 text-center mb-1">Datos de Contratación</h1>
+    <p class="text-gray-500 text-sm text-center mb-4" id="subtitulo">Verificando enlace...</p>
+
+    <div id="alerta"></div>
+    <div id="aviso-borrador" class="hidden bg-blue-50 border border-blue-200 text-blue-700 text-xs rounded-lg px-4 py-2.5 mb-4">
+      📝 Recuperamos lo que ya habías completado antes.
+    </div>
+
+    <!-- v5.1: barra "Paso X de 3" -->
+    <div id="progreso-wizard" class="hidden mb-5">
+      <div class="flex justify-between items-baseline mb-1.5">
+        <span id="progreso-etiqueta" class="text-xs font-semibold text-blue-600">Paso 1 de 3</span>
+        <span id="progreso-nombre-paso" class="text-xs text-gray-500">Datos personales</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-1.5">
+        <div id="progreso-barra" class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width:33.3%"></div>
+      </div>
+    </div>
+
+    <!-- v5.1: canal de ayuda -- solo visible en esta Etapa 2 -->
+    <div id="ayuda-asistida" class="hidden bg-white border border-gray-200 rounded-lg px-4 py-3 mb-4 text-xs text-gray-600">
+      💬 ¿Prefieres hacerlo acompañado? Puedes pedirle a un familiar, compañero o cualquier
+      persona de tu confianza que te ayude a completar esta pantalla contigo — igual eres tú
+      quien revisa y aprueba lo que se envía al final.
+    </div>
+
+    <form id="form-datos" class="bg-white shadow-sm rounded-xl p-5 space-y-4 hidden">
+
+      <!-- PASO 1: Datos personales y domicilio -->
+      <div class="paso space-y-4" data-paso="1">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Datos personales</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha nacimiento</label>
+            <input id="fecha_nacimiento" type="date" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+            <select id="sexo" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nacionalidad</label>
+          <select id="nacionalidad" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Estado civil</label>
+          <select id="estado_civil" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+        </div>
+
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide pt-2">Domicilio</p>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+          <input id="direccion_exacta" type="text" placeholder="Calle, número, depto/casa" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Región</label>
+          <select id="region" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Comuna</label>
+          <select id="comuna" required disabled class="w-full border border-gray-300 rounded-lg px-3 py-2.5 disabled:bg-gray-100"><option value="">Primero elige tu región</option></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+            <input id="ciudad" type="text" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">País</label>
+            <input id="pais" type="text" value="Chile" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+          </div>
+        </div>
+
+        <button type="button" data-siguiente="2" class="btn-siguiente w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-3 transition">
+          Siguiente
+        </button>
+      </div>
+
+      <!-- PASO 2: Previsión, banco, tallas, contacto de emergencia -->
+      <div class="paso hidden space-y-4" data-paso="2">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Previsión y banco</p>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">AFP</label>
+          <select id="afp" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Fonasa / Isapre</label>
+          <select id="isapre_fonasa" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Banco</label>
+          <select id="banco" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de cuenta</label>
+            <select id="tipo_cuenta" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">N° de cuenta</label>
+            <input id="numero_cuenta" type="text" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Estudios</label>
+          <select id="estudios" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5"><option value="">Cargando...</option></select>
+        </div>
+
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide pt-2">Tallas para tu equipo de protección personal</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Número de calzado</label>
+            <input id="talla_calzado" type="text" placeholder="Ej: 42" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Talla de overol</label>
+            <input id="talla_overol" type="text" placeholder="Ej: L" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+          </div>
+        </div>
+
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide pt-2">Contacto de emergencia</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input id="contacto_emergencia_nombre" type="text" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+            <input id="contacto_emergencia_telefono" type="tel" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5">
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-1">
+          <button type="button" data-atras="1" class="btn-atras w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg py-3 transition">Atrás</button>
+          <button type="button" data-siguiente="3" class="btn-siguiente flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-3 transition">Siguiente</button>
+        </div>
+      </div>
+
+      <!-- PASO 3: Documentos -->
+      <div class="paso hidden space-y-4" data-paso="3">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Documentos</p>
+        <p class="text-xs text-gray-400 -mt-2">Puedes tomarles una foto: cuida que quede <strong>bien enfocada, con buena luz y sin recortes</strong> — si no se puede leer, tendrás que subirla de nuevo. PDF, JPG o PNG, hasta 8 MB cada uno.</p>
+
+        <div id="contenedor-documentos" class="space-y-4"></div>
+
+        <div class="flex gap-3 pt-1">
+          <button type="button" data-atras="2" class="btn-atras w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg py-3 transition">Atrás</button>
+          <button type="button" id="btn-ir-a-revisar" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-3 transition">
+            Revisar antes de enviar
+          </button>
+        </div>
+      </div>
+
+      <!-- PASO 4: Revisar y confirmar -->
+      <div class="paso hidden space-y-4" data-paso="4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Revisa antes de enviar</p>
+        <p class="text-xs text-gray-400 -mt-2">Si algo está mal, vuelve atrás y corrígelo — una vez enviado, solo podrás corregir un documento si te lo piden.</p>
+
+        <div id="resumen-revision" class="space-y-3"></div>
+
+        <div class="flex gap-3 pt-1">
+          <button type="button" data-atras="3" class="btn-atras w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg py-3 transition">Atrás</button>
+          <button type="submit" id="btn-guardar" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg py-3 transition">
+            Confirmar y enviar
+          </button>
+        </div>
+      </div>
+
+    </form>
+
+    <div id="resultado" class="hidden bg-white shadow-sm rounded-xl p-6 text-center"></div>
+  </div>
+
+  <!-- v6: guía de encuadre -- SIEMPRE se muestra al tocar "Tomar foto".
+       Si el navegador permite cámara en vivo (HTTPS o localhost), la
+       guía se dibuja encima del video; si no, se ve como una imagen de
+       referencia y el botón abre la cámara nativa del celular. -->
+  <div id="modal-camara" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
+    <div class="relative flex-1 overflow-hidden flex items-center justify-center">
+      <video id="video-camara" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
+      <div id="guia-estatica" class="text-center px-10">
+        <div class="mx-auto border-4 border-white/90 rounded-xl mb-4 flex items-center justify-center" style="width:230px;aspect-ratio:1.586;">
+          <span class="text-white/70 text-4xl">🪪</span>
+        </div>
+      </div>
+      <div id="marco-vivo" class="absolute inset-0 flex items-center justify-center pointer-events-none px-8 hidden">
+        <div class="w-full border-4 border-white/90 rounded-xl" style="aspect-ratio:1.586;box-shadow:0 0 0 2000px rgba(0,0,0,0.55)"></div>
+      </div>
+      <p id="titulo-guia" class="absolute top-5 left-0 right-0 text-center text-white text-sm font-medium px-8"></p>
+    </div>
+    <div class="p-5 flex items-center justify-center gap-6 bg-black">
+      <button id="btn-cancelar-captura" type="button" class="text-white/80 text-sm font-medium">Cancelar</button>
+      <button id="btn-capturar" type="button" aria-label="Capturar foto" class="hidden w-16 h-16 rounded-full bg-white border-4 border-gray-400"></button>
+      <button id="btn-abrir-nativa" type="button" class="hidden bg-white text-black text-sm font-semibold px-6 py-3 rounded-full">Abrir cámara</button>
+      <span class="w-12"></span>
+    </div>
+  </div>
+  <canvas id="canvas-captura" class="hidden"></canvas>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/completar.js"></script>
+</body>
+</html>

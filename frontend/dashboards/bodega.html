@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Jefe de Bodega - ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white border-b px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <img src="../assets/img/logo-icafal.png" alt="ICAFAL" class="h-9">
+      <div>
+        <h1 class="font-bold text-gray-900">Dashboard Jefe de Bodega</h1>
+        <p class="text-xs text-gray-500">Fase 5 · Entrega de EPP</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-sm text-gray-600" data-usuario-nombre></span>
+      <button onclick="cerrarSesion()" class="text-sm text-red-600 font-medium">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-6">
+    <div id="alerta"></div>
+    <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-left">
+          <tr>
+            <th class="px-4 py-3">RUT</th>
+            <th class="px-4 py-3">Nombre</th>
+            <th class="px-4 py-3">Cargo</th>
+            <th class="px-4 py-3">Calzado</th>
+            <th class="px-4 py-3">Pantalón</th>
+            <th class="px-4 py-3">Polera</th>
+            <th class="px-4 py-3 text-right">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-postulaciones"></tbody>
+      </table>
+      <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden">No hay candidatos esperando su kit de EPP.</p>
+    </div>
+  </main>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/dashboard-common.js"></script>
+  <script src="../assets/js/dashboard-bodega.js"></script>
+</body>
+</html>

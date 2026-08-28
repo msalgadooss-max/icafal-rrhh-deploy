@@ -1,0 +1,6 @@
+# Bloquea el acceso directo por navegador a carpetas que no deben
+# exponerse jamas (script SQL crudo y dependencias de Composer).
+RedirectMatch 404 ^/database/.*$
+RedirectMatch 404 ^/vendor/.*$
+RedirectMatch 404 ^/composer\.(json|lock)$
+RedirectMatch 404 ^/README\.md$
