@@ -184,6 +184,10 @@ CREATE TABLE postulaciones (
     token_subsanacion_expira_at DATETIME NULL,
     consentimiento_ley19628     TINYINT(1) NOT NULL DEFAULT 0,
     cv_ruta_archivo             VARCHAR(255) NULL,
+    -- v6.9: alternativa cuando el postulante no tiene CV (Ricardo,
+    -- reunion 28-ago) -- ultimo cargo/fecha/descripcion en texto libre,
+    -- en vez de bloquearlo por no tener el archivo.
+    experiencia_sin_cv          TEXT NULL,
     exportado_at                DATETIME NULL,
     creado_at                   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -423,6 +427,37 @@ CREATE TABLE dev_qr_accesos (
         FOREIGN KEY (creado_por) REFERENCES usuarios(id)
         ON DELETE SET NULL,
     INDEX idx_qracceso_token (token)
+) ENGINE=InnoDB;
+
+-- =====================================================================
+-- v6.9: Modulo de induccion en video (Ricardo, reunion 28-ago) -- el
+-- postulante ve estos videos desde su celular apenas es autorizado,
+-- ANTES de presentarse, para que la charla presencial de Prevencion sea
+-- corta (solo confirma que los vio y hace la parte especifica de la
+-- obra). El catalogo (titulo/url/orden) es editable sin tocar codigo --
+-- las URLs reales las define Prevencion cuando tenga el contenido
+-- grabado; por ahora quedan con un valor placeholder en el seed.
+-- =====================================================================
+CREATE TABLE videos_induccion (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    titulo      VARCHAR(150) NOT NULL,
+    url         VARCHAR(500) NOT NULL,
+    orden       INT UNSIGNED NOT NULL DEFAULT 0,
+    activo      TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+
+CREATE TABLE postulante_videos_vistos (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    postulacion_id  INT UNSIGNED NOT NULL,
+    video_id        INT UNSIGNED NOT NULL,
+    visto_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_postulante_video (postulacion_id, video_id),
+    CONSTRAINT fk_visto_postulacion
+        FOREIGN KEY (postulacion_id) REFERENCES postulaciones(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_visto_video
+        FOREIGN KEY (video_id) REFERENCES videos_induccion(id)
+        ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- =====================================================================

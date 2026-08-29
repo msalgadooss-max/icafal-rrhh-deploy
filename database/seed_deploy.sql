@@ -22,3 +22,12 @@ INSERT INTO usuarios (nombre, correo, password, rol) VALUES
 
 -- Se abren algunos cupos de partida para que la demo no arranque vacia.
 UPDATE cargos SET cupos_totales = 5, cupos_activos = 5 WHERE nombre_cargo IN ('Jornal Concretero', 'Albañil', 'Carpintero');
+
+-- v6.9: catalogo de induccion -- placeholder (video de muestra, libre de
+-- derechos) hasta que Prevencion (Alfredo) entregue el contenido real
+-- grabado en obra; cambiar solo la URL, sin tocar codigo, cuando ese
+-- contenido este listo.
+INSERT INTO videos_induccion (titulo, url, orden) VALUES
+    ('Inducción general de seguridad en obra', 'https://www.w3schools.com/html/mov_bbb.mp4', 1),
+    ('Uso correcto de EPP', 'https://www.w3schools.com/html/mov_bbb.mp4', 2),
+    ('Riesgos frecuentes y cómo evitarlos', 'https://www.w3schools.com/html/mov_bbb.mp4', 3);

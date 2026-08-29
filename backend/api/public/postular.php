@@ -84,13 +84,31 @@ if ($stmtDup->fetch()) {
     responderError('Ya existe una postulación registrada con ese documento. Usa el módulo de seguimiento para ver su estado.', 409);
 }
 
-// El archivo se guarda al final de las validaciones, para no dejar
-// archivos huerfanos en disco si la postulacion termina rechazada
-// por otro motivo (documento duplicado, cargo inexistente, etc.).
-try {
-    $cvRuta = guardarArchivoSubido($_FILES['cv'] ?? [], 'cv', 'tu CV');
-} catch (RuntimeException $e) {
-    responderError($e->getMessage(), 422);
+// v6.9: "No tengo CV" -- si el postulante no adjunta CV, puede en vez de
+// eso contar su ultima experiencia en 3 campos simples (pedido de
+// Ricardo, reunion 28-ago, para no bloquear a quien nunca ha trabajado
+// o no trae su CV a mano). Se exige uno de los dos caminos, no ninguno.
+$experienciaCargo = limpiarTexto($_POST['experiencia_cargo'] ?? '', 150);
+$experienciaFecha = limpiarTexto($_POST['experiencia_fecha'] ?? '', 100);
+$experienciaDescripcion = limpiarTexto($_POST['experiencia_descripcion'] ?? '', 1000);
+$tieneArchivoCv = ($_FILES['cv']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+
+$cvRuta = null;
+$experienciaSinCv = null;
+
+if ($tieneArchivoCv) {
+    try {
+        $cvRuta = guardarArchivoSubido($_FILES['cv'], 'cv', 'tu CV');
+    } catch (RuntimeException $e) {
+        responderError($e->getMessage(), 422);
+    }
+} elseif ($experienciaDescripcion !== '') {
+    $partes = [];
+    if ($experienciaCargo !== '') $partes[] = $experienciaCargo;
+    if ($experienciaFecha !== '') $partes[] = $experienciaFecha;
+    $experienciaSinCv = (implode(' — ', $partes) !== '' ? implode(' — ', $partes) . "\n" : '') . $experienciaDescripcion;
+} else {
+    responderError('Debes adjuntar tu CV, o marcar "No tengo CV" y contarnos tu experiencia.', 422);
 }
 
 $codigoSeguimiento = generarCodigoSeguimiento($pdo);
@@ -99,11 +117,11 @@ $stmt = $pdo->prepare(
     'INSERT INTO postulaciones
         (tipo_documento, rut, nombre_completo, nombre, apellido, segundo_apellido,
          telefono, correo, region, comuna, cargo_id, obra,
-         codigo_seguimiento, estado, consentimiento_ley19628, cv_ruta_archivo)
+         codigo_seguimiento, estado, consentimiento_ley19628, cv_ruta_archivo, experiencia_sin_cv)
      VALUES
         (:tipo_documento, :rut, :nombre_completo, :nombre, :apellido, :segundo_apellido,
          :telefono, :correo, :region, :comuna, :cargo_id, :obra,
-         :codigo, :estado, 1, :cv_ruta)'
+         :codigo, :estado, 1, :cv_ruta, :experiencia_sin_cv)'
 );
 $stmt->execute([
     'tipo_documento'   => $tipoDocumento,
@@ -121,6 +139,7 @@ $stmt->execute([
     'codigo'           => $codigoSeguimiento,
     'estado'           => $estadoInicial,
     'cv_ruta'          => $cvRuta,
+    'experiencia_sin_cv' => $experienciaSinCv,
 ]);
 
 $postulacionId = (int)$pdo->lastInsertId();

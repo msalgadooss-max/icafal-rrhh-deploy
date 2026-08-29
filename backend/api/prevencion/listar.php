@@ -16,7 +16,11 @@ exigirMetodo('GET');
 
 $pdo = obtenerConexion();
 $stmt = $pdo->query(
-    'SELECT p.id, p.rut, p.nombre_completo, c.nombre_cargo, p.actualizado_at
+    'SELECT p.id, p.rut, p.nombre_completo, c.nombre_cargo, p.actualizado_at,
+            (SELECT COUNT(*) FROM videos_induccion WHERE activo = 1) AS videos_total,
+            (SELECT COUNT(*) FROM postulante_videos_vistos sv
+              JOIN videos_induccion v ON v.id = sv.video_id AND v.activo = 1
+             WHERE sv.postulacion_id = p.id) AS videos_vistos
        FROM postulaciones p
        JOIN cargos c ON c.id = p.cargo_id
       WHERE p.estado = "Datos_completados"

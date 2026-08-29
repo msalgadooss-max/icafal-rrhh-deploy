@@ -103,5 +103,9 @@ responderOk([
         'url_etapa2' => ($puedeCompletarEtapa2 && $tokenVigente)
             ? BASE_URL . '/frontend/public/completar.html?token=' . $postulacion['token_privado']
             : null,
+        // v6.9: la inducción en video queda disponible apenas autoriza el
+        // Administrador de Contrato (no hace falta esperar a Etapa 2) --
+        // así el postulante puede ir viéndolos antes de presentarse.
+        'puede_ver_induccion' => $postulacion['admin_autorizado_at'] !== null && !$autorizadoIngreso && !in_array($estadoActual, ['Rechazado'], true),
     ],
 ]);

@@ -38,7 +38,9 @@ async function cargarLista() {
           </div>
           ${p.tiene_cv
             ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline text-sm">Ver CV</a>`
-            : '<span class="text-gray-400 text-xs">Sin CV</span>'}
+            : (p.experiencia_sin_cv
+                ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV — ver experiencia ⓘ</span>`
+                : '<span class="text-gray-400 text-xs">Sin CV</span>')}
         </div>
         <div class="flex gap-3 mt-4">
           <button class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold text-base rounded-lg py-3" onclick="seleccionar(${p.id})">

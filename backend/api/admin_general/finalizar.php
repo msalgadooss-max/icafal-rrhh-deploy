@@ -107,6 +107,15 @@ try {
     } catch (\Throwable $e) {
         error_log('notificarContratacionExitosa error: ' . $e->getMessage());
     }
+
+    // v6.9: avisa a quien lo seleccionó en portería (Capataz/Jefe_Terreno)
+    // que ya puede ir a buscarlo -- cierra el ciclo completo de "dueños
+    // de etapa" que pidió Ricardo.
+    try {
+        notificarLiberacionTrabajador($pdo, $postulacion);
+    } catch (\Throwable $e) {
+        error_log('notificarLiberacionTrabajador error: ' . $e->getMessage());
+    }
 } catch (RuntimeException $e) {
     $pdo->rollBack();
     [$mensaje, $status] = explode('|', $e->getMessage());

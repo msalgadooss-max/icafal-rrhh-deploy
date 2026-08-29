@@ -112,6 +112,20 @@ async function cargarCargos() {
 cargarListas();
 cargarCargos();
 
+// v6.9: "No tengo CV" -- Ricardo pidió no bloquear al postulante que
+// nunca ha trabajado o no tiene su CV a mano; en vez de eso, se le pide
+// contar su última experiencia en 3 campos simples.
+const sinCvCheckbox = document.getElementById('sin-cv');
+const cvInput = document.getElementById('cv');
+const experienciaManualDiv = document.getElementById('experiencia-manual');
+sinCvCheckbox.addEventListener('change', () => {
+  const sinCv = sinCvCheckbox.checked;
+  experienciaManualDiv.classList.toggle('hidden', !sinCv);
+  cvInput.required = !sinCv;
+  cvInput.disabled = sinCv;
+  if (sinCv) cvInput.value = '';
+});
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -129,11 +143,17 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  if (sinCvCheckbox.checked && !document.getElementById('experiencia_descripcion').value.trim()) {
+    document.getElementById('alerta').innerHTML =
+      '<div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">Cuéntanos brevemente tu experiencia (o sube tu CV en vez de marcar "No tengo CV").</div>';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
   btnEnviar.disabled = true;
   btnEnviar.textContent = 'Enviando...';
 
   try {
-    const cvInput = document.getElementById('cv');
     const formData = new FormData();
     formData.append('tipo_documento', tipoDocumentoSelect.value);
     formData.append('numero_documento', numeroDocumentoInput.value);
@@ -146,7 +166,13 @@ form.addEventListener('submit', async (e) => {
     formData.append('comuna', comunaSelect.value);
     formData.append('cargo_id', cargoSelect.value);
     formData.append('consentimiento_ley19628', document.getElementById('consentimiento').checked ? '1' : '');
-    if (cvInput.files[0]) formData.append('cv', cvInput.files[0]);
+    if (sinCvCheckbox.checked) {
+      formData.append('experiencia_cargo', document.getElementById('experiencia_cargo').value);
+      formData.append('experiencia_fecha', document.getElementById('experiencia_fecha').value);
+      formData.append('experiencia_descripcion', document.getElementById('experiencia_descripcion').value);
+    } else if (cvInput.files[0]) {
+      formData.append('cv', cvInput.files[0]);
+    }
 
     const data = await apiFetchFormData('/public/postular.php', formData);
 

@@ -612,3 +612,55 @@ function guardarArchivoSubido(array $archivo, string $subcarpeta, string $etique
 
     return $subcarpeta . '/' . $nombreArchivo;
 }
+
+/**
+ * v6.9 - Cuando el JAO finaliza la contratación (queda 100% cerrada:
+ * contrato + IRL + EPP), se avisa a quien hizo la selección inicial en
+ * portería (Capataz o Jefe_Terreno, el que haya sido) para que vaya a
+ * buscar al trabajador y lo lleve a su puesto -- pedido de Ricardo en
+ * la reunión 28-ago, para cerrar el ciclo completo de "dueños de etapa".
+ * Si esa persona ya no está activa, o por si acaso, también se avisa a
+ * todos los Jefe_Terreno activos (salvo que la persona ya sea uno de
+ * ellos, para no duplicar el correo).
+ */
+function notificarLiberacionTrabajador(PDO $pdo, array $postulacion): void
+{
+    require_once __DIR__ . '/../mailer/Mailer.php';
+
+    $stmtSeleccionador = $pdo->prepare(
+        "SELECT u.id, u.nombre, u.correo, u.rol
+           FROM trazabilidad_logs t
+           JOIN usuarios u ON u.id = t.usuario_id
+          WHERE t.postulacion_id = :id
+            AND t.accion LIKE 'Cambio de estado: % -> Pre_aprobado_terreno'
+          ORDER BY t.fecha_hora ASC
+          LIMIT 1"
+    );
+    $stmtSeleccionador->execute(['id' => $postulacion['id']]);
+    $seleccionador = $stmtSeleccionador->fetch();
+
+    $destinatarios = [];
+    if ($seleccionador) {
+        $destinatarios[$seleccionador['id']] = $seleccionador;
+    }
+
+    $stmtTerreno = $pdo->query("SELECT id, nombre, correo, rol FROM usuarios WHERE rol = 'Jefe_Terreno' AND activo = 1");
+    foreach ($stmtTerreno->fetchAll() as $jt) {
+        $destinatarios[$jt['id']] = $destinatarios[$jt['id']] ?? $jt;
+    }
+
+    if (!$destinatarios) {
+        return;
+    }
+
+    $nombreCompleto = $postulacion['nombre_completo'];
+    $rut = $postulacion['rut'];
+    $cargo = $postulacion['nombre_cargo'];
+    $html = (function () use ($nombreCompleto, $rut, $cargo) {
+        return require __DIR__ . '/../mailer/templates/notificacion_liberacion_trabajador.php';
+    })();
+
+    foreach ($destinatarios as $destinatario) {
+        Mailer::enviar($destinatario['correo'], $destinatario['nombre'], 'Trabajador listo para ingresar a terreno - ICAFAL', $html);
+    }
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inducción de Seguridad - ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-md mx-auto px-4 py-8">
+    <img src="../assets/img/logo-icafal.png" alt="ICAFAL Ingeniería y Construcción" class="h-14 mx-auto mb-4">
+    <h1 class="text-2xl font-bold text-gray-900 text-center mb-1">Inducción de Seguridad</h1>
+    <p class="text-gray-500 text-sm text-center mb-6">Mira estos videos antes de presentarte -- así tu charla en obra será más corta.</p>
+
+    <form id="form-induccion" class="bg-white shadow-sm rounded-xl p-5 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">RUT</label>
+        <input id="rut" type="text" placeholder="12345678-9" required
+               class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Código de seguimiento</label>
+        <input id="codigo" type="text" maxlength="6" placeholder="AB12CD" required
+               class="w-full border border-gray-300 rounded-lg px-3 py-2.5 uppercase tracking-widest focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      </div>
+      <button type="submit" id="btn-consultar"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-3 transition">
+        Ver mis videos
+      </button>
+    </form>
+
+    <div id="alerta" class="mt-4"></div>
+    <div id="resultado" class="mt-6 space-y-4"></div>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/rut.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/induccion.js"></script>
+</body>
+</html>

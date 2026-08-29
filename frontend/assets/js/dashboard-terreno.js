@@ -145,7 +145,9 @@ async function cargarLista() {
         <td class="px-4 py-3 text-gray-500">${new Date(p.creado_at).toLocaleString('es-CL')}</td>
         <td class="px-4 py-3">${p.tiene_cv
           ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline">Ver CV</a>`
-          : '<span class="text-gray-400 text-xs">Sin CV</span>'}</td>
+          : (p.experiencia_sin_cv
+              ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV — ver experiencia ⓘ</span>`
+              : '<span class="text-gray-400 text-xs">Sin CV</span>')}</td>
         <td class="px-4 py-3 text-right space-x-2">
           <button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="aprobar(${p.id})">Aprobar</button>
           <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="rechazar(${p.id})">Rechazar</button>

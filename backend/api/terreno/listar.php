@@ -22,7 +22,8 @@ $pdo = obtenerConexion();
 $stmt = $pdo->query(
     'SELECT p.id, p.tipo_documento, p.rut, p.nombre_completo, p.telefono, p.correo, p.comuna,
             c.nombre_cargo, p.creado_at,
-            (p.cv_ruta_archivo IS NOT NULL) AS tiene_cv
+            (p.cv_ruta_archivo IS NOT NULL) AS tiene_cv,
+            p.experiencia_sin_cv
        FROM postulaciones p
        JOIN cargos c ON c.id = p.cargo_id
       WHERE p.estado = "Pendiente"
