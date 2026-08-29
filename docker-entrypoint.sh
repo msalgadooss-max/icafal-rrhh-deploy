@@ -80,20 +80,17 @@ define('SESSION_NAME', 'icafal_rrhh_sesion');
 define('APP_DEBUG', false);
 PHP
 
+# v6.8: estas carpetas viven en el disco efimero, asi que se recrean en
+# cada arranque -- y como ahora PHP corre como www-data (no como root, ver
+# Dockerfile), hay que volver a darles permiso de escritura cada vez.
 mkdir -p /app/backend/uploads /app/backend/carpetas_postulantes
+chown -R www-data:www-data /app/backend/uploads /app/backend/carpetas_postulantes
 
-echo "[entrypoint] Arrancando PHP en el puerto $PORT..."
-# v6.6: la imagen php:8.3-cli no trae un php.ini activo, asi que sin esto
-# rigen los limites hardcodeados de PHP (upload_max_filesize=2M,
-# post_max_size=8M) -- un CV o una foto de celular de mas de 2MB fallaba
-# la subida ANTES de que nuestro propio limite de 8MB por archivo llegara
-# a evaluarse ("No fue posible recibir tu CV. Intenta nuevamente."). La
-# Etapa 2 ademas sube hasta 6 documentos en un solo POST, por eso
-# post_max_size va bastante mas holgado que un solo archivo.
-exec php \
-  -d upload_max_filesize=10M \
-  -d post_max_size=60M \
-  -d max_file_uploads=20 \
-  -d memory_limit=256M \
-  -d max_execution_time=60 \
-  -S 0.0.0.0:"$PORT" -t /app
+# v6.8: Render entrega el puerto real en la variable $PORT en tiempo de
+# arranque (cambia entre despliegues), asi que el puerto de Apache no se
+# puede fijar en la imagen -- se reemplaza aqui, recien al arrancar.
+sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
+sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
+
+echo "[entrypoint] Arrancando Apache en el puerto $PORT..."
+exec apache2-foreground
