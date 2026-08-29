@@ -22,8 +22,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # El DocumentRoot de la imagen oficial de Apache es /var/www/html; lo
-# apuntamos a /app (donde vive el proyecto) en vez de mover archivos.
-RUN sed -i 's#/var/www/html#/app#g' /etc/apache2/sites-available/000-default.conf /etc/apache2/apache2.conf
+# apuntamos a /app (donde vive el proyecto) en vez de mover archivos. Se
+# escribe el vhost completo (en vez de sed sobre el original) para no
+# depender del bloque <Directory /var/www/> de apache2.conf, que NO
+# calzaba con el sed anterior (le faltaba el "/html") y dejaba /app sin
+# ningun permiso explicito -> Apache lo bloqueaba con 403 Forbidden por
+# la regla por defecto "Require all denied" de <Directory />.
+RUN { \
+        echo '<VirtualHost *:80>'; \
+        echo '    DocumentRoot /app'; \
+        echo '    <Directory /app>'; \
+        echo '        Options FollowSymLinks'; \
+        echo '        AllowOverride None'; \
+        echo '        Require all granted'; \
+        echo '    </Directory>'; \
+        echo '    ErrorLog ${APACHE_LOG_DIR}/error.log'; \
+        echo '    CustomLog ${APACHE_LOG_DIR}/access.log combined'; \
+        echo '</VirtualHost>'; \
+    } > /etc/apache2/sites-available/000-default.conf
 
 # Mismos limites de subida que antes (ver docker-entrypoint.sh viejo),
 # ahora como conf.d en vez de flags de "php -S" -- aplican igual con
