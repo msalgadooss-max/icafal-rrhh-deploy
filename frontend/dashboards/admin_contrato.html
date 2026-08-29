@@ -30,6 +30,7 @@
 
     <div class="flex gap-1 border-b border-gray-200 mb-6" id="tabs">
       <button data-tab="por_autorizar" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Por Autorizar</button>
+      <button data-tab="solicitudes_cupo" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Solicitudes de Cupo</button>
       <button data-tab="autorizado" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Autorizado</button>
       <button data-tab="estado_proceso" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Estado del proceso</button>
     </div>
@@ -51,6 +52,29 @@
           <tbody id="tbody-postulaciones"></tbody>
         </table>
         <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden">No hay postulaciones pre-aprobadas por revisar.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Solicitudes de Cupo -->
+    <section id="panel-solicitudes_cupo" class="tab-panel hidden">
+      <p class="text-xs text-gray-500 mb-4 max-w-2xl">
+        Jefe de Terreno solicita cupos por cargo; recién cuando apruebas aquí se abre
+        la vacante (el cargo pasa a mostrar esos cupos como disponibles para postular).
+      </p>
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3">Cantidad</th>
+              <th class="px-4 py-3">Solicitado por</th>
+              <th class="px-4 py-3">Fecha</th>
+              <th class="px-4 py-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-solicitudes-cupo"></tbody>
+        </table>
+        <p id="solicitudes-cupo-vacio" class="text-center text-gray-400 text-sm py-10 hidden">No hay solicitudes de cupo pendientes.</p>
       </div>
     </section>
 

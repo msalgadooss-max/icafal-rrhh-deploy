@@ -67,6 +67,63 @@ function celdaDocumento(p) {
   return p.rut;
 }
 
+// --- v6.9: motivo de rechazo estandarizado ---------------------------------
+// Antes cada dashboard pedía el motivo con un prompt() de texto libre.
+// Ricardo pidió (reunión 28-ago) motivos estandarizados y auditables para
+// poder defender legalmente cada rechazo. Se usa en Terreno, Capataz y
+// Admin_Contrato -- por eso vive en el archivo compartido por todos.
+const MOTIVOS_RECHAZO_ESTANDAR = [
+  'No hay cupos disponibles',
+  'No cumple con los requisitos del cargo',
+  'Documentación incompleta o ilegible',
+  'No se presentó / no fue posible contactarlo',
+  'Otro motivo',
+];
+
+function pedirMotivoRechazo() {
+  return new Promise((resolve) => {
+    let modal = document.getElementById('modal-motivo-rechazo');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modal-motivo-rechazo';
+      modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+      document.body.appendChild(modal);
+    }
+
+    const cerrar = (valor) => { modal.classList.add('hidden'); resolve(valor); };
+
+    modal.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+        <h3 class="font-bold text-gray-900 mb-1">Motivo del rechazo</h3>
+        <p class="text-xs text-gray-500 mb-4">Queda solo en el registro interno. El postulante recibe un mensaje genérico, nunca este motivo.</p>
+        <select id="select-motivo-rechazo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3">
+          ${MOTIVOS_RECHAZO_ESTANDAR.map(m => `<option value="${m}">${m}</option>`).join('')}
+        </select>
+        <textarea id="detalle-motivo-rechazo" class="hidden w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3" rows="2" placeholder="Especifica el motivo..."></textarea>
+        <div class="flex gap-3">
+          <button id="btn-cancelar-motivo" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg py-2">Cancelar</button>
+          <button id="btn-confirmar-motivo" class="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg py-2">Rechazar</button>
+        </div>
+      </div>`;
+    modal.classList.remove('hidden');
+
+    const select = document.getElementById('select-motivo-rechazo');
+    const detalle = document.getElementById('detalle-motivo-rechazo');
+    select.addEventListener('change', () => {
+      detalle.classList.toggle('hidden', select.value !== 'Otro motivo');
+    });
+
+    document.getElementById('btn-cancelar-motivo').addEventListener('click', () => cerrar(null));
+    modal.addEventListener('click', (e) => { if (e.target === modal) cerrar(null); });
+    document.getElementById('btn-confirmar-motivo').addEventListener('click', () => {
+      const motivo = select.value === 'Otro motivo'
+        ? (detalle.value.trim() || 'Otro motivo')
+        : select.value;
+      cerrar(motivo);
+    });
+  });
+}
+
 function mostrarAlerta(contenedorId, mensaje, tipo = 'error') {
   const el = document.getElementById(contenedorId);
   if (!el) return;

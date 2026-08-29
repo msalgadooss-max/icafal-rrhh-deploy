@@ -43,6 +43,7 @@ CREATE TABLE usuarios (
     password        VARCHAR(255) NOT NULL,
     rol             ENUM(
                         'Jefe_Terreno',
+                        'Capataz',
                         'Admin_Contrato',
                         'Prevencionista',
                         'Jefe_Bodega',
@@ -65,16 +66,28 @@ CREATE TABLE usuarios (
 -- Se registra por separado de trazabilidad_logs porque es un evento a
 -- nivel de CARGO, no de una postulacion puntual.
 -- ---------------------------------------------------------------------
+-- v6.9: la solicitud de cupos de Jefe_Terreno ya NO abre cupos de
+-- inmediato -- queda "Pendiente" hasta que Admin_Contrato la aprueba
+-- (recien ahi se suma a cupos_totales/cupos_activos del cargo, ver
+-- admin_contrato/solicitudes_cupo_aprobar.php). Esto es lo que en la
+-- reunion con Ricardo se llamo "vacante": una solicitud aprobada.
 CREATE TABLE solicitudes_cupo (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cargo_id    INT UNSIGNED NOT NULL,
-    cantidad    INT UNSIGNED NOT NULL,
-    usuario_id  INT UNSIGNED NULL,
-    creado_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    cargo_id        INT UNSIGNED NOT NULL,
+    cantidad        INT UNSIGNED NOT NULL,
+    usuario_id      INT UNSIGNED NULL,
+    estado          ENUM('Pendiente', 'Aprobada', 'Rechazada') NOT NULL DEFAULT 'Pendiente',
+    resuelta_por    INT UNSIGNED NULL,
+    resuelta_at     DATETIME NULL,
+    motivo_rechazo  VARCHAR(255) NULL,
+    creado_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_solicitud_cargo
         FOREIGN KEY (cargo_id) REFERENCES cargos(id),
     CONSTRAINT fk_solicitud_usuario
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_solicitud_resuelta_por
+        FOREIGN KEY (resuelta_por) REFERENCES usuarios(id)
         ON DELETE SET NULL
 ) ENGINE=InnoDB;
 

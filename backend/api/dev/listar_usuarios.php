@@ -16,7 +16,7 @@ $stmt = $pdo->query(
     "SELECT id, nombre, correo, rol
        FROM usuarios
       WHERE activo = 1 AND rol != 'Desarrollador'
-      ORDER BY FIELD(rol, 'Jefe_Terreno','Admin_Contrato','Jefe_Administrativo','Prevencionista','Jefe_Bodega','Porteria','Gerencia'), nombre"
+      ORDER BY FIELD(rol, 'Jefe_Terreno','Capataz','Admin_Contrato','Jefe_Administrativo','Prevencionista','Jefe_Bodega','Porteria','Gerencia'), nombre"
 );
 
 responderOk(['usuarios' => $stmt->fetchAll()]);

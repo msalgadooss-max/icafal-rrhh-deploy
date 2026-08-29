@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 
 iniciarSesionSegura();
-requireRol(['Jefe_Terreno']);
+requireRol(['Jefe_Terreno', 'Capataz']);
 exigirMetodo('GET');
 
 $postulacionId = (int)($_GET['postulacion_id'] ?? 0);

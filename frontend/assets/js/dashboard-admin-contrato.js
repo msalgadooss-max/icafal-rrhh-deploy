@@ -40,6 +40,61 @@ function cambiarTab(tab) {
   if (tab === 'estado_proceso') {
     renderEstadoProcesoTabla(); // pinta con lo último que ya cargó el widget "Estado en vivo"
   }
+  if (tab === 'solicitudes_cupo') {
+    cargarSolicitudesCupo();
+  }
+}
+
+// --- v6.9: aprobar/rechazar solicitudes de cupo de Jefe de Terreno --------
+// (esto es lo que en la reunión con Ricardo se llamó "abrir la vacante").
+async function cargarSolicitudesCupo() {
+  const tbody = document.getElementById('tbody-solicitudes-cupo');
+  const vacio = document.getElementById('solicitudes-cupo-vacio');
+  try {
+    const data = await apiFetch('/admin_contrato/solicitudes_cupo_listar.php');
+    if (!data.solicitudes.length) {
+      tbody.innerHTML = '';
+      vacio.classList.remove('hidden');
+      return;
+    }
+    vacio.classList.add('hidden');
+    tbody.innerHTML = data.solicitudes.map(s => `
+      <tr class="border-t">
+        <td class="px-4 py-3">${s.nombre_cargo}</td>
+        <td class="px-4 py-3 font-semibold">${s.cantidad}</td>
+        <td class="px-4 py-3">${s.solicitado_por_nombre || '—'}</td>
+        <td class="px-4 py-3 text-gray-500">${new Date(s.creado_at).toLocaleString('es-CL')}</td>
+        <td class="px-4 py-3 text-right space-x-2">
+          <button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="aprobarSolicitudCupo(${s.id})">Aprobar</button>
+          <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="rechazarSolicitudCupo(${s.id})">Rechazar</button>
+        </td>
+      </tr>`).join('');
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
+async function aprobarSolicitudCupo(id) {
+  if (!confirm('¿Aprobar esta solicitud de cupos? Se abrirá la vacante de inmediato.')) return;
+  try {
+    const data = await apiFetch('/admin_contrato/solicitudes_cupo_aprobar.php', { method: 'POST', body: { solicitud_id: id } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
+    await cargarSolicitudesCupo();
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
+async function rechazarSolicitudCupo(id) {
+  const motivo = await pedirMotivoRechazo();
+  if (motivo === null) return;
+  try {
+    const data = await apiFetch('/admin_contrato/solicitudes_cupo_rechazar.php', { method: 'POST', body: { solicitud_id: id, motivo } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
+    await cargarSolicitudesCupo();
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
 }
 
 // --- v6.5: pestaña "Estado del proceso" (cada trabajador individualizado) -
@@ -118,8 +173,8 @@ async function autorizar(id) {
 }
 
 async function rechazar(id) {
-  const motivo = prompt('Motivo del rechazo (queda solo en el registro interno, el postulante recibe un mensaje genérico):') || '';
-  if (!confirm('¿Rechazar esta postulación?')) return;
+  const motivo = await pedirMotivoRechazo();
+  if (motivo === null) return;
   try {
     const data = await apiFetch('/admin_contrato/rechazar.php', { method: 'POST', body: { postulacion_id: id, motivo } });
     mostrarAlerta('alerta', data.mensaje, 'exito');

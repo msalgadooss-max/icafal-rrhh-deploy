@@ -5,6 +5,7 @@
  */
 const RUTA_POR_ROL = {
   Jefe_Terreno: '../dashboards/terreno.html',
+  Capataz: '../dashboards/capataz.html',
   Admin_Contrato: '../dashboards/admin_contrato.html',
   Prevencionista: '../dashboards/prevencion.html',
   Jefe_Bodega: '../dashboards/bodega.html',

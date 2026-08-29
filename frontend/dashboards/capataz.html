@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Capataz - ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white border-b px-6 py-4 flex justify-between items-center flex-wrap gap-3">
+    <div class="flex items-center gap-4">
+      <img src="../assets/img/logo-icafal.png" alt="ICAFAL" class="h-9">
+      <div>
+        <h1 class="font-bold text-gray-900">Panel de Capataz</h1>
+        <p class="text-xs text-gray-500">Selección rápida en portería</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <button onclick="abrirGuia('capataz')" class="text-sm text-blue-600 font-medium border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg">📘 Guía de uso</button>
+      <button onclick="abrirFlujo()" class="text-sm text-indigo-600 font-medium border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg">🔀 Ver flujo</button>
+      <span class="text-sm text-gray-600" data-usuario-nombre></span>
+      <button onclick="cerrarSesion()" class="text-sm text-red-600 font-medium">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto p-6">
+    <div id="alerta"></div>
+
+    <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-6 text-sm text-blue-800">
+      Revisa en persona: que el <b>RUT coincida con la cédula</b>, y que traiga los documentos básicos.
+      Marca rápido — el postulante ve el resultado apenas terminas.
+    </div>
+
+    <div id="lista-postulantes" class="space-y-4"></div>
+    <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden bg-white rounded-xl shadow-sm">No hay nadie esperando selección en este momento.</p>
+  </main>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/dashboard-common.js"></script>
+  <script src="../assets/js/guia-proceso.js"></script>
+  <script src="../assets/js/dashboard-capataz.js"></script>
+</body>
+</html>

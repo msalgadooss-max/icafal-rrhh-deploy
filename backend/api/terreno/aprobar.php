@@ -10,13 +10,15 @@
  * completar sus datos. Mientras tanto, la postulacion queda visible
  * para Admin_Contrato en su pestaña "Por Autorizar", pero el postulante
  * no recibe nada todavia.
+ *
+ * v6.9: abierto tambien al rol Capataz (ver terreno/listar.php).
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/csrf.php';
 
 iniciarSesionSegura();
-$usuario = requireRol(['Jefe_Terreno']);
+$usuario = requireRol(['Jefe_Terreno', 'Capataz']);
 exigirMetodo('POST');
 exigirCsrfValido();
 

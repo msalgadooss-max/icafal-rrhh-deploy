@@ -1,16 +1,18 @@
 <?php
 /**
- * Jefe de Terreno rechaza una postulacion 'Pendiente'.
+ * Jefe de Terreno / Capataz rechaza una postulacion 'Pendiente'.
  * Cambio de estado: Pendiente -> Rechazado. El motivo se guarda como
  * log manual (ademas del log automatico del trigger) para dejar
  * constancia del porqué, no solo del qué.
+ *
+ * v6.9: abierto tambien al rol Capataz (ver terreno/listar.php).
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/csrf.php';
 
 iniciarSesionSegura();
-$usuario = requireRol(['Jefe_Terreno']);
+$usuario = requireRol(['Jefe_Terreno', 'Capataz']);
 exigirMetodo('POST');
 exigirCsrfValido();
 

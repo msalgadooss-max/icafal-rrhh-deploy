@@ -17,6 +17,7 @@ $token = limpiarTexto($_GET['token'] ?? '', 64);
 
 $RUTA_POR_ROL = [
     'Jefe_Terreno'         => 'terreno.html',
+    'Capataz'              => 'capataz.html',
     'Admin_Contrato'       => 'admin_contrato.html',
     'Prevencionista'       => 'prevencion.html',
     'Jefe_Bodega'          => 'bodega.html',

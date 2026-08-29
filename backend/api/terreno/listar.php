@@ -1,15 +1,20 @@
 <?php
 /**
- * Fase 1 - Dashboard Jefe de Terreno.
+ * Fase 1 - Dashboard Jefe de Terreno / Capataz.
  * IMPORTANTE: esta consulta NUNCA hace JOIN con datos_contratacion.
  * El Jefe de Terreno solo debe ver los datos publicos de la
  * postulacion (los mismos que llenó el postulante en Fase 0).
+ *
+ * v6.9: abierto tambien al rol Capataz -- desde la reunion con Ricardo
+ * (28-ago), es el Capataz quien hace la seleccion rapida en portería
+ * (verificacion en persona: RUT vs cedula, documentos basicos). Jefe de
+ * Terreno mantiene acceso por si el sitio no tiene un capataz asignado.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 
 iniciarSesionSegura();
-$usuario = requireRol(['Jefe_Terreno']);
+$usuario = requireRol(['Jefe_Terreno', 'Capataz']);
 exigirMetodo('GET');
 
 $pdo = obtenerConexion();

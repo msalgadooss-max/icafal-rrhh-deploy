@@ -4,6 +4,7 @@
  */
 const RUTA_POR_ROL = {
   Jefe_Terreno: 'terreno.html',
+  Capataz: 'capataz.html',
   Admin_Contrato: 'admin_contrato.html',
   Prevencionista: 'prevencion.html',
   Jefe_Bodega: 'bodega.html',
@@ -14,6 +15,7 @@ const RUTA_POR_ROL = {
 
 const ETIQUETAS_ROL = {
   Jefe_Terreno: 'Jefe de Terreno',
+  Capataz: 'Capataz',
   Admin_Contrato: 'Admin. de Contrato',
   Jefe_Administrativo: 'Jefe Administrativo (JAO)',
   Prevencionista: 'Prevencionista',

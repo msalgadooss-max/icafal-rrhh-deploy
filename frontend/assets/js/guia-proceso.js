@@ -11,12 +11,15 @@
 
 const GUIA_RESUMEN_GENERAL = `
   <ol class="space-y-3">
+    <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">0</span>
+      <div><p class="font-semibold text-gray-900">Jefe de Terreno solicita cupos, Administrador abre la vacante</p>
+      <p class="text-gray-600">Todo cargo parte sin cupos. Jefe de Terreno pide, por ejemplo, "5 jornales", y esa solicitud queda <b>Pendiente</b> hasta que el Administrador de Contrato la aprueba. Recién ahí se abre la vacante: el cargo muestra cupos disponibles y la gente puede postular a él.</p></div></li>
     <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">1</span>
       <div><p class="font-semibold text-gray-900">El postulante postula solo</p>
-      <p class="text-gray-600">Llena sus datos básicos, sube su CV y su cédula de identidad (ambos lados) desde el formulario público. Queda en estado <b>Pendiente</b>.</p></div></li>
+      <p class="text-gray-600">Llena sus datos básicos, sube su CV y su cédula de identidad (ambos lados) desde el formulario público (QR en portería). Queda en estado <b>Pendiente</b>.</p></div></li>
     <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">2</span>
-      <div><p class="font-semibold text-gray-900">Jefe de Terreno pre-aprueba o rechaza</p>
-      <p class="text-gray-600">Revisa el CV y decide. Si pre-aprueba, pasa a <b>Pre-aprobado por Terreno</b>. Si rechaza, el postulante recibe un correo genérico (no se le indica el motivo real, para resguardar a la empresa de la Ley 20.609).</p></div></li>
+      <div><p class="font-semibold text-gray-900">El Capataz selecciona en persona (o Jefe de Terreno)</p>
+      <p class="text-gray-600">En portería, el Capataz revisa rápido: que el RUT declarado coincida con la cédula física y que traiga lo básico, y marca quién sigue. Si selecciona, pasa a <b>Pre-aprobado por Terreno</b>. Si no, el postulante recibe un correo genérico con un motivo estandarizado (nunca el motivo real completo, para resguardar a la empresa de la Ley 20.609).</p></div></li>
     <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">3</span>
       <div><p class="font-semibold text-gray-900">Administrador de Contrato autoriza <u>primero</u></p>
       <p class="text-gray-600">Este es el paso clave del flujo actual: <b>hasta que el Administrador no autoriza, el postulante no recibe ningún enlace nuevo.</b> Al autorizar, recién ahí se le envía por correo el acceso a la Etapa 2 ("tu postulación ha sido autorizada, completa tus datos").</p></div></li>
@@ -30,21 +33,34 @@ const GUIA_RESUMEN_GENERAL = `
       <div><p class="font-semibold text-gray-900">Cierre: correo con QR, Prevención y Bodega</p>
       <p class="text-gray-600">El postulante recibe un correo de "contratación exitosa" con un código QR para presentar en Portería. Si los módulos están activos, Prevención y Bodega son notificados (Bodega recibe también las tallas) para preparar inducción y EPP.</p></div></li>
   </ol>
-  <p class="text-xs text-gray-400 mt-4">En cualquier etapa antes de esto, Jefe de Terreno o Administrador de Contrato pueden rechazar la postulación; el postulante siempre recibe el mismo mensaje genérico, nunca el motivo real (ese queda solo en el registro interno).</p>
+  <p class="text-xs text-gray-400 mt-4">En cualquier etapa antes de esto, Capataz, Jefe de Terreno o Administrador de Contrato pueden rechazar la postulación con un motivo estandarizado; el postulante siempre recibe el mismo mensaje genérico, nunca el motivo real (ese queda solo en el registro interno).</p>
 `;
 
 const GUIA_POR_ROL = {
   terreno: {
     titulo: 'Guía de uso · Jefe de Terreno',
     contenido: `
-      <p class="text-gray-700 mb-4">Tu rol es el <b>primer filtro</b>: decides quién sigue en el proceso apenas llega la postulación.</p>
+      <p class="text-gray-700 mb-4">Desde el rediseño de la reunión con Ricardo, tu foco principal es <b>abrir cupos</b>; la selección rápida en portería la hace el Capataz (aunque tú también puedes hacerla si no hay uno asignado).</p>
       <ul class="space-y-2.5 text-gray-700">
-        <li>• <b>Pestaña "Pendientes":</b> revisa el CV de cada postulación nueva y decide <b>Pre-aprobar</b> o <b>Rechazar</b>. Al pre-aprobar, la postulación pasa al Administrador de Contrato (tú ya no la ves más en esta pestaña).</li>
+        <li>• <b>Pestaña "Solicitar Cupos":</b> pide, por ejemplo, "5 jornales". La solicitud queda <b>Pendiente</b> hasta que el Administrador de Contrato la aprueba -- recién ahí se abre la vacante y el cargo muestra cupos disponibles. En la tabla de abajo ves el estado de tus solicitudes (Pendiente/Aprobada/Rechazada).</li>
+        <li>• <b>Pestaña "Pendientes":</b> mismo listado y acciones que tiene el Capataz -- revisa el CV y decide <b>Pre-aprobar</b> o <b>Rechazar</b>, por si no hay un capataz asignado a ese momento.</li>
         <li>• <b>Límite diario:</b> puedes pre-aprobar hasta 25 postulaciones por día. El contador se reinicia a medianoche.</li>
         <li>• <b>Banco de Postulantes:</b> si un cargo no tiene cupos disponibles en este momento, el postulante queda "En banco" en vez de perderse. Desde esa pestaña puedes invitarlo más adelante a cualquier cargo que sí tenga cupo -- eso equivale a pre-aprobarlo.</li>
-        <li>• <b>Cupos por cargo:</b> puedes ver y solicitar más cupos activos por cargo cuando se necesiten (sujeto a aprobación).</li>
-        <li>• <b>Rechazar:</b> el motivo que escribes queda solo en el registro interno -- el postulante recibe siempre el mismo mensaje genérico y legal, nunca el motivo real.</li>
+        <li>• <b>Rechazar:</b> eliges un motivo estandarizado (no hay cupos, no cumple requisitos, etc.) -- queda solo en el registro interno, el postulante recibe siempre el mismo mensaje genérico y legal.</li>
         <li>• <b>Estado en vivo:</b> el widget de arriba te muestra en qué fase está cada postulante activo, aunque ya no dependa de ti. Se pone ámbar y dice "pendiente en tu bandeja" solo cuando de verdad te toca actuar a ti.</li>
+      </ul>`,
+  },
+  capataz: {
+    titulo: 'Guía de uso · Capataz',
+    contenido: `
+      <p class="text-gray-700 mb-4">Tu trabajo es la <b>selección rápida en portería</b>, en persona -- la parte que antes hacía perder el día completo llenando fichas a mano.</p>
+      <ul class="space-y-2.5 text-gray-700">
+        <li>• Ves a cada postulante en espera con su <b>RUT bien grande</b>, para compararlo al toque con su cédula física.</li>
+        <li>• Revisa que traiga lo básico (por ejemplo, su certificado de AFP) -- no se piden antecedentes, eso ya está resuelto por diseño legal.</li>
+        <li>• <b>"✓ Selecciona":</b> pasa a revisión del Administrador de Contrato de inmediato.</li>
+        <li>• <b>"✕ No selecciona":</b> eliges un motivo estandarizado (no hay cupos, documentación incompleta, etc.). El postulante recibe un correo genérico, nunca el motivo real completo.</li>
+        <li>• Solo ves postulantes de cargos con <b>vacante abierta</b> (una solicitud de cupos ya aprobada por el Administrador de Contrato) -- si no ves a alguien que debería estar ahí, probablemente su cargo todavía no tiene la vacante aprobada.</li>
+        <li>• La pantalla se actualiza sola cada 15 segundos, para que la puedas dejar abierta mientras atiendes a la fila.</li>
       </ul>`,
   },
   admin_contrato: {
@@ -139,19 +155,23 @@ function ramaFlujo(texto, tipo = 'rechazo') {
 const FLUJO_DIAGRAMA_HTML = `
   <p class="text-sm text-gray-600 mb-5">Así funciona hoy el proceso completo, de punta a punta. Las cajas rojas y ámbar son las ramas donde el proceso se desvía de la ruta principal.</p>
   <div>
-    ${pasoFlujo(1, 'Postulante postula (Etapa 1)', 'Llena datos básicos, sube su CV y su cédula (frente y reverso), desde el formulario público (QR o link).')}
-    ${pasoFlujo(2, 'Jefe de Terreno revisa', 'Ve el CV y decide.', {
-      rama: ramaFlujo('Rechaza → el postulante recibe un correo genérico ("no fue seleccionado en esta etapa"), sin el motivo real. No sigue el proceso.'),
+    ${pasoFlujo(1, 'Jefe de Terreno solicita cupos', 'Ej: "necesito 5 jornales". La solicitud queda Pendiente.', {
+      rama: ramaFlujo('Administrador rechaza la solicitud → no se abre ningún cupo, el cargo sigue igual.'),
     })}
-    ${pasoFlujo(3, 'Administrador de Contrato revisa', 'Ve lo mismo que aprobó Terreno y decide.', {
+    ${pasoFlujo(2, 'Administrador de Contrato aprueba → se abre la vacante', 'Recién aquí el cargo suma cupos disponibles. Sin esto, nadie puede postular a ese cargo.')}
+    ${pasoFlujo(3, 'Postulante postula (Etapa 1)', 'Llena datos básicos, sube su CV y su cédula (frente y reverso), desde el formulario público (QR en portería).')}
+    ${pasoFlujo(4, 'Capataz selecciona en persona', 'En portería: compara el RUT declarado contra la cédula física, revisa documentos básicos, y marca rápido quién sigue (Jefe de Terreno puede hacer lo mismo si no hay capataz asignado).', {
+      rama: ramaFlujo('No selecciona → el postulante recibe un correo genérico con un motivo estandarizado, sin el motivo real completo. No sigue el proceso.'),
+    })}
+    ${pasoFlujo(5, 'Administrador de Contrato revisa', 'Ve lo que seleccionó el Capataz y decide.', {
       rama: ramaFlujo('Rechaza → mismo correo genérico que en el paso anterior. No sigue el proceso.'),
     })}
-    ${pasoFlujo(4, 'Administrador autoriza → se activa la Etapa 2', 'Este es el paso clave: recién aquí el postulante recibe el correo con el enlace para completar sus datos. Antes de esto, ese enlace no existe.')}
-    ${pasoFlujo(5, 'Postulante completa Etapa 2', 'Datos personales, previsionales, bancarios + documentos: cédula, certificado de AFP, de salud, de residencia y (si aplica) último finiquito.')}
-    ${pasoFlujo(6, 'Jefe Administrativo (JAO) revisa todo', 'Revisa cada documento, verifica que el RUT declarado coincida con la cédula, y completa los datos de nómina.', {
+    ${pasoFlujo(6, 'Administrador autoriza → se activa la Etapa 2', 'Este es el paso clave: recién aquí el postulante recibe el correo con el enlace para completar sus datos. Antes de esto, ese enlace no existe.')}
+    ${pasoFlujo(7, 'Postulante completa Etapa 2', 'Datos personales, previsionales, bancarios + documentos: cédula, certificado de AFP, de salud, de residencia y (si aplica) último finiquito.')}
+    ${pasoFlujo(8, 'Jefe Administrativo (JAO) revisa todo', 'Revisa cada documento, verifica que el RUT declarado coincida con la cédula, y completa los datos de nómina.', {
       rama: ramaFlujo('Observa un documento → el postulante recibe un correo pidiéndole que lo vuelva a subir, y vuelve a este mismo paso apenas lo corrige. El resto de lo ya aprobado no se pierde.', 'observacion'),
     })}
-    ${pasoFlujo(7, 'Contratado', 'El JAO finaliza: se descuenta el cupo, el postulante recibe un correo de éxito con un QR para presentar en Portería, y (si los módulos están activos) se avisa a Prevención y Bodega.', { ultimo: true })}
+    ${pasoFlujo(9, 'Contratado', 'El JAO finaliza: se descuenta el cupo, el postulante recibe un correo de éxito con un QR para presentar en Portería, y (si los módulos están activos) se avisa a Prevención y Bodega.', { ultimo: true })}
   </div>`;
 
 function abrirFlujo() {

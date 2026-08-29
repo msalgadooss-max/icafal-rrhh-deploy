@@ -49,6 +49,7 @@ function cambiarTab(tab) {
   }
   if (tab === 'cupos') {
     cargarCupos();
+    cargarMisSolicitudes();
   }
 }
 
@@ -70,6 +71,41 @@ async function cargarCupos() {
   }
 }
 
+// --- v6.9: historial de solicitudes con su estado (Pendiente/Aprobada/ -----
+// Rechazada) -- desde la reunión con Ricardo, solicitar cupos ya no los
+// abre de inmediato, así que Jefe de Terreno necesita ver si el
+// Administrador de Contrato ya resolvió su pedido.
+const ETIQUETA_ESTADO_SOLICITUD = {
+  Pendiente: '<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md font-medium">Pendiente</span>',
+  Aprobada: '<span class="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-md font-medium">✓ Aprobada</span>',
+  Rechazada: '<span class="text-xs text-red-700 bg-red-50 px-2 py-1 rounded-md font-medium">✕ Rechazada</span>',
+};
+
+async function cargarMisSolicitudes() {
+  const tbody = document.getElementById('tbody-mis-solicitudes');
+  const vacio = document.getElementById('mis-solicitudes-vacio');
+  try {
+    const data = await apiFetch('/terreno/mis_solicitudes.php');
+    if (!data.solicitudes.length) {
+      tbody.innerHTML = '';
+      vacio.classList.remove('hidden');
+      return;
+    }
+    vacio.classList.add('hidden');
+    tbody.innerHTML = data.solicitudes.map(s => `
+      <tr class="border-t">
+        <td class="px-4 py-3">${s.nombre_cargo}</td>
+        <td class="px-4 py-3">${s.cantidad}</td>
+        <td class="px-4 py-3">${ETIQUETA_ESTADO_SOLICITUD[s.estado] || s.estado}
+          ${s.estado === 'Rechazada' && s.motivo_rechazo ? `<span class="block text-[11px] text-gray-400 mt-0.5">${s.motivo_rechazo}</span>` : ''}
+        </td>
+        <td class="px-4 py-3 text-gray-500">${new Date(s.creado_at).toLocaleString('es-CL')}</td>
+      </tr>`).join('');
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
 document.getElementById('form-cupo').addEventListener('submit', async (e) => {
   e.preventDefault();
   const cargoId = Number(document.getElementById('cupo-cargo').value);
@@ -81,8 +117,7 @@ document.getElementById('form-cupo').addEventListener('submit', async (e) => {
     });
     mostrarAlerta('alerta', data.mensaje, 'exito');
     document.getElementById('cupo-cantidad').value = '';
-    await cargarCupos();
-    await cargarBanco();
+    await cargarMisSolicitudes();
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }
@@ -132,7 +167,8 @@ async function aprobar(id) {
 }
 
 async function rechazar(id) {
-  const motivo = prompt('Motivo del rechazo (opcional):') || '';
+  const motivo = await pedirMotivoRechazo();
+  if (motivo === null) return;
   try {
     await apiFetch('/terreno/rechazar.php', { method: 'POST', body: { postulacion_id: id, motivo } });
     mostrarAlerta('alerta', 'Postulación rechazada.', 'exito');
