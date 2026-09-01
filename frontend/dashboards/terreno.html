@@ -39,6 +39,9 @@
 
     <!-- Tab: Postulantes -->
     <section id="panel-postulantes" class="tab-panel">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4 text-sm text-blue-800">
+        Primer filtro (paso 1 de 2): al aprobar, la postulación pasa al Capataz, que hace la selección final en persona en portería.
+      </div>
       <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-gray-50 text-gray-500 text-left">
@@ -137,6 +140,7 @@
             <label class="block text-xs text-gray-600 mb-1">Cargo</label>
             <select id="cupo-cargo" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
               <option value="">Cargando cargos...</option>
+              <option value="__otro__">➕ Otro (agregar cargo nuevo)</option>
             </select>
           </div>
           <div class="w-32">
@@ -147,6 +151,12 @@
           <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">
             Solicitar cupos
           </button>
+          <div id="cupo-cargo-nuevo-wrap" class="hidden w-full">
+            <label class="block text-xs text-gray-600 mb-1">Nombre del cargo nuevo</label>
+            <input id="cupo-cargo-nuevo" type="text" maxlength="100" placeholder="Ej: Instalador de Paneles Solares"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <p class="text-xs text-gray-400 mt-1">Se crea en el catálogo recién cuando el Administrador de Contrato apruebe esta solicitud.</p>
+          </div>
         </form>
       </div>
 

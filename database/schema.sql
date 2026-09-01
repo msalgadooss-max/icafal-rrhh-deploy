@@ -71,16 +71,22 @@ CREATE TABLE usuarios (
 -- (recien ahi se suma a cupos_totales/cupos_activos del cargo, ver
 -- admin_contrato/solicitudes_cupo_aprobar.php). Esto es lo que en la
 -- reunion con Ricardo se llamo "vacante": una solicitud aprobada.
+-- v6.10: cargo_id ahora acepta NULL -- Jefe_Terreno puede pedir cupos
+-- para un cargo que todavia no existe en el catalogo (cargo_nuevo_nombre),
+-- en vez de estar limitado a los cargos predeterminados. Se crea el
+-- cargo real recien cuando Admin_Contrato aprueba la solicitud (ver
+-- admin_contrato/solicitudes_cupo_aprobar.php), nunca antes.
 CREATE TABLE solicitudes_cupo (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cargo_id        INT UNSIGNED NOT NULL,
-    cantidad        INT UNSIGNED NOT NULL,
-    usuario_id      INT UNSIGNED NULL,
-    estado          ENUM('Pendiente', 'Aprobada', 'Rechazada') NOT NULL DEFAULT 'Pendiente',
-    resuelta_por    INT UNSIGNED NULL,
-    resuelta_at     DATETIME NULL,
-    motivo_rechazo  VARCHAR(255) NULL,
-    creado_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    cargo_id            INT UNSIGNED NULL,
+    cargo_nuevo_nombre  VARCHAR(100) NULL,
+    cantidad            INT UNSIGNED NOT NULL,
+    usuario_id          INT UNSIGNED NULL,
+    estado              ENUM('Pendiente', 'Aprobada', 'Rechazada') NOT NULL DEFAULT 'Pendiente',
+    resuelta_por        INT UNSIGNED NULL,
+    resuelta_at         DATETIME NULL,
+    motivo_rechazo      VARCHAR(255) NULL,
+    creado_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_solicitud_cargo
         FOREIGN KEY (cargo_id) REFERENCES cargos(id),
     CONSTRAINT fk_solicitud_usuario
@@ -172,6 +178,15 @@ CREATE TABLE postulaciones (
                                 ) NOT NULL DEFAULT 'Pendiente',
     token_privado               VARCHAR(64) NULL,
     token_expira_at             DATETIME NULL,
+    -- v7: selección en terreno en DOS pasos secuenciales (reunión Ricardo,
+    -- 31-ago). Jefe_Terreno hace un primer filtro (aprobado_jt_at) SIN
+    -- cambiar `estado` -- la postulación sigue 'Pendiente'. Recién cuando
+    -- el Capataz la selecciona en persona (terreno/aprobar.php, ver
+    -- filtro por rol) el estado avanza a 'Pre_aprobado_terreno', igual
+    -- que antes. Antes de este cambio, Jefe_Terreno y Capataz eran
+    -- intercambiables para un unico paso; ahora son secuenciales.
+    aprobado_jt_at              DATETIME NULL,
+    aprobado_jt_por             INT UNSIGNED NULL,
     admin_autorizado_at         DATETIME NULL,
     admin_autorizado_por        INT UNSIGNED NULL,
     identidad_verificada_at     DATETIME NULL,
@@ -194,6 +209,9 @@ CREATE TABLE postulaciones (
                                     ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_postulaciones_cargo
         FOREIGN KEY (cargo_id) REFERENCES cargos(id),
+    CONSTRAINT fk_aprobado_jt_por
+        FOREIGN KEY (aprobado_jt_por) REFERENCES usuarios(id)
+        ON DELETE SET NULL,
     CONSTRAINT fk_admin_autorizado_por
         FOREIGN KEY (admin_autorizado_por) REFERENCES usuarios(id)
         ON DELETE SET NULL,

@@ -20,12 +20,12 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/auth.php';
 
 iniciarSesionSegura();
-$usuario = requireRol(['Jefe_Terreno', 'Admin_Contrato', 'Prevencionista', 'Jefe_Bodega', 'Jefe_Administrativo', 'Gerencia']);
+$usuario = requireRol(['Jefe_Terreno', 'Capataz', 'Admin_Contrato', 'Prevencionista', 'Jefe_Bodega', 'Jefe_Administrativo', 'Gerencia']);
 exigirMetodo('GET');
 
 $pdo = obtenerConexion();
 $stmt = $pdo->query(
-    "SELECT p.id, p.nombre_completo, p.estado, p.admin_autorizado_at, c.nombre_cargo,
+    "SELECT p.id, p.nombre_completo, p.estado, p.admin_autorizado_at, p.aprobado_jt_at, c.nombre_cargo,
             (SELECT COUNT(*) FROM datos_contratacion d WHERE d.postulacion_id = p.id) > 0 AS etapa2_completada,
             (SELECT COUNT(*) FROM postulacion_documentos pd
               WHERE pd.postulacion_id = p.id AND pd.rechazado_at IS NOT NULL AND pd.resubido_at IS NULL) > 0 AS documento_observado
@@ -50,7 +50,11 @@ function faseVisual(array $p): string
     }
 
     return match ($p['estado']) {
-        'Pendiente' => 'Postulación recibida, esperando revisión de Terreno',
+        // v7: 'Pendiente' ahora tiene dos sub-pasos (ver aprobado_jt_at)
+        // antes de llegar a 'Pre_aprobado_terreno'.
+        'Pendiente' => $p['aprobado_jt_at'] !== null
+            ? 'Aprobado por Jefe de Terreno, esperando selección del Capataz'
+            : 'Postulación recibida, esperando revisión de Jefe de Terreno',
         'Pre_aprobado_terreno' => match (true) {
             !$autorizado => 'Esperando autorización del Administrador de Contrato',
             $completo => 'A punto de pasar a cierre', // caso raro: join aun no corrio
@@ -78,7 +82,7 @@ function rolPendiente(array $p): ?string
     $autorizado = $p['admin_autorizado_at'] !== null;
 
     return match ($p['estado']) {
-        'Pendiente' => 'Jefe_Terreno',
+        'Pendiente' => $p['aprobado_jt_at'] !== null ? 'Capataz' : 'Jefe_Terreno',
         'Pre_aprobado_terreno' => $autorizado ? null : 'Admin_Contrato',
         'Aprobado_admin' => 'Jefe_Administrativo',
         'Induccion_ok' => 'Prevencionista',
@@ -97,7 +101,7 @@ function pasosProgreso(array $p): array
 {
     $etiquetas = [
         'Pendiente' => 'Postulación recibida',
-        'Pre_aprobado_terreno' => 'Pre-aprobado por Jefe de Terreno',
+        'Pre_aprobado_terreno' => 'Selección en terreno completa (Jefe de Terreno + Capataz)',
         'Aprobado_admin' => 'En revisión Jefe Administrativo',
         'Induccion_ok' => 'Inducción de seguridad',
         'EPP_listo' => 'Kit de EPP listo',
@@ -110,6 +114,14 @@ function pasosProgreso(array $p): array
 
     $pasos = [];
     foreach ($orden as $idx => $estado) {
+        if ($estado === 'Pendiente') {
+            // v7: sub-pasos sintéticos del filtro en dos tiempos -- no
+            // son estados reales (aprobado_jt_at es un sub-gate sobre
+            // 'Pendiente', ver terreno/aprobar.php).
+            $pasos[] = ['etiqueta' => 'Postulación recibida', 'completado' => true];
+            $pasos[] = ['etiqueta' => 'Aprobación Jefe de Terreno', 'completado' => $p['aprobado_jt_at'] !== null || ($idxActual !== false && $idx < $idxActual)];
+            continue;
+        }
         $pasos[] = ['etiqueta' => $etiquetas[$estado] ?? $estado, 'completado' => $idxActual !== false && $idx <= $idxActual];
         if ($estado === 'Pre_aprobado_terreno') {
             // v6.5: dos hitos sinteticos (no son estados reales), ahora en

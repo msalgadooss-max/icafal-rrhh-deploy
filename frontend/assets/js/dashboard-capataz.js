@@ -35,6 +35,7 @@ async function cargarLista() {
             <p class="text-2xl font-mono font-bold text-gray-900 tracking-wide">${celdaDocumento(p)}</p>
             <p class="text-base font-semibold text-gray-800">${p.nombre_completo}</p>
             <p class="text-sm text-gray-500">${p.nombre_cargo} · ${p.comuna}</p>
+            <p class="text-xs text-green-700 mt-1">✓ Aprobado por Jefe de Terreno${p.aprobado_jt_por_nombre ? ` (${p.aprobado_jt_por_nombre})` : ''}</p>
           </div>
           ${p.tiene_cv
             ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline text-sm">Ver CV</a>`

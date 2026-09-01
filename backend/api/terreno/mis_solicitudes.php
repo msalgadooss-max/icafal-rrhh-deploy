@@ -16,10 +16,11 @@ exigirMetodo('GET');
 $pdo = obtenerConexion();
 $stmt = $pdo->prepare(
     'SELECT s.id, s.cantidad, s.estado, s.motivo_rechazo, s.creado_at, s.resuelta_at,
-            c.nombre_cargo,
+            COALESCE(c.nombre_cargo, s.cargo_nuevo_nombre) AS nombre_cargo,
+            (s.cargo_id IS NULL AND s.estado = "Pendiente") AS es_cargo_nuevo,
             uR.nombre AS resuelta_por_nombre
        FROM solicitudes_cupo s
-       JOIN cargos c ON c.id = s.cargo_id
+       LEFT JOIN cargos c ON c.id = s.cargo_id
        LEFT JOIN usuarios uR ON uR.id = s.resuelta_por
       WHERE s.usuario_id = :uid
       ORDER BY s.creado_at DESC
@@ -27,4 +28,9 @@ $stmt = $pdo->prepare(
 );
 $stmt->execute(['uid' => $usuario['id']]);
 
-responderOk(['solicitudes' => $stmt->fetchAll()]);
+$solicitudes = array_map(function ($s) {
+    $s['es_cargo_nuevo'] = (bool)$s['es_cargo_nuevo'];
+    return $s;
+}, $stmt->fetchAll());
+
+responderOk(['solicitudes' => $solicitudes]);

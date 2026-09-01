@@ -60,7 +60,7 @@ async function cargarSolicitudesCupo() {
     vacio.classList.add('hidden');
     tbody.innerHTML = data.solicitudes.map(s => `
       <tr class="border-t">
-        <td class="px-4 py-3">${s.nombre_cargo}</td>
+        <td class="px-4 py-3">${s.nombre_cargo}${s.es_cargo_nuevo ? ' <span class="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold align-middle">🆕 cargo nuevo</span>' : ''}</td>
         <td class="px-4 py-3 font-semibold">${s.cantidad}</td>
         <td class="px-4 py-3">${s.solicitado_por_nombre || '—'}</td>
         <td class="px-4 py-3 text-gray-500">${new Date(s.creado_at).toLocaleString('es-CL')}</td>

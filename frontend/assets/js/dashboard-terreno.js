@@ -59,7 +59,10 @@ async function cargarCupos() {
   const select = document.getElementById('cupo-cargo');
   try {
     const data = await apiFetch('/terreno/cupos_listar.php');
-    select.innerHTML = data.cargos.map(c => `<option value="${c.id}">${c.nombre_cargo}</option>`).join('');
+    // v6.10: se agrega "Otro" al final para poder pedir cupos de un
+    // cargo que todavía no existe en el catálogo.
+    select.innerHTML = data.cargos.map(c => `<option value="${c.id}">${c.nombre_cargo}</option>`).join('')
+      + '<option value="__otro__">➕ Otro (agregar cargo nuevo)</option>';
     tbody.innerHTML = data.cargos.map(c => `
       <tr class="border-t">
         <td class="px-4 py-3">${c.nombre_cargo}</td>
@@ -94,7 +97,7 @@ async function cargarMisSolicitudes() {
     vacio.classList.add('hidden');
     tbody.innerHTML = data.solicitudes.map(s => `
       <tr class="border-t">
-        <td class="px-4 py-3">${s.nombre_cargo}</td>
+        <td class="px-4 py-3">${s.nombre_cargo}${s.es_cargo_nuevo ? ' <span class="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold align-middle">🆕 nuevo</span>' : ''}</td>
         <td class="px-4 py-3">${s.cantidad}</td>
         <td class="px-4 py-3">${ETIQUETA_ESTADO_SOLICITUD[s.estado] || s.estado}
           ${s.estado === 'Rechazada' && s.motivo_rechazo ? `<span class="block text-[11px] text-gray-400 mt-0.5">${s.motivo_rechazo}</span>` : ''}
@@ -106,17 +109,37 @@ async function cargarMisSolicitudes() {
   }
 }
 
+// v6.10: si elige "Otro", se muestra el campo de texto para el nombre
+// del cargo nuevo en vez del listado predeterminado.
+document.getElementById('cupo-cargo').addEventListener('change', (e) => {
+  const esOtro = e.target.value === '__otro__';
+  document.getElementById('cupo-cargo-nuevo-wrap').classList.toggle('hidden', !esOtro);
+  document.getElementById('cupo-cargo-nuevo').required = esOtro;
+});
+
 document.getElementById('form-cupo').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const cargoId = Number(document.getElementById('cupo-cargo').value);
+  const cargoSeleccionado = document.getElementById('cupo-cargo').value;
   const cantidad = Number(document.getElementById('cupo-cantidad').value);
+  const esOtro = cargoSeleccionado === '__otro__';
+  const cargoNuevoNombre = document.getElementById('cupo-cargo-nuevo').value.trim();
+
+  if (esOtro && !cargoNuevoNombre) {
+    mostrarAlerta('alerta', 'Escribe el nombre del cargo nuevo.');
+    return;
+  }
+
+  const body = esOtro
+    ? { cargo_nuevo_nombre: cargoNuevoNombre, cantidad }
+    : { cargo_id: Number(cargoSeleccionado), cantidad };
+
   try {
-    const data = await apiFetch('/terreno/solicitar_cupo.php', {
-      method: 'POST',
-      body: { cargo_id: cargoId, cantidad },
-    });
+    const data = await apiFetch('/terreno/solicitar_cupo.php', { method: 'POST', body });
     mostrarAlerta('alerta', data.mensaje, 'exito');
     document.getElementById('cupo-cantidad').value = '';
+    document.getElementById('cupo-cargo-nuevo').value = '';
+    document.getElementById('cupo-cargo-nuevo-wrap').classList.add('hidden');
+    document.getElementById('cupo-cargo').value = '';
     await cargarMisSolicitudes();
   } catch (err) {
     mostrarAlerta('alerta', err.message);
@@ -149,7 +172,7 @@ async function cargarLista() {
               ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV — ver experiencia ⓘ</span>`
               : '<span class="text-gray-400 text-xs">Sin CV</span>')}</td>
         <td class="px-4 py-3 text-right space-x-2">
-          <button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="aprobar(${p.id})">Aprobar</button>
+          <button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="aprobar(${p.id})" title="Pasa a selección del Capataz en terreno">Aprobar</button>
           <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="rechazar(${p.id})">Rechazar</button>
         </td>
       </tr>`).join('');
@@ -160,8 +183,8 @@ async function cargarLista() {
 
 async function aprobar(id) {
   try {
-    await apiFetch('/terreno/aprobar.php', { method: 'POST', body: { postulacion_id: id } });
-    mostrarAlerta('alerta', 'Postulación pre-aprobada.', 'exito');
+    const data = await apiFetch('/terreno/aprobar.php', { method: 'POST', body: { postulacion_id: id } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
     await cargarLista();
   } catch (err) {
     mostrarAlerta('alerta', err.message);
