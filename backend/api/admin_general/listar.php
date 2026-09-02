@@ -1,13 +1,15 @@
 <?php
 /**
- * Etapa 3 (cierre) - Dashboard Jefe Administrativo (JAO).
- * Revisa la ficha completa (datos + documentos) y llena los campos
- * amarillos (datos_jao) antes de "Finalizar Contratación".
+ * Dashboard Jefe Administrativo (JAO).
  *
- * v2: el estado que se exige como "listo para cerrar" es dinamico
- * (estadoPrevioAContratado()) -- con Prevencion y Bodega pausados,
- * eso es 'Aprobado_admin' (v3: cambio de 'Datos_completados' porque el
- * orden del pipeline se invirtio, ver functions.php).
+ * v7: el JAO tiene ahora DOS acciones separadas sobre la misma persona
+ * -- verificar documentos (día 1, requiere que Portería ya confirmó el
+ * ingreso a faena) y firmar el contrato (día 2, requiere que Prevención
+ * ya hizo la IRL). Por eso este listado muestra a TODOS los que están
+ * en cualquiera de los dos tramos ('Aprobado_admin' o 'Induccion_ok') y
+ * todavía no firman contrato -- visibilidad completa desde el
+ * comienzo, aunque la acción de cada uno esté bloqueada hasta que
+ * corresponda (ver puede_verificar / puede_firmar en cada fila).
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -17,8 +19,9 @@ requireRol(['Jefe_Administrativo']);
 exigirMetodo('GET');
 
 $pdo = obtenerConexion();
-$stmt = $pdo->prepare(
+$stmt = $pdo->query(
     'SELECT p.id, p.tipo_documento, p.rut, p.nombre_completo, p.telefono, p.correo, p.comuna,
+            p.estado, p.ingreso_faena_at, p.contrato_firmado_at,
             p.identidad_verificada_at, uv.nombre AS identidad_verificada_por_nombre,
             c.nombre_cargo,
             d.fecha_nacimiento, d.estado_civil, d.sexo, d.nacionalidad, d.direccion_exacta,
@@ -32,10 +35,10 @@ $stmt = $pdo->prepare(
        JOIN datos_contratacion d ON d.postulacion_id = p.id
        LEFT JOIN datos_jao j ON j.postulacion_id = p.id
        LEFT JOIN usuarios uv ON uv.id = p.identidad_verificada_por
-      WHERE p.estado = :estado
+      WHERE p.estado IN (\'Aprobado_admin\', \'Induccion_ok\')
+        AND p.contrato_firmado_at IS NULL
       ORDER BY p.actualizado_at ASC'
 );
-$stmt->execute(['estado' => estadoPrevioAContratado()]);
 $postulaciones = $stmt->fetchAll();
 
 $idsMostrados = array_column($postulaciones, 'id');
@@ -63,10 +66,22 @@ foreach ($postulaciones as &$p) {
     $detalleDocs = $documentosPorPostulacion[$p['id']] ?? [];
     $p['documentos'] = array_column($detalleDocs, 'tipo');
     $p['documentos_detalle'] = $detalleDocs;
-    $p['tiene_documento_observado'] = (bool)array_filter($detalleDocs, fn ($d) => $d['observado']);
+    $tieneDocumentoObservado = (bool)array_filter($detalleDocs, fn ($d) => $d['observado']);
+    $p['tiene_documento_observado'] = $tieneDocumentoObservado;
     $p['tiene_datos_jao'] = $p['datos_jao_id'] !== null;
     $p['afp_alerta_jao'] = (bool)$p['afp_alerta_jao'];
     $p['identidad_verificada'] = $p['identidad_verificada_at'] !== null;
+    $p['ingreso_faena_confirmado'] = $p['ingreso_faena_at'] !== null;
+
+    // v7: qué acción corresponde mostrarle al JAO para esta fila.
+    $p['puede_verificar'] = $p['estado'] === 'Aprobado_admin'
+        && $p['ingreso_faena_at'] !== null
+        && $p['identidad_verificada_at'] === null;
+    $p['puede_firmar'] = $p['estado'] === 'Induccion_ok'
+        && $p['identidad_verificada_at'] !== null
+        && !$tieneDocumentoObservado
+        && $p['tiene_datos_jao'];
+
     unset($p['datos_jao_id']);
 }
 unset($p);

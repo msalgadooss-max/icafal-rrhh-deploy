@@ -25,7 +25,7 @@ $pdo = obtenerConexion();
 $sql = "SELECT p.tipo_documento, p.rut, p.nombre_completo, p.estado,
                c.nombre_cargo, p.admin_autorizado_at,
                ap.fecha_hora AS fecha_aprobacion_terreno,
-               CASE WHEN p.estado = 'Contratado' THEN p.actualizado_at ELSE NULL END AS fecha_contratado
+               co.fecha_hora AS fecha_contratado
           FROM postulaciones p
           JOIN cargos c ON c.id = p.cargo_id
           LEFT JOIN (
@@ -37,6 +37,16 @@ $sql = "SELECT p.tipo_documento, p.rut, p.nombre_completo, p.estado,
                        )
                  GROUP BY postulacion_id
                ) ap ON ap.postulacion_id = p.id
+          -- v7: igual que en historico.php -- el momento real de
+          -- 'Contratado' se lee de la bitácora, no de p.actualizado_at,
+          -- para que no se distorsione cuando más tarde se confirma la
+          -- recepción y el estado avanza a 'Proceso_completo'.
+          LEFT JOIN (
+                SELECT postulacion_id, MIN(fecha_hora) AS fecha_hora
+                  FROM trazabilidad_logs
+                 WHERE accion = 'Cambio de estado: Induccion_ok -> Contratado'
+                 GROUP BY postulacion_id
+               ) co ON co.postulacion_id = p.id
          WHERE p.admin_autorizado_at IS NOT NULL";
 $params = [];
 if ($desde !== '') { $sql .= ' AND p.admin_autorizado_at >= ?'; $params[] = $desde; }

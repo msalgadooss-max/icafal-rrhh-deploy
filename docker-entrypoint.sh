@@ -73,8 +73,11 @@ define('BANCO_RETENCION_MESES', 6);
 define('OBRA_NOMBRE', 'Obra H57 Padre Hurtado IV');
 define('LIMITE_APROBACIONES_DIARIAS_TERRENO', 25);
 
-define('MODULO_PREVENCION_ACTIVO', false);
-define('MODULO_BODEGA_ACTIVO', false);
+// v7: Prevención y Bodega dejaron de ser módulos opcionales -- el nuevo
+// flujo (Portería -> JAO -> Prevención -> firma -> Bodega -> recepción)
+// los necesita siempre activos como candados reales del proceso.
+define('MODULO_PREVENCION_ACTIVO', true);
+define('MODULO_BODEGA_ACTIVO', true);
 
 define('SESSION_NAME', 'icafal_rrhh_sesion');
 define('APP_DEBUG', false);

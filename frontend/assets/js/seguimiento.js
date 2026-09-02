@@ -1,7 +1,7 @@
 /**
- * Fase 6 incluida aquí: cuando el estado llega a EPP_listo (o
- * Contratado), esta pantalla cambia a verde y genera el QR de acceso
- * para portería, codificando la URL pública de validación
+ * Fase 6 incluida aquí: cuando el estado llega a EPP_listo, Contratado
+ * o Proceso_completo, esta pantalla cambia a verde y genera el QR de
+ * acceso para portería, codificando la URL pública de validación
  * (backend/api/porteria/validar.php) con rut + codigo_seguimiento.
  */
 const ETIQUETAS_ESTADO = {
@@ -10,7 +10,8 @@ const ETIQUETAS_ESTADO = {
   Aprobado_admin: 'En revisión Jefe Administrativo',
   Induccion_ok: 'Inducción de seguridad realizada',
   EPP_listo: 'Kit de EPP listo',
-  Contratado: 'Contratado',
+  Contratado: 'Contratado -- EPP entregado',
+  Proceso_completo: 'Recibido en terreno -- proceso completo',
 };
 
 const form = document.getElementById('form-seguimiento');
@@ -89,18 +90,20 @@ function renderResultado(p) {
   }
 
   if (p.autorizado_ingreso) {
-    // v4: 'Contratado' significa que TODO el proceso terminó y falta
-    // solo firmar el contrato en oficina JAO -- mensaje distinto al de
-    // 'EPP_listo', que es sobre el ingreso físico a la obra una vez
-    // que el kit de EPP está listo.
-    const esContratacionFinal = p.estado === 'Contratado';
+    // v7: para cuando llega este estado, el JAO ya firmó el contrato y
+    // Bodega ya entregó el kit de EPP (ambos pasos del día 2 ya
+    // ocurrieron) -- lo único que falta es que el Capataz o Jefe de
+    // Terreno lo vengan a buscar. 'Proceso_completo' es un paso más:
+    // ya lo fueron a buscar y el ciclo completo terminó.
+    const yaRecibido = p.estado === 'Proceso_completo';
+    const esContratacionFinal = p.estado === 'Contratado' || yaRecibido;
     const titulo = esContratacionFinal ? 'PROCESO COMPLETADO EXITOSAMENTE' : 'CONTRATACIÓN AUTORIZADA';
-    const subtitulo = esContratacionFinal
-      ? 'Preséntate en oficina JAO para firmar tu contrato'
-      : 'INGRESO PERMITIDO A LA OBRA';
-    const pie = esContratacionFinal
-      ? 'Muestra este código en oficina JAO.'
-      : 'Muestra este código al guardia en portería.';
+    const subtitulo = yaRecibido
+      ? '¡Bienvenido a ICAFAL!'
+      : esContratacionFinal
+        ? 'Espera a que tu Capataz o Jefe de Terreno te venga a buscar'
+        : 'INGRESO PERMITIDO A LA OBRA';
+    const pie = 'Muestra este código al guardia en portería.';
     resultadoDiv.innerHTML = `
       <div class="bg-green-500 rounded-xl p-6 text-center text-white shadow-lg">
         <p class="text-2xl font-extrabold">${titulo}</p>

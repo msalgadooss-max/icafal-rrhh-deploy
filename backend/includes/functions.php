@@ -124,15 +124,11 @@ function estadoPrevioAContratado(): string
  */
 function ordenEstadosActivos(): array
 {
-    $orden = ['Pendiente', 'Pre_aprobado_terreno', 'Aprobado_admin'];
-    if (MODULO_PREVENCION_ACTIVO) {
-        $orden[] = 'Induccion_ok';
-    }
-    if (MODULO_BODEGA_ACTIVO) {
-        $orden[] = 'EPP_listo';
-    }
-    $orden[] = 'Contratado';
-    return $orden;
+    // v7: Prevención y Bodega dejaron de ser módulos opcionales -- el
+    // flujo nuevo (candados Portería/JAO/Prevención) los necesita
+    // siempre activos, así que la línea de tiempo ya no depende de
+    // MODULO_PREVENCION_ACTIVO/MODULO_BODEGA_ACTIVO.
+    return ['Pendiente', 'Pre_aprobado_terreno', 'Aprobado_admin', 'Induccion_ok', 'Contratado', 'Proceso_completo'];
 }
 
 /**
@@ -148,7 +144,7 @@ function ordenEstadosActivos(): array
 function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
 {
     $stmt = $pdo->prepare(
-        'SELECT p.estado, p.admin_autorizado_at, p.nombre_completo, p.rut, c.nombre_cargo,
+        'SELECT p.estado, p.admin_autorizado_at, p.nombre_completo, p.rut, p.correo, p.codigo_seguimiento, c.nombre_cargo,
                 d.talla_calzado, d.talla_overol,
                 (SELECT COUNT(*) FROM datos_contratacion d2 WHERE d2.postulacion_id = p.id) AS tiene_datos
            FROM postulaciones p
@@ -178,6 +174,14 @@ function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
     // -- por eso las tallas de EPP ya estan disponibles), se avisa
     // tambien a Prevencion y Bodega.
     notificarPrevencionYBodega($pdo, $postulacion);
+    // v7: y se le envia al propio postulante el QR de "ingreso a faena"
+    // -- el que Porteria escanea al dia siguiente para dejarlo pasar a
+    // ver al JAO (ver notificarIngresoFaena()).
+    try {
+        notificarIngresoFaena($pdo, $postulacion);
+    } catch (\Throwable $e) {
+        error_log('notificarIngresoFaena error: ' . $e->getMessage());
+    }
 }
 
 /**
@@ -250,6 +254,46 @@ function notificarAprobacionAJao(PDO $pdo, array $postulacion): void
     foreach ($destinatarios as $jao) {
         Mailer::enviar($jao['correo'], $jao['nombre'], 'Nueva contratación autorizada - ICAFAL', $html);
     }
+}
+
+/**
+ * v7: correo al propio postulante con el QR de "ingreso a faena" (día
+ * siguiente) -- Portería lo escanea con la cámara de su celular (el QR
+ * codifica una URL pública, no requiere app ni login) y confirma en
+ * persona que la persona llegó. Recién con eso el JAO puede empezar a
+ * verificar sus documentos (ver admin_general/verificar_identidad.php).
+ * No es lo mismo que el QR de "acceso a la obra" del correo de
+ * contratación exitosa (notificarContratacionExitosa) -- ese es el
+ * cierre del día 2, este es la entrada del día 1.
+ */
+function notificarIngresoFaena(PDO $pdo, array $postulacion): void
+{
+    require_once __DIR__ . '/../mailer/Mailer.php';
+    $vendorAutoload = __DIR__ . '/../../vendor/autoload.php';
+    if (!file_exists($vendorAutoload)) {
+        return; // sin Composer no hay libreria de QR -- no se envia este correo
+    }
+    require_once $vendorAutoload;
+
+    $urlValidacion = BASE_URL . '/frontend/public/ingreso_faena.html'
+        . '?rut=' . urlencode($postulacion['rut'])
+        . '&codigo=' . urlencode($postulacion['codigo_seguimiento']);
+
+    $opciones = new \chillerlan\QRCode\QROptions([
+        'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
+        'outputBase64'    => false,
+        'scale'           => 6,
+    ]);
+    $qrPng = (new \chillerlan\QRCode\QRCode($opciones))->render($urlValidacion);
+    $qrDataUri = 'data:image/png;base64,' . base64_encode($qrPng);
+
+    $nombreCompleto = $postulacion['nombre_completo'];
+    $cargo = $postulacion['nombre_cargo'];
+    $html = (function () use ($nombreCompleto, $cargo, $qrDataUri) {
+        return require __DIR__ . '/../mailer/templates/ingreso_faena_qr.php';
+    })();
+
+    Mailer::enviar($postulacion['correo'], $nombreCompleto, 'Preséntate en obra - Código de ingreso - ICAFAL', $html);
 }
 
 /**
@@ -362,6 +406,7 @@ function traducirAccionLog(string $accion): string
             'Induccion_ok' => 'Realizó la inducción de seguridad.',
             'EPP_listo' => 'Su kit de EPP quedó listo.',
             'Contratado' => '✔ Fue contratado.',
+            'Proceso_completo' => '✔ Recibido en terreno -- proceso completo.',
             'Rechazado' => 'La postulación fue rechazada.',
             'En_banco' => 'Quedó en el Banco de Postulantes.',
             default => "Cambió de estado a \"{$m[2]}\".",

@@ -28,13 +28,16 @@ const GUIA_RESUMEN_GENERAL = `
       <p class="text-gray-600">Este es el paso clave del flujo actual: <b>hasta que el Administrador no autoriza, el postulante no recibe ningún enlace nuevo.</b> Al autorizar, recién ahí se le envía por correo el acceso a la Etapa 2 ("tu postulación ha sido autorizada, completa tus datos").</p></div></li>
     <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">5</span>
       <div><p class="font-semibold text-gray-900">El postulante completa la Etapa 2</p>
-      <p class="text-gray-600">Con el enlace recibido, carga sus datos de contratación y el resto de sus documentos (contrato, Fonasa/Isapre, AFP, etc.). Al terminar, pasa a <b>En revisión Jefe Administrativo</b>.</p></div></li>
+      <p class="text-gray-600">Con el enlace recibido, carga sus datos de contratación y el resto de sus documentos (contrato, Fonasa/Isapre, AFP, etc.). Al terminar, recibe un correo con un QR para <b>presentarse en la obra</b>.</p></div></li>
     <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">6</span>
-      <div><p class="font-semibold text-gray-900">JAO revisa, digita y finaliza</p>
-      <p class="text-gray-600">El Jefe Administrativo revisa cada documento (puede observar/rechazar uno individual, lo que le pide al postulante corregirlo), digita el código de ficha y los datos finales, y finaliza. Ahí el postulante queda <b>✔ Contratado</b>.</p></div></li>
-    <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center">7</span>
-      <div><p class="font-semibold text-gray-900">Cierre: correo con QR, Prevención y Bodega</p>
-      <p class="text-gray-600">El postulante recibe un correo de "contratación exitosa" con un código QR para presentar en Portería. Si los módulos están activos, Prevención y Bodega son notificados (Bodega recibe también las tallas) para preparar inducción y EPP.</p></div></li>
+      <div><p class="font-semibold text-gray-900">Día 1: se presenta en obra -- JAO verifica y Prevención hace la inducción</p>
+      <p class="text-gray-600">Portería confirma su ingreso con el QR. Recién ahí el JAO puede verificar que el RUT coincida con la cédula, y Prevención puede marcar la inducción de seguridad realizada.</p></div></li>
+    <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">7</span>
+      <div><p class="font-semibold text-gray-900">Día 2, 8am: JAO firma el contrato y Bodega entrega el EPP</p>
+      <p class="text-gray-600">El trabajador vuelve al otro día a firmar. Bodega ya sabe que viene y tiene su kit de EPP listo -- al entregarlo, el postulante queda <b>✔ Contratado</b> y se descuenta el cupo.</p></div></li>
+    <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center">8</span>
+      <div><p class="font-semibold text-gray-900">Cierre: Capataz/Jefe de Terreno lo van a buscar</p>
+      <p class="text-gray-600">Con el EPP entregado, se avisa a Capataz y Jefe de Terreno para que lo busquen en sala de reuniones o Bodega. Al confirmar que lo recibieron, el proceso queda <b>✔ completo</b> de punta a punta.</p></div></li>
   </ol>
   <p class="text-xs text-gray-400 mt-4">En cualquier etapa antes de esto, Capataz, Jefe de Terreno o Administrador de Contrato pueden rechazar la postulación con un motivo estandarizado; el postulante siempre recibe el mismo mensaje genérico, nunca el motivo real (ese queda solo en el registro interno).</p>
 `;
@@ -51,6 +54,7 @@ const GUIA_POR_ROL = {
         <li>• <b>Límite diario:</b> el Capataz puede seleccionar hasta 25 postulaciones por día en su paso. El contador se reinicia a medianoche.</li>
         <li>• <b>Banco de Postulantes:</b> si un cargo no tiene cupos disponibles en este momento, el postulante queda "En banco" en vez de perderse. Desde esa pestaña puedes invitarlo más adelante a cualquier cargo que sí tenga cupo -- eso equivale a pre-aprobarlo.</li>
         <li>• <b>Rechazar:</b> eliges un motivo estandarizado (no hay cupos, no cumple requisitos, etc.) -- queda solo en el registro interno, el postulante recibe siempre el mismo mensaje genérico y legal.</li>
+        <li>• <b>Pestaña "Recepción":</b> aparecen quienes Bodega ya marcó Contratado (EPP ya entregado). Ve a sala de reuniones o Bodega a buscarlos y confirma aquí -- con eso el proceso queda 100% cerrado. La ve también el Capataz: cualquiera de los dos puede confirmar.</li>
         <li>• <b>Estado en vivo:</b> el widget de arriba te muestra en qué fase está cada postulante activo, aunque ya no dependa de ti. Se pone ámbar y dice "pendiente en tu bandeja" solo cuando de verdad te toca actuar a ti.</li>
       </ul>`,
   },
@@ -65,6 +69,7 @@ const GUIA_POR_ROL = {
         <li>• <b>"✕ No selecciona":</b> eliges un motivo estandarizado (no hay cupos, documentación incompleta, etc.). El postulante recibe un correo genérico, nunca el motivo real completo.</li>
         <li>• Solo ves postulantes de cargos con <b>vacante abierta</b> (una solicitud de cupos ya aprobada por el Administrador de Contrato) <b>y</b> ya aprobados por Jefe de Terreno -- si no ves a alguien que debería estar ahí, revisa esos dos requisitos primero.</li>
         <li>• La pantalla se actualiza sola cada 15 segundos, para que la puedas dejar abierta mientras atiendes a la fila.</li>
+        <li>• <b>Pestaña "Recepción":</b> cuando Bodega ya entregó el EPP de alguien, aparece aquí -- ve a buscarlo y confirma. Con eso el proceso de esa persona queda 100% cerrado. La ve también Jefe de Terreno: cualquiera de los dos puede confirmar.</li>
       </ul>`,
   },
   admin_contrato: {
@@ -82,12 +87,12 @@ const GUIA_POR_ROL = {
   jao: {
     titulo: 'Guía de uso · Jefe Administrativo (JAO)',
     contenido: `
-      <p class="text-gray-700 mb-4">Eres el <b>último filtro</b> antes de la contratación: revisas que todo esté correcto y das el cierre formal.</p>
+      <p class="text-gray-700 mb-4">Desde el rediseño de la reunión con Ricardo (31-ago), tu parte quedó en <b>dos acciones separadas, en días distintos</b>: verificar identidad el día 1, y firmar el contrato el día 2. Ves a todos los que están en cualquiera de las dos etapas desde el comienzo -- lo que cambia es cuándo se te habilita cada botón.</p>
       <ul class="space-y-2.5 text-gray-700">
-        <li>• <b>Pestaña "Pendientes de Aprobación":</b> postulantes que ya completaron la Etapa 2 (Administrador autorizó y el postulante ya cargó sus documentos). Revisa cada documento uno por uno.</li>
+        <li>• <b>Día 1 -- Verificar identidad:</b> el postulante ya completó la Etapa 2, pero el botón solo se habilita <u>después</u> de que Portería confirme que se presentó en la obra (con el QR que le llegó por correo). Compara el RUT declarado contra su cédula subida y confirma.</li>
         <li>• <b>Observar un documento:</b> si algo está mal o ilegible, puedes rechazar ese documento puntual -- el postulante recibe un correo pidiéndole que lo vuelva a subir, sin afectar el resto de sus documentos ya aprobados.</li>
-        <li>• <b>Finalizar contratación:</b> digitas el código de ficha y los datos finales. Al finalizar: (1) el postulante queda <b>Contratado</b>, (2) recibe un correo de éxito con un código QR para presentar en Portería, (3) si los módulos están activos, Prevención y Bodega son notificados (Bodega recibe también las tallas), (4) se genera automáticamente la carpeta local del trabajador con sus documentos de Etapa 2.</li>
-        <li>• <b>Pestaña "Contratados":</b> histórico de todos los que ya finalizaste.</li>
+        <li>• <b>Día 2, 8am -- Firmar Contrato:</b> se habilita recién cuando ya verificaste la identidad Y no queda ningún documento observado. Al firmar, <u>todavía no</u> se descuenta el cupo ni queda Contratado -- eso pasa cuando Bodega entrega el kit de EPP (que espera tu firma para poder entregarlo).</li>
+        <li>• <b>Pestaña "Contratados":</b> histórico de todos los que Bodega ya cerró (EPP entregado).</li>
         <li>• <b>Pestaña "Rechazados":</b> los que fueron rechazados en cualquier etapa anterior (Terreno o Administrador), solo para trazabilidad -- tú no rechazas desde aquí, eso ya pasó antes de llegar a ti.</li>
       </ul>`,
   },
@@ -174,11 +179,14 @@ const FLUJO_DIAGRAMA_HTML = `
       rama: ramaFlujo('Rechaza → mismo correo genérico que en los pasos anteriores. No sigue el proceso.'),
     })}
     ${pasoFlujo(7, 'Administrador autoriza → se activa la Etapa 2', 'Este es el paso clave: recién aquí el postulante recibe el correo con el enlace para completar sus datos. Antes de esto, ese enlace no existe.')}
-    ${pasoFlujo(8, 'Postulante completa Etapa 2', 'Datos personales, previsionales, bancarios + documentos: cédula, certificado de AFP, de salud, de residencia y (si aplica) último finiquito.')}
-    ${pasoFlujo(9, 'Jefe Administrativo (JAO) revisa todo', 'Revisa cada documento, verifica que el RUT declarado coincida con la cédula, y completa los datos de nómina.', {
-      rama: ramaFlujo('Observa un documento → el postulante recibe un correo pidiéndole que lo vuelva a subir, y vuelve a este mismo paso apenas lo corrige. El resto de lo ya aprobado no se pierde.', 'observacion'),
+    ${pasoFlujo(8, 'Postulante completa Etapa 2', 'Datos personales, previsionales, bancarios + documentos: cédula, certificado de AFP, de salud, de residencia y (si aplica) último finiquito. Al terminar, recibe un correo con un código QR para presentarse en la obra.')}
+    ${pasoFlujo(9, 'Se presenta en obra -- Portería confirma el ingreso', 'Muestra el QR en Portería (o dicta RUT + código). Sin este ingreso confirmado, el JAO todavía no puede verificar su identidad.')}
+    ${pasoFlujo(10, 'Día 1: JAO verifica identidad y Prevención hace la inducción', 'El JAO compara el RUT declarado contra la cédula subida. En paralelo, Prevención marca la inducción de seguridad realizada.', {
+      rama: ramaFlujo('El JAO observa un documento → el postulante recibe un correo pidiéndole que lo vuelva a subir, y vuelve a este mismo paso apenas lo corrige. El resto de lo ya aprobado no se pierde.', 'observacion'),
     })}
-    ${pasoFlujo(10, 'Contratado', 'El JAO finaliza: se descuenta el cupo, el postulante recibe un correo de éxito con un QR para presentar en Portería, y (si los módulos están activos) se avisa a Prevención y Bodega.', { ultimo: true })}
+    ${pasoFlujo(11, 'Día 2, 8am: JAO firma el Contrato', 'Se habilita recién con la identidad verificada y sin documentos observados. Bodega ya sabe que el trabajador viene y tiene su kit de EPP preparado.')}
+    ${pasoFlujo(12, 'Bodega entrega el EPP → Contratado', 'Recién aquí se descuenta el cupo del cargo. El postulante recibe el correo de éxito con el QR final, y se avisa a Capataz/Jefe de Terreno para que lo vayan a buscar.')}
+    ${pasoFlujo(13, 'Capataz o Jefe de Terreno confirman la recepción', 'Van a sala de reuniones o Bodega a buscarlo y confirman en su panel. Con eso el ciclo completo queda cerrado, desde la postulación hasta el primer día en el frente de trabajo.', { ultimo: true })}
   </div>`;
 
 function abrirFlujo() {

@@ -40,7 +40,7 @@ if ($idsSolicitados) {
            FROM postulaciones p
            JOIN datos_contratacion d ON d.postulacion_id = p.id
            LEFT JOIN datos_jao j ON j.postulacion_id = p.id
-          WHERE p.estado = \"Contratado\" AND p.id IN ($in)
+          WHERE p.estado IN (\"Contratado\", \"Proceso_completo\") AND p.id IN ($in)
           ORDER BY p.actualizado_at ASC"
     );
     $stmt->execute(array_values($idsSolicitados));
@@ -50,7 +50,7 @@ if ($idsSolicitados) {
            FROM postulaciones p
            JOIN datos_contratacion d ON d.postulacion_id = p.id
            LEFT JOIN datos_jao j ON j.postulacion_id = p.id
-          WHERE p.estado = "Contratado" AND p.exportado_at IS NULL
+          WHERE p.estado IN ("Contratado", "Proceso_completo") AND p.exportado_at IS NULL
           ORDER BY p.actualizado_at ASC'
     );
 }

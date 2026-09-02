@@ -30,7 +30,7 @@ $pdo = obtenerConexion();
 
 $estadosEnProceso = ['Pre_aprobado_terreno', 'Datos_completados', 'Aprobado_admin', 'Induccion_ok', 'EPP_listo'];
 $condicionEstado = $vista === 'contratados'
-    ? 'p.estado = "Contratado"'
+    ? 'p.estado IN ("Contratado", "Proceso_completo")'
     : 'p.estado IN (' . implode(',', array_fill(0, count($estadosEnProceso), '?')) . ')';
 $params = $vista === 'contratados' ? [] : $estadosEnProceso;
 

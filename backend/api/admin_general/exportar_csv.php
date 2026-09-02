@@ -25,7 +25,7 @@ $stmt = $pdo->query(
        FROM postulaciones p
        JOIN cargos c ON c.id = p.cargo_id
        JOIN datos_contratacion d ON d.postulacion_id = p.id
-      WHERE p.estado = "Contratado" AND p.exportado_at IS NULL
+      WHERE p.estado IN ("Contratado", "Proceso_completo") AND p.exportado_at IS NULL
       ORDER BY p.actualizado_at ASC'
 );
 $filas = $stmt->fetchAll();

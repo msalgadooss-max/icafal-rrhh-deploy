@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingreso a Faena - Portería ICAFAL</title>
+<link rel="icon" href="../assets/img/logo-icafal-mark.png">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center">
+  <div class="max-w-sm w-full mx-4 text-center">
+    <img src="../assets/img/logo-icafal.png" alt="ICAFAL Ingeniería y Construcción" class="h-12 mx-auto mb-6">
+    <div id="contenedor">
+      <p class="text-gray-400">Verificando credencial...</p>
+    </div>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    /**
+     * v7 - Pantalla que ve Portería al escanear (con la cámara de su
+     * propio celular) el QR de "ingreso a faena" que le llega al
+     * postulante por correo apenas es autorizado. Muestra Nombre, RUT y
+     * Cargo, y si corresponde, un botón para confirmar el ingreso --
+     * recién con eso el JAO puede empezar a verificar sus documentos.
+     */
+    const params = new URLSearchParams(window.location.search);
+    const rut = params.get('rut') || '';
+    const codigo = params.get('codigo') || '';
+    const contenedor = document.getElementById('contenedor');
+
+    function tarjeta(color, titulo, subtitulo, data, botonHtml) {
+      return `
+        <div class="${color} rounded-2xl p-8 shadow-2xl">
+          <p class="text-white text-2xl font-extrabold mb-2">${titulo}</p>
+          ${subtitulo ? `<p class="text-white text-sm font-medium mb-4 opacity-90">${subtitulo}</p>` : ''}
+          <div class="bg-white/10 rounded-xl p-4 text-left space-y-1 mt-2">
+            <p class="text-white text-sm"><span class="opacity-70">Nombre:</span> <strong>${data.nombre_completo}</strong></p>
+            <p class="text-white text-sm"><span class="opacity-70">RUT:</span> <strong>${data.rut}</strong></p>
+            <p class="text-white text-sm"><span class="opacity-70">Cargo:</span> <strong>${data.cargo}</strong></p>
+          </div>
+          ${botonHtml || ''}
+        </div>`;
+    }
+
+    async function confirmar() {
+      const btn = document.getElementById('btn-confirmar');
+      if (btn) { btn.disabled = true; btn.textContent = 'Confirmando...'; }
+      try {
+        await apiFetch('/porteria/marcar_ingreso.php', { method: 'POST', body: { rut, codigo } });
+        await cargar();
+      } catch (err) {
+        contenedor.innerHTML = `<p class="text-red-400 font-bold">${err.message}</p>`;
+      }
+    }
+    window.confirmar = confirmar;
+
+    async function cargar() {
+      if (!rut || !codigo) {
+        contenedor.innerHTML = '<p class="text-red-400 font-bold">Credencial incompleta.</p>';
+        return;
+      }
+      try {
+        const data = await apiFetch(`/porteria/ingreso_estado.php?rut=${encodeURIComponent(rut)}&codigo=${encodeURIComponent(codigo)}`);
+        if (data.ya_confirmado) {
+          contenedor.innerHTML = tarjeta('bg-green-600', 'INGRESO CONFIRMADO', 'Puede pasar a oficina JAO a revisar sus documentos.', data);
+        } else if (data.puede_confirmar) {
+          contenedor.innerHTML = tarjeta('bg-blue-600', 'LISTO PARA INGRESAR', 'Confirma que esta persona se presentó en faena.', data,
+            `<button id="btn-confirmar" onclick="confirmar()" class="mt-5 w-full bg-white text-blue-700 font-bold rounded-lg py-3 text-base">Confirmar ingreso</button>`);
+        } else {
+          contenedor.innerHTML = tarjeta('bg-red-600', 'NO DISPONIBLE', 'Esta postulación todavía no está lista para ingresar a faena.', data);
+        }
+      } catch (err) {
+        contenedor.innerHTML = `<p class="text-red-400 font-bold">${err.message}</p>`;
+      }
+    }
+    cargar();
+  </script>
+</body>
+</html>

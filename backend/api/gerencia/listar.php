@@ -30,7 +30,7 @@ $postulaciones = $stmt->fetchAll();
 // v2: incluye 'En_banco' (Banco de Postulantes).
 $resumen = array_fill_keys([
     'En_banco', 'Pendiente', 'Pre_aprobado_terreno', 'Aprobado_admin', 'Datos_completados',
-    'Induccion_ok', 'EPP_listo', 'Contratado', 'Rechazado',
+    'Induccion_ok', 'EPP_listo', 'Contratado', 'Proceso_completo', 'Rechazado',
 ], 0);
 foreach ($postulaciones as $p) {
     $resumen[$p['estado']]++;

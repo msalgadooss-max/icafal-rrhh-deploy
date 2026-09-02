@@ -51,6 +51,46 @@ function cambiarTab(tab) {
     cargarCupos();
     cargarMisSolicitudes();
   }
+  if (tab === 'recepcion') {
+    cargarRecepcion();
+  }
+}
+
+// --- v7: Recepción (cierre operativo, Bodega ya entregó el EPP) -----------
+async function cargarRecepcion() {
+  const tbody = document.getElementById('tbody-recepcion');
+  const vacio = document.getElementById('recepcion-vacio');
+  try {
+    const data = await apiFetch('/terreno/recepcion_listar.php');
+    if (!data.postulaciones.length) {
+      tbody.innerHTML = '';
+      vacio.classList.remove('hidden');
+      return;
+    }
+    vacio.classList.add('hidden');
+    tbody.innerHTML = data.postulaciones.map(p => `
+      <tr class="border-t">
+        <td class="px-4 py-3 font-mono">${p.rut}</td>
+        <td class="px-4 py-3">${p.nombre_completo}</td>
+        <td class="px-4 py-3">${p.nombre_cargo}</td>
+        <td class="px-4 py-3 text-right">
+          <button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="confirmarRecepcion(${p.id})">Confirmar recepción</button>
+        </td>
+      </tr>`).join('');
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
+async function confirmarRecepcion(id) {
+  if (!confirm('¿Confirmas que fuiste a buscar a esta persona? Esto da por terminado el proceso completo.')) return;
+  try {
+    const data = await apiFetch('/terreno/recepcion_confirmar.php', { method: 'POST', body: { postulacion_id: id } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
+    await cargarRecepcion();
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
 }
 
 // --- v4: Solicitar Cupos ---------------------------------------------------

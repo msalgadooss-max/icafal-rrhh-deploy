@@ -1,9 +1,15 @@
 <?php
 /**
- * Cambio de estado: Induccion_ok -> EPP_listo.
- * A partir de este cambio, el modulo de seguimiento publico del
- * postulante pasa a color verde ("INGRESO PERMITIDO") y se habilita
- * el QR de porteria (ver frontend/public/seguimiento.html).
+ * v7 - Entrega del kit de EPP, día 2. Este es ahora el candado final
+ * del proceso: reemplaza lo que antes hacía admin_general/finalizar.php
+ * -- descuenta el cupo (dentro de una transacción con FOR UPDATE) y
+ * deja a la postulación en 'Contratado'. Requiere que el JAO ya haya
+ * firmado el contrato (contrato_firmado_at) el mismo día 2.
+ *
+ * Cambio de estado: Induccion_ok -> Contratado.
+ * A partir de este cambio, el módulo de seguimiento público del
+ * postulante pasa a color verde y se le avisa a Capataz/Jefe_Terreno
+ * (rol pendiente en el widget "Estado en vivo") que vayan a buscarlo.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -23,20 +29,68 @@ if ($postulacionId <= 0) {
 
 $pdo = obtenerConexion();
 
-$stmtCheck = $pdo->prepare('SELECT estado FROM postulaciones WHERE id = :id');
-$stmtCheck->execute(['id' => $postulacionId]);
-$postulacion = $stmtCheck->fetch();
-
-if (!$postulacion) {
-    responderError('Postulación no encontrada.', 404);
-}
-if ($postulacion['estado'] !== 'Induccion_ok') {
-    responderError('La postulación no está en estado Induccion_ok.', 409);
+if (cierreRemuneracionesActivo($pdo)) {
+    responderError(
+        'Cierre de mes de remuneraciones activo: no se pueden cerrar contrataciones hasta que se reabra. El resto del proceso sigue funcionando con normalidad.',
+        423
+    );
 }
 
-fijarUsuarioContextoBD($pdo, $usuario['id']);
+$pdo->beginTransaction();
 
-$stmt = $pdo->prepare('UPDATE postulaciones SET estado = "EPP_listo" WHERE id = :id');
-$stmt->execute(['id' => $postulacionId]);
+try {
+    $stmtCheck = $pdo->prepare(
+        'SELECT p.id, p.estado, p.cargo_id, p.contrato_firmado_at,
+                p.rut, p.codigo_seguimiento, p.correo, p.nombre_completo,
+                c.cupos_activos, c.nombre_cargo
+           FROM postulaciones p
+           JOIN cargos c ON c.id = p.cargo_id
+          WHERE p.id = :id
+          FOR UPDATE'
+    );
+    $stmtCheck->execute(['id' => $postulacionId]);
+    $postulacion = $stmtCheck->fetch();
 
-responderOk(['mensaje' => 'Kit de EPP marcado como listo.']);
+    if (!$postulacion) {
+        throw new RuntimeException('Postulación no encontrada.|404');
+    }
+    if ($postulacion['estado'] !== 'Induccion_ok') {
+        throw new RuntimeException('La postulación no está en estado Induccion_ok.|409');
+    }
+    if ($postulacion['contrato_firmado_at'] === null) {
+        throw new RuntimeException('El JAO todavía no firma el contrato de esta persona.|409');
+    }
+    if ((int)$postulacion['cupos_activos'] <= 0) {
+        throw new RuntimeException('No quedan cupos activos disponibles para este cargo.|409');
+    }
+
+    fijarUsuarioContextoBD($pdo, $usuario['id']);
+
+    $stmt = $pdo->prepare('UPDATE postulaciones SET estado = "Contratado" WHERE id = :id');
+    $stmt->execute(['id' => $postulacionId]);
+
+    $pdo->commit();
+
+    // v6.1/v7: correos finales, fuera de la transacción (que no falle
+    // el cierre si el envío de correo falla).
+    try {
+        notificarContratacionExitosa($pdo, $postulacion);
+    } catch (\Throwable $e) {
+        error_log('notificarContratacionExitosa error: ' . $e->getMessage());
+    }
+    try {
+        notificarLiberacionTrabajador($pdo, $postulacion);
+    } catch (\Throwable $e) {
+        error_log('notificarLiberacionTrabajador error: ' . $e->getMessage());
+    }
+} catch (RuntimeException $e) {
+    $pdo->rollBack();
+    [$mensaje, $status] = explode('|', $e->getMessage());
+    responderError($mensaje, (int)$status);
+} catch (Throwable $e) {
+    $pdo->rollBack();
+    error_log('bodega/marcar_epp error: ' . $e->getMessage());
+    responderError('No fue posible cerrar la contratación.', 500);
+}
+
+responderOk(['mensaje' => 'EPP entregado. Contratación cerrada -- avisa a Capataz o Jefe de Terreno para que lo vayan a buscar.']);

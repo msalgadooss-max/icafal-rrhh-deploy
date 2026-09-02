@@ -14,8 +14,37 @@
   const usuario = await protegerDashboard('Capataz');
   if (!usuario) return;
   await cargarLista();
-  setInterval(cargarLista, 15000);
+  configurarTabs();
+  setInterval(() => {
+    if (TAB_ACTIVA === 'seleccion') cargarLista();
+    else cargarRecepcion();
+  }, 15000);
 })();
+
+// --- v7: pestañas (Selección en terreno / Recepción) -----------------------
+let TAB_ACTIVA = 'seleccion';
+
+function configurarTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => cambiarTab(btn.dataset.tab));
+  });
+}
+
+function cambiarTab(tab) {
+  TAB_ACTIVA = tab;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const activo = btn.dataset.tab === tab;
+    btn.classList.toggle('border-blue-600', activo);
+    btn.classList.toggle('text-blue-600', activo);
+    btn.classList.toggle('border-transparent', !activo);
+    btn.classList.toggle('text-gray-500', !activo);
+  });
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.classList.toggle('hidden', panel.id !== `panel-${tab}`);
+  });
+  if (tab === 'seleccion') cargarLista();
+  if (tab === 'recepcion') cargarRecepcion();
+}
 
 async function cargarLista() {
   const cont = document.getElementById('lista-postulantes');
@@ -74,6 +103,47 @@ async function noSeleccionar(id) {
     await apiFetch('/terreno/rechazar.php', { method: 'POST', body: { postulacion_id: id, motivo } });
     mostrarAlerta('alerta', 'Postulación no continúa.', 'exito');
     await cargarLista();
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
+// --- v7: Recepción (cierre operativo, Bodega ya entregó el EPP) -----------
+async function cargarRecepcion() {
+  const cont = document.getElementById('lista-recepcion');
+  const vacio = document.getElementById('recepcion-vacio');
+  try {
+    const data = await apiFetch('/terreno/recepcion_listar.php');
+    if (!data.postulaciones.length) {
+      cont.innerHTML = '';
+      vacio.classList.remove('hidden');
+      return;
+    }
+    vacio.classList.add('hidden');
+    cont.innerHTML = data.postulaciones.map(p => `
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p class="text-2xl font-mono font-bold text-gray-900 tracking-wide">${p.rut}</p>
+            <p class="text-base font-semibold text-gray-800">${p.nombre_completo}</p>
+            <p class="text-sm text-gray-500">${p.nombre_cargo}</p>
+          </div>
+        </div>
+        <button class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold text-base rounded-lg py-3" onclick="confirmarRecepcion(${p.id})">
+          ✓ Confirmar recepción
+        </button>
+      </div>`).join('');
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
+async function confirmarRecepcion(id) {
+  if (!confirm('¿Confirmas que fuiste a buscar a esta persona? Esto da por terminado el proceso completo.')) return;
+  try {
+    const data = await apiFetch('/terreno/recepcion_confirmar.php', { method: 'POST', body: { postulacion_id: id } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
+    await cargarRecepcion();
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }

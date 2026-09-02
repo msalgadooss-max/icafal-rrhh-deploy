@@ -204,22 +204,26 @@ function tarjeta(p) {
           ${p.tiene_datos_jao ? '<span class="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-md font-medium">✓ Nómina completa</span>' : ''}
           ${p.identidad_verificada
             ? `<span class="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-md font-medium" title="Verificado por ${p.identidad_verificada_por_nombre || ''}">✓ Identidad verificada</span>`
-            : `<span class="inline-flex gap-1">
-                 <button class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="verificarIdentidad(${p.id})">Coincide</button>
-                 <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg" onclick="noCoincideIdentidad(${p.id})">No coincide</button>
-               </span>`}
+            : (p.ingreso_faena_confirmado
+                ? `<span class="inline-flex gap-1">
+                     <button class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="verificarIdentidad(${p.id})">Coincide</button>
+                     <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg" onclick="noCoincideIdentidad(${p.id})">No coincide</button>
+                   </span>`
+                : `<span class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md font-medium" title="Portería aún no confirma que llegó a faena">⏳ Esperando ingreso a faena</span>`)}
           <button class="bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="toggleFormJao(${p.id})">
             ${p.tiene_datos_jao ? 'Editar datos de nómina' : 'Completar datos de nómina'}
           </button>
           <button class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg disabled:opacity-40"
-                  ${p.tiene_datos_jao && p.identidad_verificada && !p.tiene_documento_observado ? '' : 'disabled'} onclick="finalizar(${p.id})">
-            Finalizar Contratación
+                  ${p.puede_firmar ? '' : 'disabled'} onclick="firmarContrato(${p.id})" title="Día 2, 8am: firma de contrato. Habilita a Bodega para entregar el EPP.">
+            Firmar Contrato (día 2)
           </button>
         </div>
       </div>
 
       ${p.afp_alerta_jao ? `<p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3">⚠ Esta persona declaró un régimen previsional antiguo ("${p.afp}"), no una AFP vigente. Verifica manualmente antes de finalizar.</p>` : ''}
-      ${p.tiene_documento_observado ? `<p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3">⚠ Hay un documento observado esperando que el postulante lo corrija — no se puede finalizar hasta entonces. El resto del proceso ya avanzado no se pierde.</p>` : ''}
+      ${p.tiene_documento_observado ? `<p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3">⚠ Hay un documento observado esperando que el postulante lo corrija — no se puede firmar el contrato hasta entonces. El resto del proceso ya avanzado no se pierde.</p>` : ''}
+      ${p.estado === 'Induccion_ok' && !p.puede_firmar && !p.tiene_documento_observado ? `<p class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mt-3">Ya hizo la inducción de seguridad con Prevención. Falta completar la nómina para poder firmar el contrato.</p>` : ''}
+      ${p.estado === 'Aprobado_admin' ? `<p class="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mt-3">Todavía en día 1 -- falta la inducción de seguridad con Prevención antes de poder firmar el contrato.</p>` : ''}
 
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm mt-3 text-gray-700">
         <p><span class="text-gray-400">AFP:</span> ${p.afp}</p>
@@ -349,13 +353,12 @@ async function verificarIdentidad(id) {
   }
 }
 
-async function finalizar(id) {
-  if (!confirm('¿Finalizar la contratación? Esto descontará un cupo del cargo.')) return;
+async function firmarContrato(id) {
+  if (!confirm('¿Registrar la firma del contrato? Esto habilita a Bodega para entregar el EPP -- el cupo se descuenta recién cuando Bodega entrega.')) return;
   try {
-    await apiFetch('/admin_general/finalizar.php', { method: 'POST', body: { postulacion_id: id } });
-    mostrarAlerta('alerta', 'Contratación finalizada.', 'exito');
+    const data = await apiFetch('/admin_general/firmar_contrato.php', { method: 'POST', body: { postulacion_id: id } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
     await cargarLista();
-    await cargarEstadisticas();
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }

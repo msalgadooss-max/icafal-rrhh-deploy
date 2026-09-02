@@ -39,11 +39,16 @@ if (!$postulacion) {
     responderError('No se encontró ninguna credencial con esos datos.', 404);
 }
 
-$autorizado = in_array($postulacion['estado'], ['EPP_listo', 'Contratado'], true);
+// v7: el JAO ya firma el contrato el día 2 ANTES de que Bodega entregue
+// el EPP (que es lo que deja el estado en 'Contratado'), así que a
+// esta altura el trámite administrativo ya terminó -- lo único que
+// falta es que Capataz/Jefe_Terreno lo vengan a buscar. 'Proceso_completo'
+// (recepción ya confirmada) sigue autorizado para entrar a la obra.
+$autorizado = in_array($postulacion['estado'], ['EPP_listo', 'Contratado', 'Proceso_completo'], true);
 $mensaje = null;
 if ($autorizado) {
-    $mensaje = $postulacion['estado'] === 'Contratado'
-        ? 'Proceso realizado exitosamente. Habilitado para ir a oficina JAO a firmar el Contrato.'
+    $mensaje = in_array($postulacion['estado'], ['Contratado', 'Proceso_completo'], true)
+        ? 'Proceso de contratación completado. Ingreso a la obra autorizado -- su Capataz o Jefe de Terreno lo viene a buscar.'
         : 'Ingreso permitido a la obra.';
 }
 

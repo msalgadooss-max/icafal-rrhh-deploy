@@ -5,8 +5,8 @@
  * comentario obligatorio. A diferencia de terreno/rechazar.php, esto
  * NO cambia el `estado` de la postulación ni deshace lo ya avanzado
  * (admin_autorizado_at y la existencia de datos_contratacion siguen
- * intactos) -- solo bloquea "Finalizar Contratación" hasta que ese
- * documento puntual se resuba (ver finalizar.php), y le envía al
+ * intactos) -- solo bloquea "Firmar Contrato" (día 2) hasta que ese
+ * documento puntual se resuba (ver firmar_contrato.php), y le envía al
  * postulante un link de un solo propósito para corregir justo eso.
  */
 require_once __DIR__ . '/../../config/database.php';

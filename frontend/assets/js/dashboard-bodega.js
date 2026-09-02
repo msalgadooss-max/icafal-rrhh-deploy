@@ -24,7 +24,9 @@ async function cargarLista() {
         <td class="px-4 py-3">${p.talla_pantalon}</td>
         <td class="px-4 py-3">${p.talla_polera}</td>
         <td class="px-4 py-3 text-right">
-          <button class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="marcarEpp(${p.id})">EPP Listo</button>
+          ${p.puede_entregar
+            ? `<button class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="marcarEpp(${p.id})">Entregar EPP</button>`
+            : `<span class="text-xs text-gray-400" title="El JAO todavía no firma el contrato de esta persona (día 2)">⏳ Esperando firma de contrato</span>`}
         </td>
       </tr>`).join('');
   } catch (err) {
@@ -33,9 +35,10 @@ async function cargarLista() {
 }
 
 async function marcarEpp(id) {
+  if (!confirm('¿Entregar el kit de EPP? Esto cierra la contratación y descuenta el cupo del cargo.')) return;
   try {
-    await apiFetch('/bodega/marcar_epp.php', { method: 'POST', body: { postulacion_id: id } });
-    mostrarAlerta('alerta', 'Kit de EPP marcado como listo.', 'exito');
+    const data = await apiFetch('/bodega/marcar_epp.php', { method: 'POST', body: { postulacion_id: id } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
     await cargarLista();
   } catch (err) {
     mostrarAlerta('alerta', err.message);

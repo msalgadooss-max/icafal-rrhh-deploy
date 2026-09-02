@@ -16,9 +16,11 @@ $dias = (int)($_GET['dias'] ?? 30);
 
 $pdo = obtenerConexion();
 
+// v7: 'Proceso_completo' es 'Contratado' + recepción en terreno
+// confirmada -- para este gráfico ambos cuentan como "Contratado".
 $sql = "SELECT estado, COUNT(*) AS total
           FROM postulaciones
-         WHERE estado IN ('Contratado', 'Rechazado')";
+         WHERE estado IN ('Contratado', 'Proceso_completo', 'Rechazado')";
 if ($dias > 0) {
     $sql .= " AND actualizado_at >= DATE_SUB(NOW(), INTERVAL :dias DAY)";
 }
@@ -32,7 +34,11 @@ $stmt->execute();
 
 $resultado = ['Contratado' => 0, 'Rechazado' => 0];
 foreach ($stmt->fetchAll() as $fila) {
-    $resultado[$fila['estado']] = (int)$fila['total'];
+    if ($fila['estado'] === 'Proceso_completo') {
+        $resultado['Contratado'] += (int)$fila['total'];
+    } else {
+        $resultado[$fila['estado']] = (int)$fila['total'];
+    }
 }
 
 responderOk(['conteo' => $resultado]);

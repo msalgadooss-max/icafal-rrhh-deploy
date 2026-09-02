@@ -39,7 +39,7 @@ $sql = "SELECT p.id, p.tipo_documento, p.rut, p.nombre_completo, p.estado,
                ap.fecha_hora AS fecha_aprobacion_terreno,
                d.creado_at AS fecha_datos_completados,
                aa.fecha_hora AS fecha_aprobado_admin,
-               CASE WHEN p.estado = 'Contratado' THEN p.actualizado_at ELSE NULL END AS fecha_contratado
+               co.fecha_hora AS fecha_contratado
           FROM postulaciones p
           JOIN cargos c ON c.id = p.cargo_id
           LEFT JOIN datos_contratacion d ON d.postulacion_id = p.id
@@ -60,6 +60,18 @@ $sql = "SELECT p.id, p.tipo_documento, p.rut, p.nombre_completo, p.estado,
                  WHERE accion = 'Cambio de estado: Pre_aprobado_terreno -> Aprobado_admin'
                  GROUP BY postulacion_id
                ) aa ON aa.postulacion_id = p.id
+          -- v7: se lee el momento real en que Bodega marcó 'Contratado'
+          -- (bodega/marcar_epp.php) desde la bitácora, en vez de
+          -- p.actualizado_at -- así el KPI no se distorsiona cuando,
+          -- más tarde, Jefe_Terreno/Capataz confirman la recepción y
+          -- el estado avanza a 'Proceso_completo'.
+          LEFT JOIN (
+                SELECT postulacion_id,
+                       MIN(fecha_hora) AS fecha_hora
+                  FROM trazabilidad_logs
+                 WHERE accion = 'Cambio de estado: Induccion_ok -> Contratado'
+                 GROUP BY postulacion_id
+               ) co ON co.postulacion_id = p.id
          WHERE p.admin_autorizado_at IS NOT NULL";
 
 $params = [];

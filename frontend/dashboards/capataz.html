@@ -27,13 +27,29 @@
   <main class="max-w-3xl mx-auto p-6">
     <div id="alerta"></div>
 
-    <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-6 text-sm text-blue-800">
-      Estas ya vienen aprobadas por Jefe de Terreno. Revisa en persona: que el <b>RUT coincida con la cédula</b>, y que traiga los documentos básicos.
-      Marca rápido — el postulante ve el resultado apenas terminas.
+    <div class="flex gap-1 border-b border-gray-200 mb-6" id="tabs">
+      <button data-tab="seleccion" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Selección en terreno</button>
+      <button data-tab="recepcion" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Recepción</button>
     </div>
 
-    <div id="lista-postulantes" class="space-y-4"></div>
-    <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden bg-white rounded-xl shadow-sm">No hay nadie esperando selección en este momento.</p>
+    <section id="panel-seleccion" class="tab-panel">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-6 text-sm text-blue-800">
+        Estas ya vienen aprobadas por Jefe de Terreno. Revisa en persona: que el <b>RUT coincida con la cédula</b>, y que traiga los documentos básicos.
+        Marca rápido — el postulante ve el resultado apenas terminas.
+      </div>
+
+      <div id="lista-postulantes" class="space-y-4"></div>
+      <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden bg-white rounded-xl shadow-sm">No hay nadie esperando selección en este momento.</p>
+    </section>
+
+    <section id="panel-recepcion" class="tab-panel hidden">
+      <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-6 text-sm text-green-800">
+        Bodega ya les entregó el EPP -- ve a sala de reuniones o a Bodega a buscarlos y confirma aquí. Con esto se da por terminado el proceso completo.
+      </div>
+
+      <div id="lista-recepcion" class="space-y-4"></div>
+      <p id="recepcion-vacio" class="text-center text-gray-400 text-sm py-10 hidden bg-white rounded-xl shadow-sm">Nadie esperando recepción en este momento.</p>
+    </section>
   </main>
 
   <script src="../assets/js/config.js"></script>

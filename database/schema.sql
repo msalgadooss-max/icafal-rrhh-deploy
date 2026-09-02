@@ -147,8 +147,8 @@ CREATE TABLE solicitudes_cupo (
 -- en el futuro conviven varias obras). identidad_verificada_at/_por:
 -- verificacion MANUAL (con un clic, no OCR) de que el RUT declarado
 -- coincide con el de la foto/PDF de cedula subida en Etapa 2 -- gatilla
--- junto con datos_jao el poder "Finalizar Contratacion" (ver
--- admin_general/verificar_identidad.php y finalizar.php).
+-- junto con datos_jao el poder "Firmar Contrato" el dia 2 (ver
+-- admin_general/verificar_identidad.php y firmar_contrato.php).
 -- ---------------------------------------------------------------------
 CREATE TABLE postulaciones (
     id                          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -174,6 +174,13 @@ CREATE TABLE postulaciones (
                                     'Induccion_ok',
                                     'EPP_listo',
                                     'Contratado',
+                                    -- v7: cierre operativo real (reunion Ricardo, 31-ago). 'Contratado'
+                                    -- ya no es el ultimo estado: falta que Capataz o Jefe_Terreno
+                                    -- confirmen que recibieron al trabajador en el frente de obra
+                                    -- (ver terreno/recepcion_confirmar.php). El trigger que descuenta
+                                    -- el cupo sigue disparando en la transicion HACIA 'Contratado',
+                                    -- asi que agregar este estado despues no lo afecta.
+                                    'Proceso_completo',
                                     'Rechazado'
                                 ) NOT NULL DEFAULT 'Pendiente',
     token_privado               VARCHAR(64) NULL,
@@ -189,6 +196,30 @@ CREATE TABLE postulaciones (
     aprobado_jt_por             INT UNSIGNED NULL,
     admin_autorizado_at         DATETIME NULL,
     admin_autorizado_por        INT UNSIGNED NULL,
+    -- v7: QR de "ingreso a faena" (dia 1) -- se envia por correo apenas
+    -- se llega a 'Aprobado_admin' (mismo momento en que hoy se avisa a
+    -- Prevencion/Bodega, ver notificarIngresoFaena()). Portico escanea
+    -- ese QR (con la camara de su celular, sin apps ni login: el QR
+    -- codifica una URL publica) y confirma en persona -- reci�n ahi el
+    -- JAO puede empezar a verificar documentos (ver
+    -- admin_general/verificar_identidad.php). No es lo mismo que el QR
+    -- de "acceso a la obra" del correo de contratacion exitosa (ese
+    -- sigue igual, es el cierre del dia 2).
+    ingreso_faena_at            DATETIME NULL,
+    -- v7: el JAO ahora tiene DOS acciones separadas en vez de una sola
+    -- "Finalizar Contratacion": verificar documentos (dia 1, columna
+    -- identidad_verificada_at que ya existia) y firmar el contrato
+    -- (dia 2, 8am, columnas nuevas de aqui abajo). Bodega es quien
+    -- recien pasa el estado a 'Contratado' al entregar el EPP -- ver
+    -- bodega/marcar_epp.php.
+    contrato_firmado_at         DATETIME NULL,
+    contrato_firmado_por        INT UNSIGNED NULL,
+    -- v7: cierre operativo -- Capataz o Jefe_Terreno confirman que
+    -- fueron a buscar al trabajador ya contratado y equipado (ver
+    -- terreno/recepcion_confirmar.php). Recien ahi estado ->
+    -- 'Proceso_completo'.
+    recibido_terreno_at         DATETIME NULL,
+    recibido_terreno_por        INT UNSIGNED NULL,
     identidad_verificada_at     DATETIME NULL,
     identidad_verificada_por    INT UNSIGNED NULL,
     -- v5: token de un solo proposito para que el postulante corrija
@@ -214,6 +245,12 @@ CREATE TABLE postulaciones (
         ON DELETE SET NULL,
     CONSTRAINT fk_admin_autorizado_por
         FOREIGN KEY (admin_autorizado_por) REFERENCES usuarios(id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_contrato_firmado_por
+        FOREIGN KEY (contrato_firmado_por) REFERENCES usuarios(id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_recibido_terreno_por
+        FOREIGN KEY (recibido_terreno_por) REFERENCES usuarios(id)
         ON DELETE SET NULL,
     CONSTRAINT fk_identidad_verificada_por
         FOREIGN KEY (identidad_verificada_por) REFERENCES usuarios(id)
@@ -284,9 +321,9 @@ CREATE TABLE datos_contratacion (
 -- para el caso "el RUT de la foto no coincide") con un comentario que
 -- se le envia al postulante. Esto NO retrocede el estado de la
 -- postulacion ni deshace lo ya avanzado (admin_autorizado_at,
--- etapa2_completada siguen intactos): solo bloquea "Finalizar
--- Contratacion" hasta que ese documento puntual se resuba (ver
--- admin_general/rechazar_documento.php y finalizar.php).
+-- etapa2_completada siguen intactos): solo bloquea "Firmar Contrato"
+-- (dia 2) hasta que ese documento puntual se resuba (ver
+-- admin_general/rechazar_documento.php y firmar_contrato.php).
 -- ---------------------------------------------------------------------
 CREATE TABLE postulacion_documentos (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

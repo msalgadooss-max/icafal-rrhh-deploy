@@ -61,6 +61,7 @@ $etiquetasEstado = [
     'Induccion_ok'         => 'Inducción de seguridad realizada',
     'EPP_listo'            => 'Kit de EPP listo',
     'Contratado'           => 'Contratado',
+    'Proceso_completo'     => 'Recibido en terreno -- proceso completo',
     'Rechazado'            => 'Rechazado (no continúa en el proceso)',
 ];
 

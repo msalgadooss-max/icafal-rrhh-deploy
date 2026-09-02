@@ -5,9 +5,9 @@
  * su estado actual mapeado a una linea de tiempo, sin exponer nunca
  * datos de la tabla datos_contratacion.
  *
- * Cuando el estado es 'EPP_listo' o 'Contratado' se marca
- * autorizado_ingreso=true; el frontend pinta la pantalla en VERDE y
- * genera el QR de portería con esos mismos datos minimos.
+ * Cuando el estado es 'EPP_listo', 'Contratado' o 'Proceso_completo' se
+ * marca autorizado_ingreso=true; el frontend pinta la pantalla en VERDE
+ * y genera el QR de portería con esos mismos datos minimos.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -54,7 +54,10 @@ if (!$postulacion) {
 $ordenEstados = ordenEstadosActivos();
 
 $estadoActual = $postulacion['estado'];
-$autorizadoIngreso = in_array($estadoActual, ['EPP_listo', 'Contratado'], true);
+// v7: 'Proceso_completo' es 'Contratado' + recepción en terreno ya
+// confirmada -- sigue siendo un estado autorizado/verde, no debe volver
+// a NO-autorizado justo cuando el proceso terminó con éxito.
+$autorizadoIngreso = in_array($estadoActual, ['EPP_listo', 'Contratado', 'Proceso_completo'], true);
 $enBanco = $estadoActual === 'En_banco';
 
 // v6.6: si al postulante no le llegó (o no encuentra) el correo con el

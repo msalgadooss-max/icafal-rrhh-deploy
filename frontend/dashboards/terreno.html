@@ -34,6 +34,7 @@
       <button data-tab="banco" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Banco de Postulantes</button>
       <button data-tab="en_proceso" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Aprobado en Proceso</button>
       <button data-tab="contratados" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Contratado</button>
+      <button data-tab="recepcion" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Recepción</button>
       <button data-tab="cupos" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Solicitar Cupos</button>
     </div>
 
@@ -122,6 +123,27 @@
           <tbody id="tbody-contratados"></tbody>
         </table>
         <p id="contratados-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie contratado todavía.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Recepción (cierre operativo) -->
+    <section id="panel-recepcion" class="tab-panel hidden">
+      <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-4 text-sm text-green-800">
+        Bodega ya les entregó el EPP -- ve a sala de reuniones o a Bodega a buscarlos y confirma aquí. Con esto se da por terminado el proceso completo.
+      </div>
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Cargo</th>
+              <th class="px-4 py-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-recepcion"></tbody>
+        </table>
+        <p id="recepcion-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie esperando recepción en este momento.</p>
       </div>
     </section>
 

@@ -49,15 +49,14 @@ define('OBRA_NOMBRE', 'Obra H57 Padre Hurtado IV');
 // trazabilidad_logs -- ver includes/functions.php::contarAprobacionesHoy().
 define('LIMITE_APROBACIONES_DIARIAS_TERRENO', 25);
 
-// --- Modulos activos (v2) --------------------------------------------------
-// Mientras esten en false: los dashboards de Prevencion y Bodega responden
-// "modulo no disponible" y el Jefe Administrativo puede finalizar la
-// contratacion directamente después de 'Datos_completados', sin exigir
-// pasar por esos dos pasos. Poner en true reactiva el flujo completo tal
-// como se definio originalmente (Fase 4 y Fase 5), sin perder datos: el rol,
-// las tablas y los endpoints siguen existiendo, solo estan pausados.
-define('MODULO_PREVENCION_ACTIVO', false);
-define('MODULO_BODEGA_ACTIVO', false);
+// --- Modulos activos ---------------------------------------------------
+// v7: Prevencion y Bodega dejaron de ser opcionales -- son candados
+// reales del flujo nuevo (Porteria -> JAO -> Prevencion -> firma ->
+// Bodega -> recepcion). Ponerlos en false solo tiene sentido en un
+// ambiente de prueba puntual donde todavia no se quiere exigir esos
+// pasos; en produccion deben quedar en true.
+define('MODULO_PREVENCION_ACTIVO', true);
+define('MODULO_BODEGA_ACTIVO', true);
 
 // --- Sesion ---------------------------------------------------------------
 define('SESSION_NAME', 'icafal_rrhh_sesion');

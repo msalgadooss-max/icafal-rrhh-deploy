@@ -63,7 +63,8 @@ function faseVisual(array $p): string
         'Aprobado_admin' => 'En revisión Jefe Administrativo',
         'Induccion_ok' => 'Inducción de seguridad realizada',
         'EPP_listo' => 'Kit de EPP listo, cierre final',
-        'Contratado' => '✔ Contratado',
+        'Contratado' => '✔ Contratado, esperando que lo vengan a buscar',
+        'Proceso_completo' => '✔ Recibido en terreno -- proceso completo',
         default => $p['estado'],
     };
 }
@@ -105,7 +106,8 @@ function pasosProgreso(array $p): array
         'Aprobado_admin' => 'En revisión Jefe Administrativo',
         'Induccion_ok' => 'Inducción de seguridad',
         'EPP_listo' => 'Kit de EPP listo',
-        'Contratado' => 'Contratado',
+        'Contratado' => 'Contratado -- EPP entregado',
+        'Proceso_completo' => 'Recibido en terreno -- proceso completo',
     ];
     $orden = ordenEstadosActivos();
     $idxActual = array_search($p['estado'], $orden, true);
@@ -143,7 +145,7 @@ $resultado = array_map(function ($p) use ($usuario) {
         'nombre_completo' => $p['nombre_completo'],
         'nombre_cargo' => $p['nombre_cargo'],
         'fase' => faseVisual($p),
-        'contratado' => $p['estado'] === 'Contratado',
+        'contratado' => in_array($p['estado'], ['Contratado', 'Proceso_completo'], true),
         'pasos' => pasosProgreso($p),
         // v6: true si el rol que está mirando el widget es justo el que
         // tiene que actuar ahora sobre esta persona.

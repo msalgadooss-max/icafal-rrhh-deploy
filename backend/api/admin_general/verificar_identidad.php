@@ -6,7 +6,7 @@
  * ambos datos con sus propios ojos (ver documentos/ver.php para abrir
  * la cédula) y confirma con este botón -- queda registrado quién y
  * cuándo lo confirmó, y es requisito (junto a datos_jao) para poder
- * "Finalizar Contratación" (ver finalizar.php).
+ * "Firmar Contrato" el día 2 (ver firmar_contrato.php).
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -26,7 +26,7 @@ if ($postulacionId <= 0) {
 $pdo = obtenerConexion();
 
 $stmtCheck = $pdo->prepare(
-    'SELECT p.id,
+    'SELECT p.id, p.ingreso_faena_at,
             (SELECT COUNT(*) FROM postulacion_documentos pd
               WHERE pd.postulacion_id = p.id AND pd.tipo = "cedula_identidad") AS tiene_cedula
        FROM postulaciones p
@@ -37,6 +37,12 @@ $postulacion = $stmtCheck->fetch();
 
 if (!$postulacion) {
     responderError('Postulación no encontrada.', 404);
+}
+// v7: candado nuevo -- no se puede verificar documentos hasta que
+// Portería confirmó que la persona se presentó en faena (ver
+// porteria/marcar_ingreso.php).
+if ($postulacion['ingreso_faena_at'] === null) {
+    responderError('Esta persona todavía no registra ingreso a faena en Portería.', 409);
 }
 if ((int)$postulacion['tiene_cedula'] === 0) {
     responderError('Esta postulación aún no tiene la foto/PDF de cédula subida.', 409);

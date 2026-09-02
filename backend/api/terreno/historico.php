@@ -30,8 +30,10 @@ $aprobadoPor = (int)($_GET['aprobado_por'] ?? 0);
 $pdo = obtenerConexion();
 
 $estadosEnProceso = ['Pre_aprobado_terreno', 'Datos_completados', 'Aprobado_admin', 'Induccion_ok', 'EPP_listo'];
+// v7: 'Proceso_completo' (Contratado + recepción en terreno confirmada)
+// sigue siendo "Personal Contratado" para esta pestaña.
 $condicionEstado = $vista === 'contratados'
-    ? 'p.estado = "Contratado"'
+    ? 'p.estado IN ("Contratado", "Proceso_completo")'
     : 'p.estado IN (' . implode(',', array_fill(0, count($estadosEnProceso), '?')) . ')';
 
 $params = $vista === 'contratados' ? [] : $estadosEnProceso;
