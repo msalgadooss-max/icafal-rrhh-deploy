@@ -1,9 +1,12 @@
 <?php
 /**
- * v6.9 - Módulo de inducción en video (Ricardo, reunión 28-ago): el
- * postulante ve los videos de seguridad desde su celular apenas es
- * autorizado, antes de presentarse. Misma identidad de dos factores que
- * ya protege todo el módulo de seguimiento (RUT + código).
+ * v9 - Catálogo de cursos de Prevención (evolución del módulo de
+ * "videos de inducción" de v6.9, reunión Ricardo 31-ago). El postulante
+ * ve, por categoría, cada curso con su video y su evaluación simple
+ * (preguntas abiertas), y el estado que Prevención ya le puso
+ * (Pendiente/Aprobado/Reprobado) una vez que la revisa. Misma identidad
+ * de dos factores que ya protege todo el módulo de seguimiento (RUT +
+ * código).
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -38,22 +41,36 @@ if ($postulacion['admin_autorizado_at'] === null) {
     responderError('Todavía no está disponible la inducción para tu proceso.', 409);
 }
 
-$stmtVideos = $pdo->prepare(
-    'SELECT v.id, v.titulo, v.url, v.orden,
-            (sv.id IS NOT NULL) AS visto
-       FROM videos_induccion v
-       LEFT JOIN postulante_videos_vistos sv
-              ON sv.video_id = v.id AND sv.postulacion_id = :pid
-      WHERE v.activo = 1
-      ORDER BY v.orden ASC'
+$stmtCursos = $pdo->prepare(
+    'SELECT c.id, c.categoria, c.titulo, c.descripcion, c.duracion_estimada, c.url,
+            c.preguntas_evaluacion,
+            pc.visto_at, pc.respuestas, pc.enviado_at, pc.estado, pc.comentario_evaluador
+       FROM cursos_induccion c
+       LEFT JOIN postulacion_cursos pc
+              ON pc.curso_id = c.id AND pc.postulacion_id = :pid
+      WHERE c.activo = 1
+      ORDER BY c.categoria ASC, c.orden ASC'
 );
-$stmtVideos->execute(['pid' => $postulacion['id']]);
-$videos = array_map(function ($v) {
-    $v['visto'] = (bool)$v['visto'];
-    return $v;
-}, $stmtVideos->fetchAll());
+$stmtCursos->execute(['pid' => $postulacion['id']]);
+$cursos = array_map(function ($c) {
+    return [
+        'id' => (int)$c['id'],
+        'categoria' => $c['categoria'],
+        'titulo' => $c['titulo'],
+        'descripcion' => $c['descripcion'],
+        'duracion_estimada' => $c['duracion_estimada'],
+        'url' => $c['url'],
+        'preguntas' => json_decode($c['preguntas_evaluacion'], true) ?? [],
+        'visto' => $c['visto_at'] !== null,
+        'respuestas' => $c['respuestas'] !== null ? json_decode($c['respuestas'], true) : null,
+        'enviado' => $c['enviado_at'] !== null,
+        // Sin fila en postulacion_cursos todavia = 'Pendiente' por defecto.
+        'estado' => $c['estado'] ?? 'Pendiente',
+        'comentario_evaluador' => $c['comentario_evaluador'],
+    ];
+}, $stmtCursos->fetchAll());
 
 responderOk([
     'nombre_completo' => $postulacion['nombre_completo'],
-    'videos' => $videos,
+    'cursos' => $cursos,
 ]);

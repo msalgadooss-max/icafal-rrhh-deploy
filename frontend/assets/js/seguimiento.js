@@ -141,12 +141,12 @@ function renderResultado(p) {
     }
   }
 
-  // v6.9: la inducción en video queda disponible apenas autoriza el
-  // Administrador de Contrato, no hace falta esperar a Etapa 2.
+  // v6.9/v9: el catálogo de cursos de Prevención queda disponible apenas
+  // autoriza el Administrador de Contrato, no hace falta esperar a Etapa 2.
   const bloqueInduccion = p.puede_ver_induccion ? `
     <div class="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 mb-4">
-      <p class="text-sm text-indigo-800 font-medium mb-2">🎥 Ya puedes ver tu inducción de seguridad -- así tu charla en obra será más corta.</p>
-      <a href="induccion.html?rut=${encodeURIComponent(p.rut)}&codigo=${encodeURIComponent(p.codigo_seguimiento)}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Ver mis videos</a>
+      <p class="text-sm text-indigo-800 font-medium mb-2">🎥 Ya puedes ver tus cursos de Prevención -- así tu charla en obra será más corta.</p>
+      <a href="induccion.html?rut=${encodeURIComponent(p.rut)}&codigo=${encodeURIComponent(p.codigo_seguimiento)}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Ver mis cursos</a>
     </div>` : '';
 
   resultadoDiv.innerHTML = `

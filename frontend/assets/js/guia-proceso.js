@@ -31,7 +31,7 @@ const GUIA_RESUMEN_GENERAL = `
       <p class="text-gray-600">Con el enlace recibido, carga sus datos de contratación y el resto de sus documentos (contrato, Fonasa/Isapre, AFP, etc.). Al terminar, recibe un correo con un QR para <b>presentarse en la obra</b>.</p></div></li>
     <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">6</span>
       <div><p class="font-semibold text-gray-900">Día 1: se presenta en obra -- JAO verifica y Prevención hace la inducción</p>
-      <p class="text-gray-600">Portería confirma su ingreso con el QR. Recién ahí el JAO puede verificar que el RUT coincida con la cédula, y Prevención puede marcar la inducción de seguridad realizada.</p></div></li>
+      <p class="text-gray-600">Portería confirma su ingreso con el QR. Recién ahí el JAO puede verificar que el RUT coincida con la cédula. El postulante ya venía viendo y rindiendo el catálogo de cursos de Prevención desde su celular; cuando Prevención aprobó todos, marca la inducción como realizada.</p></div></li>
     <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">7</span>
       <div><p class="font-semibold text-gray-900">Día 2, 8am: JAO firma el contrato y Bodega entrega el EPP</p>
       <p class="text-gray-600">El trabajador vuelve al otro día a firmar. Bodega ya sabe que viene y tiene su kit de EPP listo -- al entregarlo, el postulante queda <b>✔ Contratado</b> y se descuenta el cupo.</p></div></li>
@@ -181,7 +181,7 @@ const FLUJO_DIAGRAMA_HTML = `
     ${pasoFlujo(7, 'Administrador autoriza → se activa la Etapa 2', 'Este es el paso clave: recién aquí el postulante recibe el correo con el enlace para completar sus datos. Antes de esto, ese enlace no existe.')}
     ${pasoFlujo(8, 'Postulante completa Etapa 2', 'Datos personales, previsionales, bancarios + documentos: cédula, certificado de AFP, de salud, de residencia y (si aplica) último finiquito. Al terminar, recibe un correo con un código QR para presentarse en la obra.')}
     ${pasoFlujo(9, 'Se presenta en obra -- Portería confirma el ingreso', 'Muestra el QR en Portería (o dicta RUT + código). Sin este ingreso confirmado, el JAO todavía no puede verificar su identidad.')}
-    ${pasoFlujo(10, 'Día 1: JAO verifica identidad y Prevención hace la inducción', 'El JAO compara el RUT declarado contra la cédula subida. En paralelo, Prevención marca la inducción de seguridad realizada.', {
+    ${pasoFlujo(10, 'Día 1: JAO verifica identidad y Prevención hace la inducción', 'El JAO compara el RUT declarado contra la cédula subida. El postulante ya viene rindiendo el catálogo de cursos de Prevención (video + evaluación) desde su celular; cuando Prevención aprueba todos, marca la inducción como realizada.', {
       rama: ramaFlujo('El JAO observa un documento → el postulante recibe un correo pidiéndole que lo vuelva a subir, y vuelve a este mismo paso apenas lo corrige. El resto de lo ya aprobado no se pierde.', 'observacion'),
     })}
     ${pasoFlujo(11, 'Día 2, 8am: JAO firma el Contrato', 'Se habilita recién con la identidad verificada y sin documentos observados. Bodega ya sabe que el trabajador viene y tiene su kit de EPP preparado.')}

@@ -485,34 +485,63 @@ CREATE TABLE dev_qr_accesos (
 ) ENGINE=InnoDB;
 
 -- =====================================================================
--- v6.9: Modulo de induccion en video (Ricardo, reunion 28-ago) -- el
--- postulante ve estos videos desde su celular apenas es autorizado,
--- ANTES de presentarse, para que la charla presencial de Prevencion sea
--- corta (solo confirma que los vio y hace la parte especifica de la
--- obra). El catalogo (titulo/url/orden) es editable sin tocar codigo --
--- las URLs reales las define Prevencion cuando tenga el contenido
--- grabado; por ahora quedan con un valor placeholder en el seed.
+-- v9: Catálogo de cursos de Prevención (reunión Ricardo, 31-ago),
+-- evolución del módulo de "videos de inducción" de v6.9. Inspirado en
+-- academiamlp.cl ("Mi Formación"): cursos agrupados por categoría, cada
+-- uno con su video y una evaluación simple que el propio postulante
+-- responde -- pero que Prevención (una persona) revisa y aprueba o
+-- reprueba a mano, no un corrector automático. Sin vigencia/vencimiento
+-- por ahora (queda abierto para más adelante, dado el alto % de
+-- reingreso). Aplica SOLO a postulantes en proceso, no a trabajadores ya
+-- contratados -- por eso cuelga de `postulaciones`, igual que el resto
+-- del módulo de Prevención.
+-- El catálogo (titulo/categoria/url/preguntas) es editable sin tocar
+-- código -- las URLs reales las define Prevención cuando tenga el
+-- contenido grabado; por ahora quedan con un valor placeholder en el
+-- seed.
 -- =====================================================================
-CREATE TABLE videos_induccion (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    titulo      VARCHAR(150) NOT NULL,
-    url         VARCHAR(500) NOT NULL,
-    orden       INT UNSIGNED NOT NULL DEFAULT 0,
-    activo      TINYINT(1) NOT NULL DEFAULT 1
+CREATE TABLE cursos_induccion (
+    id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    categoria             VARCHAR(80) NOT NULL DEFAULT 'General',
+    titulo                VARCHAR(150) NOT NULL,
+    descripcion           VARCHAR(300) NULL,
+    duracion_estimada     VARCHAR(40) NULL,
+    url                   VARCHAR(500) NOT NULL,
+    -- Array JSON de preguntas abiertas (texto libre), ej:
+    -- ["¿Qué debes hacer si detectas una condición insegura?", "..."].
+    -- El postulante responde en texto libre; Prevención lee las
+    -- respuestas y aprueba/reprueba -- no hay corrección automática.
+    preguntas_evaluacion  JSON NOT NULL,
+    orden                 INT UNSIGNED NOT NULL DEFAULT 0,
+    activo                TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB;
 
-CREATE TABLE postulante_videos_vistos (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    postulacion_id  INT UNSIGNED NOT NULL,
-    video_id        INT UNSIGNED NOT NULL,
-    visto_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_postulante_video (postulacion_id, video_id),
-    CONSTRAINT fk_visto_postulacion
+CREATE TABLE postulacion_cursos (
+    id                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    postulacion_id       INT UNSIGNED NOT NULL,
+    curso_id             INT UNSIGNED NOT NULL,
+    visto_at             DATETIME NULL,
+    -- Array JSON de respuestas del postulante, mismo orden que
+    -- preguntas_evaluacion. enviado_at NULL = todavía no envía su
+    -- evaluación (o la reprobaron y aún no reintenta); enviado_at
+    -- puesto + estado='Pendiente' = enviada y esperando que Prevención
+    -- la revise.
+    respuestas           JSON NULL,
+    enviado_at           DATETIME NULL,
+    estado               ENUM('Pendiente', 'Aprobado', 'Reprobado') NOT NULL DEFAULT 'Pendiente',
+    evaluado_at          DATETIME NULL,
+    evaluado_por         INT UNSIGNED NULL,
+    comentario_evaluador VARCHAR(500) NULL,
+    UNIQUE KEY uq_postulacion_curso (postulacion_id, curso_id),
+    CONSTRAINT fk_pcurso_postulacion
         FOREIGN KEY (postulacion_id) REFERENCES postulaciones(id)
         ON DELETE CASCADE,
-    CONSTRAINT fk_visto_video
-        FOREIGN KEY (video_id) REFERENCES videos_induccion(id)
-        ON DELETE CASCADE
+    CONSTRAINT fk_pcurso_curso
+        FOREIGN KEY (curso_id) REFERENCES cursos_induccion(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_pcurso_evaluador
+        FOREIGN KEY (evaluado_por) REFERENCES usuarios(id)
+        ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- =====================================================================

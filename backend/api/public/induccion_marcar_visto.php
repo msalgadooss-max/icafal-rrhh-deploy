@@ -1,8 +1,9 @@
 <?php
 /**
- * v6.9 - El postulante marca un video de inducción como visto (o el
- * propio reproductor lo marca solo al terminar). Idempotente: volver a
- * marcar el mismo video no genera duplicados ni error.
+ * v9 - El postulante marca un curso como visto (o el propio reproductor
+ * lo marca solo al terminar el video). Idempotente: volver a marcar el
+ * mismo curso no pierde una evaluación ya enviada ni cambia su estado,
+ * solo registra que lo vio.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -13,9 +14,9 @@ exigirMetodo('POST');
 $body = leerJsonBody();
 $documentoCrudo = trim((string)($body['rut'] ?? ''));
 $codigo = strtoupper(limpiarTexto($body['codigo_seguimiento'] ?? '', 10));
-$videoId = (int)($body['video_id'] ?? 0);
+$cursoId = (int)($body['curso_id'] ?? 0);
 
-if ($documentoCrudo === '' || $codigo === '' || $videoId <= 0) {
+if ($documentoCrudo === '' || $codigo === '' || $cursoId <= 0) {
     responderError('Faltan datos.', 422);
 }
 
@@ -37,15 +38,17 @@ if ($postulacion['admin_autorizado_at'] === null) {
     responderError('Todavía no está disponible la inducción para tu proceso.', 409);
 }
 
-$stmtVideo = $pdo->prepare('SELECT id FROM videos_induccion WHERE id = :id AND activo = 1');
-$stmtVideo->execute(['id' => $videoId]);
-if (!$stmtVideo->fetch()) {
-    responderError('Video no encontrado.', 404);
+$stmtCurso = $pdo->prepare('SELECT id FROM cursos_induccion WHERE id = :id AND activo = 1');
+$stmtCurso->execute(['id' => $cursoId]);
+if (!$stmtCurso->fetch()) {
+    responderError('Curso no encontrado.', 404);
 }
 
-$stmtInsert = $pdo->prepare(
-    'INSERT IGNORE INTO postulante_videos_vistos (postulacion_id, video_id) VALUES (:pid, :vid)'
+$stmtUpsert = $pdo->prepare(
+    'INSERT INTO postulacion_cursos (postulacion_id, curso_id, visto_at)
+     VALUES (:pid, :cid, NOW())
+     ON DUPLICATE KEY UPDATE visto_at = COALESCE(visto_at, NOW())'
 );
-$stmtInsert->execute(['pid' => $postulacion['id'], 'vid' => $videoId]);
+$stmtUpsert->execute(['pid' => $postulacion['id'], 'cid' => $cursoId]);
 
-responderOk(['mensaje' => 'Video marcado como visto.']);
+responderOk(['mensaje' => 'Curso marcado como visto.']);
