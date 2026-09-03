@@ -12,7 +12,17 @@ if [ ! -d "$DATADIR/mysql" ]; then
 fi
 
 echo "[entrypoint] Iniciando MariaDB..."
-mysqld_safe --datadir="$DATADIR" --skip-networking=0 --bind-address=127.0.0.1 &
+# v9.1: character-set-server/collation-server EXPLICITOS al arrancar el
+# propio servidor -- se detectaron nombres con tildes/"ñ" corruptos de
+# forma intermitente entre un arranque de contenedor y otro (probando el
+# piloto de punta a punta), pese a que la base, las tablas y cada
+# conexion via PDO ya pedian utf8mb4 explicitamente. Fijarlo aqui, al
+# nivel del propio proceso mysqld, elimina cualquier dependencia de un
+# my.cnf por defecto del paquete o de una negociacion de charset que
+# pudiera llegar tarde para las primeras conexiones (schema.sql/
+# seed_deploy.sql corren segundos despues de este arranque).
+mysqld_safe --datadir="$DATADIR" --skip-networking=0 --bind-address=127.0.0.1 \
+  --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci &
 
 # --- 2) Espera a que acepte conexiones (por el socket local) -------------
 for i in $(seq 1 30); do
