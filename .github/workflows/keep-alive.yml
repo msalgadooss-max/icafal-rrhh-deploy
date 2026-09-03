@@ -1,0 +1,25 @@
+name: Keep-alive (Render free tier)
+
+# v9.2 - El plan gratuito de Render "duerme" el servicio tras ~15 min sin
+# trafico, y al despertar reinicia el contenedor desde cero -- lo que
+# BORRA la base de datos completa (sin disco persistente en el plan
+# free, ver docker-entrypoint.sh). Este ping periodico es un parche
+# temporal mientras se sube a un plan con disco persistente: no
+# reemplaza esa solucion de fondo, solo reduce la ventana de riesgo.
+# Solo hace un GET de lectura a la pagina publica -- no crea ni modifica
+# ningun dato.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping icafal-rrhh.onrender.com
+        run: |
+          echo "Ping a $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          curl -sS -o /dev/null -w "HTTP %{http_code} en %{time_total}s\n" \
+            --max-time 60 --retry 2 --retry-delay 5 \
+            https://icafal-rrhh.onrender.com/
