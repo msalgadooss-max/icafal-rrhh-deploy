@@ -16,7 +16,7 @@ INSERT INTO usuarios (nombre, correo, password, rol) VALUES
     ('Juan Perez', 'jterreno@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Terreno'),
     ('Roberto Capataz', 'capataz@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Capataz'),
     ('Maria Soto', 'administrador@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Admin_Contrato'),
-    ('Luis Vera', 'jao@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Administrativo'),
+    ('Luis Vera', 'msalgadoo@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Administrativo'),
     ('Pedro Rios', 'pedro@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Prevencionista'),
     ('Ana Diaz', 'ana@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Bodega'),
     ('Sofia Gerente', 'gerencia@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Gerencia'),
