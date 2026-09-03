@@ -20,6 +20,13 @@ function obtenerConexion(): PDO
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ]);
+            // v9.1: refuerzo explícito -- el parámetro "charset=" del DSN
+            // debería bastar, pero en el ambiente de Render se detectaron
+            // nombres con tildes/"ñ" llegando corruptos a la base. Un
+            // SET NAMES explícito deja la codificación de la sesión sin
+            // ambigüedad, sin importar cómo el driver haya interpretado
+            // el DSN.
+            $pdo->exec('SET NAMES ' . DB_CHARSET . ' COLLATE utf8mb4_unicode_ci');
         } catch (PDOException $e) {
             http_response_code(500);
             header('Content-Type: application/json; charset=utf-8');

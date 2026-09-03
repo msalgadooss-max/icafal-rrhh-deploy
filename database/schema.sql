@@ -6,6 +6,12 @@
 -- Charset utf8mb4 para acentos, "ñ" y compatibilidad total.
 -- =====================================================================
 
+-- v9.1: SET NAMES explícito además de la bandera --default-character-set
+-- de la línea de comandos -- se detectaron acentos/"ñ" corruptos en
+-- Render pese a esa bandera, así que se refuerza sin ambigüedad la
+-- codificación de ESTA sesión antes de crear nada.
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE DATABASE IF NOT EXISTS icafal_rrhh
     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -26,7 +32,7 @@ CREATE TABLE cargos (
     creado_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                         ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: usuarios
@@ -56,7 +62,7 @@ CREATE TABLE usuarios (
     creado_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                         ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: solicitudes_cupo (v4)
@@ -95,7 +101,7 @@ CREATE TABLE solicitudes_cupo (
     CONSTRAINT fk_solicitud_resuelta_por
         FOREIGN KEY (resuelta_por) REFERENCES usuarios(id)
         ON DELETE SET NULL
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: postulaciones (datos publicos / no sensibles)
@@ -258,7 +264,7 @@ CREATE TABLE postulaciones (
     INDEX idx_postulaciones_estado (estado),
     INDEX idx_postulaciones_token (token_privado),
     INDEX idx_postulaciones_token_subsanacion (token_subsanacion)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: datos_contratacion (datos privados/sensibles)
@@ -308,7 +314,7 @@ CREATE TABLE datos_contratacion (
     CONSTRAINT fk_datos_postulacion
         FOREIGN KEY (postulacion_id) REFERENCES postulaciones(id)
         ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: postulacion_documentos (v3)
@@ -354,7 +360,7 @@ CREATE TABLE postulacion_documentos (
         FOREIGN KEY (rechazado_por) REFERENCES usuarios(id)
         ON DELETE SET NULL,
     UNIQUE KEY uq_postulacion_tipo (postulacion_id, tipo)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: datos_jao (v3)
@@ -395,7 +401,7 @@ CREATE TABLE datos_jao (
     CONSTRAINT fk_jao_usuario
         FOREIGN KEY (creado_por) REFERENCES usuarios(id)
         ON DELETE SET NULL
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: trazabilidad_logs
@@ -416,7 +422,7 @@ CREATE TABLE trazabilidad_logs (
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
         ON DELETE SET NULL,
     INDEX idx_log_postulacion (postulacion_id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: cierre_remuneraciones (v2)
@@ -436,7 +442,7 @@ CREATE TABLE cierre_remuneraciones (
         FOREIGN KEY (actualizado_por) REFERENCES usuarios(id)
         ON DELETE SET NULL,
     CONSTRAINT chk_cierre_id_unico CHECK (id = 1)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO cierre_remuneraciones (id, activo) VALUES (1, 0);
 
@@ -458,7 +464,7 @@ CREATE TABLE dev_accesos (
     CONSTRAINT fk_dev_acceso_objetivo
         FOREIGN KEY (usuario_objetivo_id) REFERENCES usuarios(id)
         ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Tabla: dev_qr_accesos (v6.4)
@@ -482,7 +488,7 @@ CREATE TABLE dev_qr_accesos (
         FOREIGN KEY (creado_por) REFERENCES usuarios(id)
         ON DELETE SET NULL,
     INDEX idx_qracceso_token (token)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
 -- v9: Catálogo de cursos de Prevención (reunión Ricardo, 31-ago),
@@ -514,7 +520,7 @@ CREATE TABLE cursos_induccion (
     preguntas_evaluacion  JSON NOT NULL,
     orden                 INT UNSIGNED NOT NULL DEFAULT 0,
     activo                TINYINT(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE postulacion_cursos (
     id                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -542,7 +548,7 @@ CREATE TABLE postulacion_cursos (
     CONSTRAINT fk_pcurso_evaluador
         FOREIGN KEY (evaluado_por) REFERENCES usuarios(id)
         ON DELETE SET NULL
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
 -- TRIGGERS

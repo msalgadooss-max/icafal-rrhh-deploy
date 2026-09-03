@@ -3,6 +3,13 @@
  * Helpers comunes a todos los endpoints de la API.
  */
 
+// v9.1: sin esto, mb_substr() y el resto de las funciones mbstring usan
+// la codificacion interna por defecto de PHP (no necesariamente UTF-8),
+// lo que puede corromper o directamente perder acentos/"ñ" al pasar por
+// limpiarTexto() -- detectado probando nombres reales (ej. "José Muñoz")
+// antes de pasar el piloto a producción con personas reales.
+mb_internal_encoding('UTF-8');
+
 header('Content-Type: application/json; charset=utf-8');
 
 /** Responde JSON y termina la ejecucion. */

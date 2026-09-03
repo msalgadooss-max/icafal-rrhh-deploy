@@ -5,6 +5,9 @@
 -- el equipo pueda loguearse y postular).
 -- Clave de todos los usuarios: Clave123!
 -- =====================================================================
+-- v9.1: SET NAMES explícito -- ver la misma nota en schema.sql.
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 USE icafal_rrhh;
 
 DELETE FROM usuarios WHERE correo = 'admin@icafal.cl';
