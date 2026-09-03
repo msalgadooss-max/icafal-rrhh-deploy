@@ -50,13 +50,14 @@ define('OBRA_NOMBRE', 'Obra H57 Padre Hurtado IV');
 define('LIMITE_APROBACIONES_DIARIAS_TERRENO', 25);
 
 // --- Modulos activos ---------------------------------------------------
-// v7: Prevencion y Bodega dejaron de ser opcionales -- son candados
-// reales del flujo nuevo (Porteria -> JAO -> Prevencion -> firma ->
-// Bodega -> recepcion). Ponerlos en false solo tiene sentido en un
-// ambiente de prueba puntual donde todavia no se quiere exigir esos
-// pasos; en produccion deben quedar en true.
-define('MODULO_PREVENCION_ACTIVO', true);
-define('MODULO_BODEGA_ACTIVO', true);
+// v9.2: Etapa 1 del piloto -- Prevencion y Bodega quedan fuera del
+// alcance de la app por ahora (siguen pasando en la vida real, en
+// papel). admin_general/firmar_contrato.php cierra la contratacion el
+// mismo cuando ambos estan en false. Volver a poner ambos en true
+// cuando arranque Etapa 2 (Porteria -> JAO -> Prevencion -> firma ->
+// Bodega -> recepcion, como en produccion hoy).
+define('MODULO_PREVENCION_ACTIVO', false);
+define('MODULO_BODEGA_ACTIVO', false);
 
 // --- Sesion ---------------------------------------------------------------
 define('SESSION_NAME', 'icafal_rrhh_sesion');

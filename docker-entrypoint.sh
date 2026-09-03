@@ -83,11 +83,15 @@ define('BANCO_RETENCION_MESES', 6);
 define('OBRA_NOMBRE', 'Obra H57 Padre Hurtado IV');
 define('LIMITE_APROBACIONES_DIARIAS_TERRENO', 25);
 
-// v7: Prevención y Bodega dejaron de ser módulos opcionales -- el nuevo
-// flujo (Portería -> JAO -> Prevención -> firma -> Bodega -> recepción)
-// los necesita siempre activos como candados reales del proceso.
-define('MODULO_PREVENCION_ACTIVO', true);
-define('MODULO_BODEGA_ACTIVO', true);
+// v9.2: Etapa 1 del piloto (reunión con Jorge, semana 7-11 sep) -- el
+// alcance de ESTA etapa termina en el JAO. Prevención y Bodega siguen
+// existiendo en la vida real (charla IRL y entrega de EPP en papel al
+// día siguiente), pero no como candados dentro de la app todavía --
+// eso es Etapa 2. admin_general/firmar_contrato.php ya sabe cerrar la
+// contratación él mismo cuando estos dos están inactivos (ver su
+// docblock). Volver a poner ambos en true cuando arranque Etapa 2.
+define('MODULO_PREVENCION_ACTIVO', false);
+define('MODULO_BODEGA_ACTIVO', false);
 
 define('SESSION_NAME', 'icafal_rrhh_sesion');
 define('APP_DEBUG', false);

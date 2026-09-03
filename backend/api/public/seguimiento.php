@@ -109,6 +109,12 @@ responderOk([
         // v6.9: la inducción en video queda disponible apenas autoriza el
         // Administrador de Contrato (no hace falta esperar a Etapa 2) --
         // así el postulante puede ir viéndolos antes de presentarse.
-        'puede_ver_induccion' => $postulacion['admin_autorizado_at'] !== null && !$autorizadoIngreso && !in_array($estadoActual, ['Rechazado'], true),
+        // v9.2: en Etapa 1 del piloto, Prevención (y el catálogo de
+        // cursos) todavía no participa -- no tiene sentido invitar al
+        // postulante a un flujo que nadie del otro lado va a revisar.
+        'puede_ver_induccion' => MODULO_PREVENCION_ACTIVO
+            && $postulacion['admin_autorizado_at'] !== null
+            && !$autorizadoIngreso
+            && !in_array($estadoActual, ['Rechazado'], true),
     ],
 ]);

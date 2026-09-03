@@ -74,10 +74,13 @@ foreach ($postulaciones as &$p) {
     $p['ingreso_faena_confirmado'] = $p['ingreso_faena_at'] !== null;
 
     // v7: qué acción corresponde mostrarle al JAO para esta fila.
+    // v9.2: en Etapa 1 del piloto (MODULO_PREVENCION_ACTIVO=false),
+    // "Induccion_ok" nunca se alcanza -- basta con 'Aprobado_admin'.
+    $estadoParaFirmar = MODULO_PREVENCION_ACTIVO ? 'Induccion_ok' : 'Aprobado_admin';
     $p['puede_verificar'] = $p['estado'] === 'Aprobado_admin'
         && $p['ingreso_faena_at'] !== null
         && $p['identidad_verificada_at'] === null;
-    $p['puede_firmar'] = $p['estado'] === 'Induccion_ok'
+    $p['puede_firmar'] = $p['estado'] === $estadoParaFirmar
         && $p['identidad_verificada_at'] !== null
         && !$tieneDocumentoObservado
         && $p['tiene_datos_jao'];
@@ -89,4 +92,7 @@ unset($p);
 responderOk([
     'postulaciones' => $postulaciones,
     'cierre_remuneraciones_activo' => cierreRemuneracionesActivo($pdo),
+    // v9.2: para que el dashboard sepa si está en Etapa 1 del piloto
+    // (Prevención inactiva -- no hace falta esperar 'Induccion_ok').
+    'modulo_prevencion_activo' => MODULO_PREVENCION_ACTIVO,
 ]);

@@ -3,18 +3,26 @@
  * v7 - Segunda acción del JAO, separada de la verificación de
  * documentos (día 1, ver verificar_identidad.php). Esta se hace al día
  * siguiente, a las 8am, cuando el trabajador vuelve a firmar su
- * contrato. Reemplaza lo que antes hacía admin_general/finalizar.php,
- * pero YA NO deja a la postulación en 'Contratado' -- eso ahora lo hace
- * Bodega al entregar el EPP (ver bodega/marcar_epp.php), que es el
- * candado siguiente y quien de verdad descuenta el cupo.
+ * contrato. Reemplaza lo que antes hacía admin_general/finalizar.php.
  *
- * Requisitos, en orden:
- *   1) estado = 'Induccion_ok' (Prevención ya hizo la IRL)
- *   2) identidad_verificada_at (JAO ya verificó documentos, día 1)
- *   3) datos_jao completo (código de ficha, etc.)
- *   4) sin documentos rechazados pendientes de corrección
- *   5) cierre de remuneraciones no activo
- *   6) contrato_firmado_at todavía NULL (no se firma dos veces)
+ * v9.2 - Etapa 1 del piloto (reunión con Jorge, semana del 7 al 11 de
+ * septiembre): Prevención y Bodega quedan fuera del alcance de ESTA
+ * etapa como candados del sistema -- en la vida real, Prevención igual
+ * hace la charla IRL al día siguiente y Bodega igual entrega el EPP con
+ * firma en papel, pero ninguna de las dos aprueba nada DENTRO de la
+ * app todavía (eso es Etapa 2). Por eso el requisito de 'Induccion_ok'
+ * y el cierre vía Bodega se vuelven CONDICIONALES a los mismos flags
+ * MODULO_PREVENCION_ACTIVO / MODULO_BODEGA_ACTIVO que ya existían:
+ *
+ *   - Con Prevención activa (Etapa 2): se exige 'Induccion_ok' como
+ *     antes, y quien cierra a 'Contratado' sigue siendo Bodega.
+ *   - Con Prevención INACTIVA (Etapa 1, piloto de esta semana): basta
+ *     con 'Aprobado_admin' + identidad ya verificada -- se salta el
+ *     paso de cursos por completo.
+ *   - Si además Bodega está INACTIVA (Etapa 1): esta misma acción hace
+ *     lo que en Etapa 2 hace bodega/marcar_epp.php -- descuenta el
+ *     cupo y deja la postulación en 'Contratado', porque no hay ningún
+ *     otro candado digital que vaya a hacerlo.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -44,9 +52,12 @@ $pdo->beginTransaction();
 
 try {
     $stmtCheck = $pdo->prepare(
-        'SELECT id, estado, identidad_verificada_at, contrato_firmado_at
-           FROM postulaciones
-          WHERE id = :id
+        'SELECT p.id, p.estado, p.identidad_verificada_at, p.contrato_firmado_at,
+                p.cargo_id, p.rut, p.codigo_seguimiento, p.correo, p.nombre_completo,
+                c.cupos_activos, c.nombre_cargo
+           FROM postulaciones p
+           JOIN cargos c ON c.id = p.cargo_id
+          WHERE p.id = :id
           FOR UPDATE'
     );
     $stmtCheck->execute(['id' => $postulacionId]);
@@ -55,8 +66,10 @@ try {
     if (!$postulacion) {
         throw new RuntimeException('Postulación no encontrada.|404');
     }
-    if ($postulacion['estado'] !== 'Induccion_ok') {
-        throw new RuntimeException('La postulación no está en estado Induccion_ok.|409');
+
+    $estadoRequerido = MODULO_PREVENCION_ACTIVO ? 'Induccion_ok' : 'Aprobado_admin';
+    if ($postulacion['estado'] !== $estadoRequerido) {
+        throw new RuntimeException("La postulación no está en estado {$estadoRequerido}.|409");
     }
     if ($postulacion['identidad_verificada_at'] === null) {
         throw new RuntimeException('Debes verificar la identidad (RUT vs. cédula) antes de firmar el contrato.|409');
@@ -80,14 +93,47 @@ try {
         throw new RuntimeException('Hay un documento observado pendiente de corrección por el postulante.|409');
     }
 
-    $stmt = $pdo->prepare(
-        'UPDATE postulaciones SET contrato_firmado_at = NOW(), contrato_firmado_por = :uid WHERE id = :id'
-    );
-    $stmt->execute(['uid' => $usuario['id'], 'id' => $postulacionId]);
+    // v9.2 - Etapa 1: sin Bodega activa como candado digital, esta misma
+    // acción cierra el ciclo completo (descuenta cupo, queda Contratado).
+    $cierraAquiMismo = !MODULO_BODEGA_ACTIVO;
+    if ($cierraAquiMismo && (int)$postulacion['cupos_activos'] <= 0) {
+        throw new RuntimeException('No quedan cupos activos disponibles para este cargo.|409');
+    }
 
-    registrarLog($pdo, $postulacionId, $usuario['id'], 'Firmó el contrato (día 2). Pasa a Bodega para entrega de EPP.');
+    $nuevoEstado = $cierraAquiMismo ? 'Contratado' : $postulacion['estado'];
+    $stmt = $pdo->prepare(
+        'UPDATE postulaciones
+            SET contrato_firmado_at = NOW(), contrato_firmado_por = :uid, estado = :estado
+          WHERE id = :id'
+    );
+    $stmt->execute(['uid' => $usuario['id'], 'estado' => $nuevoEstado, 'id' => $postulacionId]);
+
+    registrarLog(
+        $pdo,
+        $postulacionId,
+        $usuario['id'],
+        $cierraAquiMismo
+            ? 'Firmó el contrato (día 2). Etapa 1 del piloto: cierra la contratación directamente (Bodega todavía no participa en la app).'
+            : 'Firmó el contrato (día 2). Pasa a Bodega para entrega de EPP.'
+    );
 
     $pdo->commit();
+
+    if ($cierraAquiMismo) {
+        // v9.2: mismos correos de cierre que Bodega dispara en Etapa 2,
+        // fuera de la transacción para no hacer fallar el cierre si el
+        // envío de correo falla.
+        try {
+            notificarContratacionExitosa($pdo, $postulacion);
+        } catch (\Throwable $e) {
+            error_log('notificarContratacionExitosa error: ' . $e->getMessage());
+        }
+        try {
+            notificarLiberacionTrabajador($pdo, $postulacion);
+        } catch (\Throwable $e) {
+            error_log('notificarLiberacionTrabajador error: ' . $e->getMessage());
+        }
+    }
 } catch (RuntimeException $e) {
     $pdo->rollBack();
     [$mensaje, $status] = explode('|', $e->getMessage());
@@ -98,4 +144,8 @@ try {
     responderError('No fue posible registrar la firma del contrato.', 500);
 }
 
-responderOk(['mensaje' => 'Contrato firmado. Pasa a Bodega para la entrega de EPP.']);
+responderOk([
+    'mensaje' => $cierraAquiMismo
+        ? 'Contrato firmado. Contratación cerrada -- avisa a Capataz o Jefe de Terreno para que lo vayan a buscar.'
+        : 'Contrato firmado. Pasa a Bodega para la entrega de EPP.',
+]);

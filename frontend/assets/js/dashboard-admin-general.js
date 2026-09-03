@@ -15,6 +15,8 @@ const ETIQUETAS_DOC = {
 
 let CIERRE_ACTIVO = false;
 let LISTAS = null;
+// v9.2: Etapa 1 del piloto -- Prevención inactiva como candado digital.
+let MODULO_PREVENCION_ACTIVO = true;
 let CHART_DONUT = null;
 
 (async () => {
@@ -115,6 +117,7 @@ async function cargarLista() {
   try {
     const data = await apiFetch('/admin_general/listar.php');
     CIERRE_ACTIVO = data.cierre_remuneraciones_activo;
+    MODULO_PREVENCION_ACTIVO = data.modulo_prevencion_activo;
     renderBadgeCierre();
     if (!data.postulaciones.length) {
       cont.innerHTML = '';
@@ -214,7 +217,8 @@ function tarjeta(p) {
             ${p.tiene_datos_jao ? 'Editar datos de nómina' : 'Completar datos de nómina'}
           </button>
           <button class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg disabled:opacity-40"
-                  ${p.puede_firmar ? '' : 'disabled'} onclick="firmarContrato(${p.id})" title="Día 2, 8am: firma de contrato. Habilita a Bodega para entregar el EPP.">
+                  ${p.puede_firmar ? '' : 'disabled'} onclick="firmarContrato(${p.id})"
+                  title="${MODULO_PREVENCION_ACTIVO ? 'Día 2, 8am: firma de contrato. Habilita a Bodega para entregar el EPP.' : 'Día 2, 8am: firma de contrato. Etapa 1 del piloto: esto cierra la contratación.'}">
             Firmar Contrato (día 2)
           </button>
         </div>
@@ -223,7 +227,12 @@ function tarjeta(p) {
       ${p.afp_alerta_jao ? `<p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3">⚠ Esta persona declaró un régimen previsional antiguo ("${p.afp}"), no una AFP vigente. Verifica manualmente antes de finalizar.</p>` : ''}
       ${p.tiene_documento_observado ? `<p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3">⚠ Hay un documento observado esperando que el postulante lo corrija — no se puede firmar el contrato hasta entonces. El resto del proceso ya avanzado no se pierde.</p>` : ''}
       ${p.estado === 'Induccion_ok' && !p.puede_firmar && !p.tiene_documento_observado ? `<p class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mt-3">Ya hizo la inducción de seguridad con Prevención. Falta completar la nómina para poder firmar el contrato.</p>` : ''}
-      ${p.estado === 'Aprobado_admin' ? `<p class="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mt-3">Todavía en día 1 -- falta la inducción de seguridad con Prevención antes de poder firmar el contrato.</p>` : ''}
+      ${p.estado === 'Aprobado_admin' && !p.puede_firmar && !p.tiene_documento_observado
+        ? (MODULO_PREVENCION_ACTIVO
+            ? `<p class="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mt-3">Todavía en día 1 -- falta la inducción de seguridad con Prevención antes de poder firmar el contrato.</p>`
+            : `<p class="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mt-3">Todavía en día 1 -- falta verificar la identidad y/o completar la nómina antes de poder firmar el contrato.</p>`)
+        : ''}
+      ${!MODULO_PREVENCION_ACTIVO && p.puede_firmar ? `<p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3">Etapa 1 del piloto: al firmar, esta acción cierra la contratación directamente (Prevención y Bodega todavía no participan en la app).</p>` : ''}
 
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm mt-3 text-gray-700">
         <p><span class="text-gray-400">AFP:</span> ${p.afp}</p>
@@ -354,7 +363,10 @@ async function verificarIdentidad(id) {
 }
 
 async function firmarContrato(id) {
-  if (!confirm('¿Registrar la firma del contrato? Esto habilita a Bodega para entregar el EPP -- el cupo se descuenta recién cuando Bodega entrega.')) return;
+  const confirmacion = MODULO_PREVENCION_ACTIVO
+    ? '¿Registrar la firma del contrato? Esto habilita a Bodega para entregar el EPP -- el cupo se descuenta recién cuando Bodega entrega.'
+    : '¿Registrar la firma del contrato? Etapa 1 del piloto: esto cierra la contratación y descuenta el cupo de inmediato.';
+  if (!confirm(confirmacion)) return;
   try {
     const data = await apiFetch('/admin_general/firmar_contrato.php', { method: 'POST', body: { postulacion_id: id } });
     mostrarAlerta('alerta', data.mensaje, 'exito');
