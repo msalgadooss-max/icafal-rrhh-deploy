@@ -1,9 +1,18 @@
 <?php
 /**
  * Modulo de seguimiento publico. El postulante se identifica con
- * RUT + codigo_seguimiento (dos factores que solo el conoce) y recibe
- * su estado actual mapeado a una linea de tiempo, sin exponer nunca
- * datos de la tabla datos_contratacion.
+ * RUT + correo (dos datos que solo el conoce, y que ya escribio al
+ * postular -- no depende de que haya guardado o recuerde el codigo de
+ * 6 caracteres que se le mostro una sola vez). Recibe su estado actual
+ * mapeado a una linea de tiempo, sin exponer nunca datos de la tabla
+ * datos_contratacion.
+ *
+ * v10: cambio de codigo_seguimiento -> correo como segundo factor
+ * (pedido explicito, pensando en el segundo QR de la sala de espera:
+ * la gente siempre sabe su correo, no siempre guarda el codigo). El
+ * codigo_seguimiento sigue existiendo y sigue viajando en la respuesta
+ * -- lo siguen usando el QR de porteria, el link de induccion y
+ * reenviar_etapa2.php, que no cambian.
  *
  * Cuando el estado es 'EPP_listo', 'Contratado' o 'Proceso_completo' se
  * marca autorizado_ingreso=true; el frontend pinta la pantalla en VERDE
@@ -17,10 +26,10 @@ exigirMetodo('POST');
 
 $body = leerJsonBody();
 $documentoCrudo = trim((string)($body['rut'] ?? ''));
-$codigo = strtoupper(limpiarTexto($body['codigo_seguimiento'] ?? '', 10));
+$correo = filter_var(trim((string)($body['correo'] ?? '')), FILTER_VALIDATE_EMAIL);
 
-if ($documentoCrudo === '' || $codigo === '') {
-    responderError('Tu documento y el código de seguimiento son obligatorios.', 422);
+if ($documentoCrudo === '' || !$correo) {
+    responderError('Tu documento y tu correo son obligatorios.', 422);
 }
 
 // v3: el formulario no sabe de antemano si es RUT u "Otro" documento,
@@ -38,10 +47,10 @@ $stmt = $pdo->prepare(
               WHERE pd.postulacion_id = p.id AND pd.rechazado_at IS NOT NULL AND pd.resubido_at IS NULL) > 0 AS documento_observado
        FROM postulaciones p
        JOIN cargos c ON c.id = p.cargo_id
-      WHERE (p.rut = :doc_crudo OR p.rut = :doc_rut) AND p.codigo_seguimiento = :codigo
+      WHERE (p.rut = :doc_crudo OR p.rut = :doc_rut) AND LOWER(p.correo) = LOWER(:correo)
       LIMIT 1'
 );
-$stmt->execute(['doc_crudo' => $documentoCrudo, 'doc_rut' => $documentoRut, 'codigo' => $codigo]);
+$stmt->execute(['doc_crudo' => $documentoCrudo, 'doc_rut' => $documentoRut, 'correo' => $correo]);
 $postulacion = $stmt->fetch();
 
 if (!$postulacion) {

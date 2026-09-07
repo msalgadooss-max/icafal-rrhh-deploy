@@ -21,12 +21,21 @@ const alertaDiv = document.getElementById('alerta');
 
 formatearRutInput(rutInput);
 
-// Prefill si venimos desde el correo de confirmación (?rut=...)
+// Prefill si venimos desde el correo de confirmación (?rut=...), o de un
+// QR personalizado que ya trae ambos datos (?rut=...&correo=...) -- ej.
+// el que el asistente del JAO podria mostrar al entregar casco y peto.
 const params = new URLSearchParams(window.location.search);
 if (params.get('rut')) rutInput.value = params.get('rut');
+if (params.get('correo')) document.getElementById('correo').value = params.get('correo');
 
 // v6.6: se guardan para poder reenviar el enlace de Etapa 2 sin pedirle
 // de nuevo el RUT y el código al postulante.
+// v10: el acceso ahora es RUT + correo (no código de seguimiento) --
+// ULTIMO_CODIGO_CONSULTADO ya no viene de lo que el postulante tipeo,
+// sino de lo que devuelve la propia consulta (seguimiento.php lo sigue
+// entregando en la respuesta, aunque ya no se use para buscar). Así el
+// QR de porteria, el link de induccion y "reenviar mi enlace" siguen
+// funcionando exactamente igual que antes.
 let ULTIMO_RUT_CONSULTADO = '';
 let ULTIMO_CODIGO_CONSULTADO = '';
 
@@ -35,15 +44,15 @@ form.addEventListener('submit', async (e) => {
   alertaDiv.innerHTML = '';
   resultadoDiv.innerHTML = '';
 
-  const codigo = document.getElementById('codigo').value.trim().toUpperCase();
+  const correo = document.getElementById('correo').value.trim();
   ULTIMO_RUT_CONSULTADO = rutInput.value;
-  ULTIMO_CODIGO_CONSULTADO = codigo;
 
   try {
     const data = await apiFetch('/public/seguimiento.php', {
       method: 'POST',
-      body: { rut: rutInput.value, codigo_seguimiento: codigo },
+      body: { rut: rutInput.value, correo },
     });
+    ULTIMO_CODIGO_CONSULTADO = data.postulacion.codigo_seguimiento || '';
     renderResultado(data.postulacion);
   } catch (err) {
     alertaDiv.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">${err.message}</div>`;
