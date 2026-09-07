@@ -380,6 +380,39 @@ function notificarPrevencionYBodega(PDO $pdo, array $postulacion): void
 }
 
 /**
+ * v10 - Etapa 1 del piloto: Bodega no tiene candado digital (ver
+ * MODULO_BODEGA_ACTIVO), así que notificarPrevencionYBodega() de
+ * arriba solo le avisa CON ANTICIPACIÓN (día 1) para que prepare el
+ * kit. Faltaba el segundo aviso: el día 2, cuando el JAO firma el
+ * contrato y la persona ya está físicamente en la obra, Bodega
+ * necesita saber que debe entregar el EPP AHORA, no solo que viene
+ * en camino. Se llama desde firmar_contrato.php, solo cuando esa misma
+ * acción está cerrando el ciclo completo (Etapa 1).
+ */
+function notificarEntregaEppAhora(PDO $pdo, array $postulacion): void
+{
+    require_once __DIR__ . '/../mailer/Mailer.php';
+    $stmt = $pdo->query("SELECT nombre, correo FROM usuarios WHERE rol = 'Jefe_Bodega' AND activo = 1");
+    $destinatarios = $stmt->fetchAll();
+    if (!$destinatarios) {
+        return;
+    }
+
+    $nombreCompleto = $postulacion['nombre_completo'];
+    $rut = $postulacion['rut'];
+    $cargo = $postulacion['nombre_cargo'];
+    $tallaCalzado = $postulacion['talla_calzado'] ?? '—';
+    $tallaOverol = $postulacion['talla_overol'] ?? '—';
+    $html = (function () use ($nombreCompleto, $rut, $cargo, $tallaCalzado, $tallaOverol) {
+        return require __DIR__ . '/../mailer/templates/notificacion_bodega_entrega_ahora.php';
+    })();
+
+    foreach ($destinatarios as $destinatario) {
+        Mailer::enviar($destinatario['correo'], $destinatario['nombre'], 'Entrega EPP ahora - trabajador en obra - ICAFAL', $html);
+    }
+}
+
+/**
  * v5: nombres cortos y legibles de cada tipo de documento de la Etapa 2,
  * usados tanto en el correo de rechazo como en la pantalla de
  * subsanación pública. Centralizado aquí para no repetir el mapeo en

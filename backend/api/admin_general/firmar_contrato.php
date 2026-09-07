@@ -54,9 +54,11 @@ try {
     $stmtCheck = $pdo->prepare(
         'SELECT p.id, p.estado, p.identidad_verificada_at, p.contrato_firmado_at,
                 p.cargo_id, p.rut, p.codigo_seguimiento, p.correo, p.nombre_completo,
-                c.cupos_activos, c.nombre_cargo
+                c.cupos_activos, c.nombre_cargo,
+                d.talla_calzado, d.talla_overol
            FROM postulaciones p
            JOIN cargos c ON c.id = p.cargo_id
+           LEFT JOIN datos_contratacion d ON d.postulacion_id = p.id
           WHERE p.id = :id
           FOR UPDATE'
     );
@@ -132,6 +134,11 @@ try {
             notificarLiberacionTrabajador($pdo, $postulacion);
         } catch (\Throwable $e) {
             error_log('notificarLiberacionTrabajador error: ' . $e->getMessage());
+        }
+        try {
+            notificarEntregaEppAhora($pdo, $postulacion);
+        } catch (\Throwable $e) {
+            error_log('notificarEntregaEppAhora error: ' . $e->getMessage());
         }
     }
 } catch (RuntimeException $e) {
