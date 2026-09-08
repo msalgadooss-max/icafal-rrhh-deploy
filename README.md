@@ -1,4 +1,4 @@
-# Sistema de Reclutamiento y Onboarding — ICAFAL
+# Sistema de Reclutamiento y Onboarding · ICAFAL
 
 Sistema web para gestionar el flujo completo de reclutamiento de personal de
 obra: postulación pública por QR, aprobaciones internas por rol, firma de
@@ -61,7 +61,7 @@ frontend/assets/             JS/CSS compartido
 - 100% de las consultas SQL con **prepared statements** (PDO).
 - Control de roles server-side en cada endpoint (`requireRol([...])`).
 - El **Jefe de Terreno** y **Portería** no tienen ninguna consulta que
-  incluya la tabla `datos_contratacion` — no es un tema de UI, el propio
+  incluya la tabla `datos_contratacion`: no es un tema de UI, el propio
   backend nunca la referencia en esos endpoints.
 - El rol **Gerencia** ("usuario maestro") ve TODAS las postulaciones en
   TODAS las fases en un panel único (`frontend/dashboards/gerencia.html`),

@@ -103,7 +103,7 @@ async function cargarCargos() {
       return;
     }
     cargoSelect.innerHTML = '<option value="">Selecciona un cargo</option>' +
-      data.cargos.map(c => `<option value="${c.id}">${c.nombre_cargo} — ${c.tiene_cupo ? `${c.cupos_disponibles} cupo(s) disponible(s)` : 'sin cupo, quedarás en el Banco de Postulantes'}</option>`).join('');
+      data.cargos.map(c => `<option value="${c.id}">${c.nombre_cargo}: ${c.tiene_cupo ? `${c.cupos_disponibles} cupo(s) disponible(s)` : 'sin cupo, quedarás en el Banco de Postulantes'}</option>`).join('');
   } catch (e) {
     cargoSelect.innerHTML = '<option value="">Error al cargar cargos</option>';
   }

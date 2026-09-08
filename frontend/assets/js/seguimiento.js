@@ -82,7 +82,7 @@ function renderResultado(p) {
     resultadoDiv.innerHTML = `
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
         <p class="text-blue-700 font-bold text-lg">Estás en nuestro Banco de Postulantes</p>
-        <p class="text-sm text-gray-600 mt-1">${p.nombre_completo} — interés en ${p.cargo}</p>
+        <p class="text-sm text-gray-600 mt-1">${p.nombre_completo} · interés en ${p.cargo}</p>
         <p class="text-sm text-gray-600 mt-3">Ahora mismo no hay cupos para ese cargo. Te contactaremos apenas se abra uno.</p>
         <p class="text-xs text-gray-400 mt-3">Tus datos se conservan hasta el ${p.retencion_hasta}.</p>
       </div>`;
@@ -93,7 +93,7 @@ function renderResultado(p) {
     resultadoDiv.innerHTML = `
       <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p class="text-red-700 font-bold text-lg">Postulación no continúa en el proceso</p>
-        <p class="text-sm text-red-600 mt-1">${p.nombre_completo} — ${p.cargo}</p>
+        <p class="text-sm text-red-600 mt-1">${p.nombre_completo} · ${p.cargo}</p>
       </div>`;
     return;
   }
@@ -117,7 +117,7 @@ function renderResultado(p) {
       <div class="bg-green-500 rounded-xl p-6 text-center text-white shadow-lg">
         <p class="text-2xl font-extrabold">${titulo}</p>
         <p class="text-lg font-semibold mt-1">${subtitulo}</p>
-        <p class="text-sm mt-2 opacity-90">${p.nombre_completo} — ${p.cargo}</p>
+        <p class="text-sm mt-2 opacity-90">${p.nombre_completo} · ${p.cargo}</p>
         <div id="qr" class="bg-white inline-block p-3 rounded-lg mt-4"></div>
         <p class="text-xs mt-2 opacity-80">${pie}</p>
       </div>
@@ -138,13 +138,13 @@ function renderResultado(p) {
     if (p.url_etapa2) {
       bloqueEtapa2 = `
         <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4">
-          <p class="text-sm text-blue-800 font-medium mb-2">Tu contratación fue autorizada. Ya puedes completar tus datos.</p>
+          <p class="text-sm text-blue-800 font-medium mb-2">Tu postulación fue autorizada. Ya puedes completar tus datos.</p>
           <a href="${p.url_etapa2}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Continuar completando mis datos</a>
         </div>`;
     } else {
       bloqueEtapa2 = `
         <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4" id="zona-reenviar-etapa2">
-          <p class="text-sm text-blue-800 font-medium mb-2">Tu contratación fue autorizada. Te enviamos un correo para completar tus datos — si no te llegó, genera tu enlace aquí:</p>
+          <p class="text-sm text-blue-800 font-medium mb-2">Tu postulación fue autorizada. Te enviamos un correo para completar tus datos: si no te llegó, genera tu enlace aquí:</p>
           <button id="btn-reenviar-etapa2" onclick="reenviarEtapa2()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Generar mi enlace para continuar</button>
         </div>`;
     }

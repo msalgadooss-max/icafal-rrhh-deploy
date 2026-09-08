@@ -106,7 +106,7 @@ if ($tieneArchivoCv) {
     $partes = [];
     if ($experienciaCargo !== '') $partes[] = $experienciaCargo;
     if ($experienciaFecha !== '') $partes[] = $experienciaFecha;
-    $experienciaSinCv = (implode(' — ', $partes) !== '' ? implode(' — ', $partes) . "\n" : '') . $experienciaDescripcion;
+    $experienciaSinCv = (implode(' · ', $partes) !== '' ? implode(' · ', $partes) . "\n" : '') . $experienciaDescripcion;
 } else {
     responderError('Debes adjuntar tu CV, o marcar "No tengo CV" y contarnos tu experiencia.', 422);
 }

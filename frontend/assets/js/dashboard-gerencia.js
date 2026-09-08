@@ -55,7 +55,7 @@ async function cargarBitacora() {
     vacio.classList.add('hidden');
     lista.innerHTML = data.eventos.map(e => `
       <li class="text-sm border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-        <span class="text-gray-900"><strong>${e.nombre_completo}</strong> (${e.nombre_cargo}) — ${e.descripcion}</span>
+        <span class="text-gray-900"><strong>${e.nombre_completo}</strong> (${e.nombre_cargo}): ${e.descripcion}</span>
         <span class="block text-xs text-gray-400 mt-0.5">${e.autor} · ${new Date(e.fecha_hora).toLocaleString('es-CL')}</span>
       </li>`).join('');
   } catch (err) {
@@ -92,7 +92,7 @@ function renderEstadoSistema(cierreActivo, modulos) {
   if (!el) return;
   const chips = [];
   chips.push(cierreActivo
-    ? '<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Cierre de remuneraciones ACTIVO — no se pueden finalizar contrataciones</span>'
+    ? '<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Cierre de remuneraciones ACTIVO: no se pueden finalizar contrataciones</span>'
     : '<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Remuneraciones abiertas</span>');
   if (!modulos.prevencion) {
     chips.push('<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Prevención: pausada en esta demo</span>');

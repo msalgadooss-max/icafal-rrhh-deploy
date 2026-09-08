@@ -15,7 +15,7 @@ function renderLimiteAprobaciones(usadas, limite) {
   cont.innerHTML = `
     <div class="rounded-lg px-4 py-2.5 text-sm font-medium border ${alTope ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-200 text-gray-600'}">
       Aprobaciones de hoy: <strong>${usadas} / ${limite}</strong>
-      ${alTope ? ' — alcanzaste el límite diario, podrás aprobar de nuevo mañana.' : ''}
+      ${alTope ? ' (alcanzaste el límite diario, podrás aprobar de nuevo mañana).' : ''}
     </div>`;
 }
 
@@ -209,7 +209,7 @@ async function cargarLista() {
         <td class="px-4 py-3">${p.tiene_cv
           ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline">Ver CV</a>`
           : (p.experiencia_sin_cv
-              ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV — ver experiencia ⓘ</span>`
+              ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV (ver experiencia) ⓘ</span>`
               : '<span class="text-gray-400 text-xs">Sin CV</span>')}</td>
         <td class="px-4 py-3 text-right space-x-2">
           <button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="aprobar(${p.id})" title="Pasa a selección del Capataz en terreno">Aprobar</button>
@@ -386,8 +386,8 @@ async function cargarHistorico(vista) {
     vacio.classList.add('hidden');
 
     tbody.innerHTML = data.postulaciones.map(p => {
-      const fecha = p.fecha_aprobacion ? new Date(p.fecha_aprobacion).toLocaleString('es-CL') : '—';
-      const aprobador = p.aprobado_por_nombre || '—';
+      const fecha = p.fecha_aprobacion ? new Date(p.fecha_aprobacion).toLocaleString('es-CL') : '-';
+      const aprobador = p.aprobado_por_nombre || '-';
       const filasComunes = `
         <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
         <td class="px-4 py-3">${p.nombre_completo}</td>

@@ -367,8 +367,8 @@ function notificarPrevencionYBodega(PDO $pdo, array $postulacion): void
     $nombreCompleto = $postulacion['nombre_completo'];
     $rut = $postulacion['rut'];
     $cargo = $postulacion['nombre_cargo'];
-    $tallaCalzado = $postulacion['talla_calzado'] ?? '—';
-    $tallaOverol = $postulacion['talla_overol'] ?? '—';
+    $tallaCalzado = $postulacion['talla_calzado'] ?? '-';
+    $tallaOverol = $postulacion['talla_overol'] ?? '-';
 
     foreach ($destinatarios as $destinatario) {
         $esBodega = $destinatario['rol'] === 'Jefe_Bodega';
@@ -401,8 +401,8 @@ function notificarEntregaEppAhora(PDO $pdo, array $postulacion): void
     $nombreCompleto = $postulacion['nombre_completo'];
     $rut = $postulacion['rut'];
     $cargo = $postulacion['nombre_cargo'];
-    $tallaCalzado = $postulacion['talla_calzado'] ?? '—';
-    $tallaOverol = $postulacion['talla_overol'] ?? '—';
+    $tallaCalzado = $postulacion['talla_calzado'] ?? '-';
+    $tallaOverol = $postulacion['talla_overol'] ?? '-';
     $html = (function () use ($nombreCompleto, $rut, $cargo, $tallaCalzado, $tallaOverol) {
         return require __DIR__ . '/../mailer/templates/notificacion_bodega_entrega_ahora.php';
     })();

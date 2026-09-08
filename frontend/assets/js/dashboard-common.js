@@ -34,7 +34,7 @@ async function protegerDashboard(rolEsperado) {
 function mostrarBannerDesarrollador(devNombre) {
   const banner = document.createElement('div');
   banner.className = 'bg-amber-500 text-white text-xs font-semibold text-center py-1.5 px-4 sticky top-0 z-40';
-  banner.innerHTML = `🛠 Modo desarrollador — ${devNombre || 'Desarrollador'} está viendo este dashboard prestado.
+  banner.innerHTML = `🛠 Modo desarrollador: ${devNombre || 'Desarrollador'} está viendo este dashboard prestado.
     <button onclick="volverAPanelDev()" class="underline ml-2">Volver al panel de desarrollador</button>`;
   document.body.prepend(banner);
 }

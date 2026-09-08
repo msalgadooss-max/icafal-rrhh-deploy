@@ -102,7 +102,7 @@ document.getElementById('btn-generar-qr-rol').addEventListener('click', async ()
   try {
     const data = await apiFetch('/dev/generar_qr_acceso.php', { method: 'POST', body: { usuario_id: usuarioId } });
     document.getElementById('resultado-qr-rol').classList.remove('hidden');
-    document.getElementById('titulo-qr-rol').textContent = `${ETIQUETAS_ROL[data.rol] || data.rol} — ${data.nombre}`;
+    document.getElementById('titulo-qr-rol').textContent = `${ETIQUETAS_ROL[data.rol] || data.rol} · ${data.nombre}`;
     document.getElementById('url-qr-rol').textContent = data.url;
     document.getElementById('qr-rol').innerHTML = '';
     // eslint-disable-next-line no-undef

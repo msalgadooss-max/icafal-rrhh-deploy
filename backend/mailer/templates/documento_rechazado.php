@@ -13,7 +13,7 @@ return <<<HTML
     <p style="margin:0 0 6px;font-weight:bold;color:#92400e">{$etiquetaDoc}</p>
     <p style="margin:0;color:#78350f">{$motivo}</p>
   </div>
-  <p>El resto de tu proceso sigue avanzando con normalidad — esto no te hace perder lo que ya completaste.</p>
+  <p>El resto de tu proceso sigue avanzando con normalidad: esto no te hace perder lo que ya completaste.</p>
   <p style="text-align:center;margin:24px 0">
     <a href="{$urlSubsanacion}" style="background:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:bold;display:inline-block">
       Corregir documento

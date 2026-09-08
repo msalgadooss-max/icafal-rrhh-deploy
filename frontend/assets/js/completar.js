@@ -465,7 +465,7 @@ document.getElementById('btn-ir-a-revisar').addEventListener('click', () => {
 
 function textoSeleccionado(id) {
   const el = document.getElementById(id);
-  return el.value || '—';
+  return el.value || '(sin dato)';
 }
 
 function renderResumen() {

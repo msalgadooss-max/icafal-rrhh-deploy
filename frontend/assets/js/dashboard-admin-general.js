@@ -104,7 +104,7 @@ async function cargarRechazadosTab() {
         <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
         <td class="px-4 py-3">${p.nombre_completo}</td>
         <td class="px-4 py-3">${p.nombre_cargo}</td>
-        <td class="px-4 py-3 text-gray-600">${p.motivo || '—'}</td>
+        <td class="px-4 py-3 text-gray-600">${p.motivo || '-'}</td>
         <td class="px-4 py-3 text-gray-500">${new Date(p.actualizado_at).toLocaleDateString('es-CL')}</td>
         <td class="px-4 py-3 text-right"><button class="text-xs font-semibold text-blue-600 underline" onclick="abrirDetalleTiempos(${p.id})">⏱ Ver tiempos</button></td>
       </tr>`).join('');
@@ -227,7 +227,7 @@ function tarjeta(p) {
       </div>
 
       ${p.afp_alerta_jao ? `<p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3">⚠ Esta persona declaró un régimen previsional antiguo ("${p.afp}"), no una AFP vigente. Verifica manualmente antes de finalizar.</p>` : ''}
-      ${p.tiene_documento_observado ? `<p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3">⚠ Hay un documento observado esperando que el postulante lo corrija — no se puede firmar el contrato hasta entonces. El resto del proceso ya avanzado no se pierde.</p>` : ''}
+      ${p.tiene_documento_observado ? `<p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3">⚠ Hay un documento observado esperando que el postulante lo corrija: no se puede firmar el contrato hasta entonces. El resto del proceso ya avanzado no se pierde.</p>` : ''}
       ${p.estado === 'Induccion_ok' && !p.puede_firmar && !p.tiene_documento_observado ? `<p class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mt-3">Ya hizo la inducción de seguridad con Prevención. Falta completar la nómina para poder firmar el contrato.</p>` : ''}
       ${p.estado === 'Aprobado_admin' && !p.puede_firmar && !p.tiene_documento_observado
         ? (MODULO_PREVENCION_ACTIVO
@@ -381,7 +381,7 @@ async function firmarContrato(id) {
 function renderBadgeCierre() {
   const badge = document.getElementById('badge-cierre');
   if (CIERRE_ACTIVO) {
-    badge.textContent = 'Activo — contrataciones bloqueadas';
+    badge.textContent = 'Activo: contrataciones bloqueadas';
     badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800';
   } else {
     badge.textContent = 'Abierto';
