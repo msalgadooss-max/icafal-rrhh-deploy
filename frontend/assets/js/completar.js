@@ -38,13 +38,17 @@ const ETIQUETAS_CAMPO = {
 
 // --- Documentos: definidos como datos, no HTML repetido, para poder ------
 // reutilizar la misma lógica de captura con cámara en los 5 campos. -------
+// v10: "formato" define el marco de encuadre que se muestra al tomar la
+// foto -- 'tarjeta' (apaisado, proporción de una cédula) para la Cédula
+// de Identidad, 'documento' (vertical, proporción carta) para el resto,
+// que son certificados de página completa, no tarjetas.
 const DOCUMENTOS = [
-  { id: 'cedula', etiqueta: 'Cédula de Identidad (frente)', obligatorio: true, ayuda: 'Que se lean claramente el RUT y tu nombre.', grupo: 'cedula' },
-  { id: 'cedula_reverso', etiqueta: 'Cédula de Identidad (reverso)', obligatorio: true, ayuda: 'El reverso también es obligatorio: trae datos que igual necesitamos.', grupo: 'cedula' },
-  { id: 'certificado_afp', etiqueta: 'Certificado de AFP', obligatorio: true, ayuda: 'Que se lea el nombre de la AFP completo.' },
-  { id: 'certificado_salud', etiqueta: 'Certificado de Fonasa/Isapre', obligatorio: true, ayuda: 'Que se lea el nombre completo de tu Isapre o "Fonasa".' },
-  { id: 'certificado_residencia', etiqueta: 'Certificado de Residencia', obligatorio: true, ayuda: 'Que se lea completa tu dirección.' },
-  { id: 'ultimo_finiquito', etiqueta: 'Último Finiquito', obligatorio: false, ayuda: 'Si nunca has trabajado antes, puedes omitirlo.' },
+  { id: 'cedula', etiqueta: 'Cédula de Identidad (frente)', obligatorio: true, ayuda: 'Que se lean claramente el RUT y tu nombre.', grupo: 'cedula', formato: 'tarjeta' },
+  { id: 'cedula_reverso', etiqueta: 'Cédula de Identidad (reverso)', obligatorio: true, ayuda: 'El reverso también es obligatorio: trae datos que igual necesitamos.', grupo: 'cedula', formato: 'tarjeta' },
+  { id: 'certificado_afp', etiqueta: 'Certificado de AFP', obligatorio: true, ayuda: 'Que se lea el nombre de la AFP completo.', formato: 'documento' },
+  { id: 'certificado_salud', etiqueta: 'Certificado de Fonasa/Isapre', obligatorio: true, ayuda: 'Que se lea el nombre completo de tu Isapre o "Fonasa".', formato: 'documento' },
+  { id: 'certificado_residencia', etiqueta: 'Certificado de Residencia', obligatorio: true, ayuda: 'Que se lea completa tu dirección.', formato: 'documento' },
+  { id: 'ultimo_finiquito', etiqueta: 'Último Finiquito', obligatorio: false, ayuda: 'Si nunca has trabajado antes, puedes omitirlo.', formato: 'documento' },
 ];
 
 const CAMPOS_TEXTO_PASO = {
@@ -130,7 +134,10 @@ function renderCamposDocumentos() {
   // cámara en vivo si el navegador lo permite (HTTPS o localhost), o
   // como imagen de referencia + acceso a la cámara nativa si no.
   document.querySelectorAll('.btn-tomar-foto').forEach(btn => {
-    btn.addEventListener('click', () => abrirGuiaCaptura(document.getElementById(btn.dataset.camara)));
+    btn.addEventListener('click', () => {
+      const doc = DOCUMENTOS.find(d => d.id === btn.dataset.camara);
+      abrirGuiaCaptura(document.getElementById(btn.dataset.camara), doc ? doc.formato : 'documento');
+    });
   });
 
   DOCUMENTOS.forEach(d => {
@@ -167,7 +174,70 @@ function soportaCamaraEnVivo() {
   return !!(window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 }
 
-async function abrirGuiaCaptura(inputObjetivo) {
+// v10: proporción ancho/alto de cada tipo de marco -- 'tarjeta' es la
+// proporción real de una cédula (ISO/IEC 7810 ID-1, 85.6x53.98mm);
+// 'documento' es una hoja carta vertical (215.9x279.4mm), para los
+// certificados de página completa.
+const RATIOS_FORMATO = { tarjeta: 85.6 / 53.98, documento: 215.9 / 279.4 };
+
+// v10: antes el marco vivo (la caja blanca que ves en pantalla) medía su
+// tamaño solo por CSS (w-full + aspect-ratio), pero la foto capturada
+// tomaba el cuadro COMPLETO de la cámara, no lo que se veía dentro del
+// marco -- de ahí que la foto saliera "más ancha" que el recuadro. Ahora
+// el marco se dimensiona en JS (en píxeles concretos) y esos mismos
+// píxeles se reutilizan para recortar la captura exactamente ahí.
+function actualizarMarcoEncuadre(formato) {
+  const ratio = RATIOS_FORMATO[formato] || RATIOS_FORMATO.documento;
+  const marcoVivo = document.getElementById('marco-vivo');
+  const maxW = marcoVivo.clientWidth - 64; // resta el px-8 (32px por lado)
+  const maxH = marcoVivo.clientHeight - 120; // deja espacio para el título arriba
+  let w = maxW;
+  let h = w / ratio;
+  if (h > maxH) {
+    h = maxH;
+    w = h * ratio;
+  }
+  const rectVivo = document.getElementById('rect-marco-vivo');
+  rectVivo.style.width = `${Math.round(w)}px`;
+  rectVivo.style.height = `${Math.round(h)}px`;
+
+  const rectEstatica = document.getElementById('rect-guia-estatica');
+  rectEstatica.style.width = formato === 'tarjeta' ? '230px' : '170px';
+  rectEstatica.style.aspectRatio = String(ratio);
+  document.getElementById('icono-guia-estatica').textContent = formato === 'tarjeta' ? '🪪' : '📄';
+}
+
+// Calcula, en píxeles NATIVOS del video (no de pantalla), qué región
+// corresponde exactamente al recuadro blanco que se ve en pantalla --
+// necesario porque el video se muestra con "object-fit: cover" (recorta
+// para llenar la pantalla), así que un píxel de pantalla no es 1:1 con
+// un píxel del video real.
+function calcularRecorteVideo() {
+  const video = document.getElementById('video-camara');
+  const marco = document.getElementById('rect-marco-vivo');
+  const videoRect = video.getBoundingClientRect();
+  const marcoRect = marco.getBoundingClientRect();
+
+  const escala = Math.max(videoRect.width / video.videoWidth, videoRect.height / video.videoHeight);
+  const anchoVisibleNativo = videoRect.width / escala;
+  const altoVisibleNativo = videoRect.height / escala;
+  const offsetXNativo = (video.videoWidth - anchoVisibleNativo) / 2;
+  const offsetYNativo = (video.videoHeight - altoVisibleNativo) / 2;
+
+  const relX = (marcoRect.left - videoRect.left) / videoRect.width;
+  const relY = (marcoRect.top - videoRect.top) / videoRect.height;
+  const relW = marcoRect.width / videoRect.width;
+  const relH = marcoRect.height / videoRect.height;
+
+  return {
+    x: offsetXNativo + relX * anchoVisibleNativo,
+    y: offsetYNativo + relY * altoVisibleNativo,
+    w: relW * anchoVisibleNativo,
+    h: relH * altoVisibleNativo,
+  };
+}
+
+async function abrirGuiaCaptura(inputObjetivo, formato = 'documento') {
   INPUT_OBJETIVO_CAPTURA = inputObjetivo;
   const modal = document.getElementById('modal-camara');
   const video = document.getElementById('video-camara');
@@ -189,11 +259,16 @@ async function abrirGuiaCaptura(inputObjetivo) {
       btnCapturar.classList.remove('hidden');
       btnAbrirNativa.classList.add('hidden');
       titulo.textContent = 'Encuadra el documento dentro del marco, con buena luz';
+      // v10: recién ahora marco-vivo es visible (clientWidth/Height ya
+      // no son 0), así que recién ahora se puede calcular su tamaño.
+      requestAnimationFrame(() => actualizarMarcoEncuadre(formato));
       return;
     } catch (err) {
       // sigue abajo con la guía estática como respaldo
     }
   }
+
+  actualizarMarcoEncuadre(formato);
 
   // Sin cámara en vivo (HTTP sin ser localhost, permiso denegado, o
   // navegador sin soporte): se muestra la referencia y se delega la
@@ -246,14 +321,19 @@ document.getElementById('btn-abrir-nativa').addEventListener('click', () => {
 document.getElementById('btn-capturar').addEventListener('click', () => {
   const video = document.getElementById('video-camara');
   const canvas = document.getElementById('canvas-captura');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  const recorte = calcularRecorteVideo();
+  canvas.width = Math.round(recorte.w);
+  canvas.height = Math.round(recorte.h);
+  canvas.getContext('2d').drawImage(
+    video,
+    recorte.x, recorte.y, recorte.w, recorte.h,
+    0, 0, canvas.width, canvas.height
+  );
   canvas.toBlob((blob) => {
     BLOB_CAPTURADO = blob;
     document.getElementById('img-confirmar').src = URL.createObjectURL(blob);
     mostrarVistaConfirmar(true);
-  }, 'image/jpeg', 0.9);
+  }, 'image/jpeg', 0.92);
 });
 
 document.getElementById('btn-repetir-foto').addEventListener('click', () => {

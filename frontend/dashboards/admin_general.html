@@ -72,14 +72,29 @@
 
     <!-- Tab: Contratados -->
     <section id="panel-contratados" class="tab-panel hidden">
+      <!-- v10: descargar la carpeta de documentos (para subir a Buk) de
+           uno o varios trabajadores contratados, con el mismo patrón de
+           checkboxes que "Exportar Carga Masiva". -->
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div class="flex items-center gap-3 text-xs">
+          <button onclick="seleccionarTodosContratados(true)" class="text-blue-600 font-medium">Marcar todos</button>
+          <span class="text-gray-300">·</span>
+          <button onclick="seleccionarTodosContratados(false)" class="text-blue-600 font-medium">Desmarcar todos</button>
+        </div>
+        <button onclick="descargarCarpetasSeleccionadas()" class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-lg">
+          📁 Descargar carpetas (ZIP)
+        </button>
+      </div>
       <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-gray-50 text-gray-500 text-left">
             <tr>
+              <th class="px-4 py-3 w-8"></th>
               <th class="px-4 py-3">RUT</th>
               <th class="px-4 py-3">Nombre</th>
               <th class="px-4 py-3">Cargo</th>
               <th class="px-4 py-3">Exportado</th>
+              <th class="px-4 py-3 text-right">Carpeta</th>
               <th class="px-4 py-3 text-right">Tiempos</th>
             </tr>
           </thead>

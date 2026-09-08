@@ -195,12 +195,12 @@
     <div class="relative flex-1 overflow-hidden flex items-center justify-center">
       <video id="video-camara" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
       <div id="guia-estatica" class="text-center px-10">
-        <div class="mx-auto border-4 border-white/90 rounded-xl mb-4 flex items-center justify-center" style="width:230px;aspect-ratio:1.586;">
-          <span class="text-white/70 text-4xl">🪪</span>
+        <div id="rect-guia-estatica" class="mx-auto border-4 border-white/90 rounded-xl mb-4 flex items-center justify-center" style="width:230px;aspect-ratio:1.586;">
+          <span id="icono-guia-estatica" class="text-white/70 text-4xl">🪪</span>
         </div>
       </div>
       <div id="marco-vivo" class="absolute inset-0 flex items-center justify-center pointer-events-none px-8 hidden">
-        <div class="w-full border-4 border-white/90 rounded-xl" style="aspect-ratio:1.586;box-shadow:0 0 0 2000px rgba(0,0,0,0.55)"></div>
+        <div id="rect-marco-vivo" class="w-full border-4 border-white/90 rounded-xl" style="aspect-ratio:1.586;box-shadow:0 0 0 2000px rgba(0,0,0,0.55)"></div>
       </div>
       <!-- v10: pantalla de revisión tras capturar -- nadie envía la foto
            directamente, primero confirma que se ve completa y nítida. -->

@@ -75,10 +75,12 @@ async function cargarContratadosTab() {
     vacio.classList.add('hidden');
     tbody.innerHTML = data.postulaciones.map(p => `
       <tr class="border-t">
+        <td class="px-4 py-3"><input type="checkbox" class="chk-carpeta" value="${p.id}"></td>
         <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
         <td class="px-4 py-3">${p.nombre_completo}</td>
         <td class="px-4 py-3">${p.nombre_cargo}</td>
         <td class="px-4 py-3">${p.exportado_at ? `<span class="text-xs text-gray-500">${new Date(p.exportado_at).toLocaleDateString('es-CL')}</span>` : '<span class="text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">pendiente</span>'}</td>
+        <td class="px-4 py-3 text-right"><button class="text-xs font-semibold text-gray-700 underline" onclick="descargarCarpeta(${p.id})">📁 Descargar</button></td>
         <td class="px-4 py-3 text-right"><button class="text-xs font-semibold text-blue-600 underline" onclick="abrirDetalleTiempos(${p.id})">⏱ Ver tiempos</button></td>
       </tr>`).join('');
   } catch (err) {
@@ -526,6 +528,41 @@ function renderTiemposHtml(data) {
     </div>
 
     <div>${filas}</div>`;
+}
+
+// --- v10: descargar carpeta(s) de documentos para subir a Buk ------------
+function seleccionarTodosContratados(valor) {
+  document.querySelectorAll('.chk-carpeta').forEach(chk => { chk.checked = valor; });
+}
+
+async function descargarZipCarpetas(ids, nombrePorDefecto) {
+  try {
+    const res = await apiFetch(`/admin_general/descargar_carpetas.php?ids=${ids.join(',')}`);
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombrePorDefecto;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    mostrarAlerta('alerta', err.message || 'No fue posible descargar la carpeta.');
+  }
+}
+
+function descargarCarpeta(id) {
+  descargarZipCarpetas([id], `carpeta_trabajador_${id}.zip`);
+}
+
+function descargarCarpetasSeleccionadas() {
+  const ids = Array.from(document.querySelectorAll('.chk-carpeta:checked')).map(chk => chk.value);
+  if (!ids.length) {
+    mostrarAlerta('alerta', 'Selecciona al menos una persona para descargar su carpeta.');
+    return;
+  }
+  descargarZipCarpetas(ids, `carpetas_trabajadores_${new Date().toISOString().slice(0, 10)}.zip`);
 }
 
 async function confirmarExport() {
