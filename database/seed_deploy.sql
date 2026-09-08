@@ -15,11 +15,11 @@ DELETE FROM usuarios WHERE correo = 'admin@icafal.cl';
 INSERT INTO usuarios (nombre, correo, password, rol) VALUES
     ('Juan Perez', 'jterreno@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Terreno'),
     ('Roberto Capataz', 'capataz@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Capataz'),
-    ('Maria Soto', 'administrador@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Admin_Contrato'),
-    ('Luis Vera', 'msalgadoo@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Administrativo'),
+    ('Jaime Maturana', 'administrador@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Admin_Contrato'),
+    ('Luis Lopez', 'msalgadoo@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Administrativo'),
     ('Pedro Rios', 'pedro@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Prevencionista'),
     ('Ana Diaz', 'ana@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Bodega'),
-    ('Sofia Gerente', 'gerencia@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Gerencia'),
+    ('Jose Molina', 'gerencia@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Gerencia'),
     ('Carlos Rivas', 'porteria@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Porteria'),
     ('Desarrollador ICAFAL', 'dev@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Desarrollador');
 
