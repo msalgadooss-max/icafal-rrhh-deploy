@@ -134,15 +134,23 @@ function renderCamposDocumentos() {
   });
 
   DOCUMENTOS.forEach(d => {
-    document.getElementById(d.id).addEventListener('change', (e) => {
+    document.getElementById(d.id).addEventListener('change', async (e) => {
       const preview = document.getElementById(`preview-${d.id}`);
-      const archivo = e.target.files[0];
-      if (archivo) {
-        preview.textContent = `✓ ${archivo.name}`;
-        preview.classList.remove('hidden');
-      } else {
+      let archivo = e.target.files[0];
+      if (!archivo) {
         preview.classList.add('hidden');
+        return;
       }
+      if (archivo.type === 'image/jpeg' || archivo.type === 'image/png') {
+        preview.textContent = '⏳ Convirtiendo a PDF...';
+        preview.classList.remove('hidden');
+        archivo = await convertirImagenAPdf(archivo);
+        const dt = new DataTransfer();
+        dt.items.add(archivo);
+        e.target.files = dt.files;
+      }
+      preview.textContent = `✓ ${archivo.name}`;
+      preview.classList.remove('hidden');
     });
   });
 }
@@ -199,6 +207,22 @@ async function abrirGuiaCaptura(inputObjetivo) {
   titulo.textContent = 'Encuadra tu documento así: las 4 esquinas visibles y con buena luz';
 }
 
+// v10: la foto capturada NO se usa de inmediato -- primero se muestra
+// una pantalla de revisión ("¿se ve completa, nítida y sin recortes?")
+// con opción de repetir, para no descubrir una foto mala recién al
+// revisar el trámite completo en el Paso 4.
+let BLOB_CAPTURADO = null;
+
+function mostrarVistaConfirmar(mostrar) {
+  document.getElementById('vista-confirmar').classList.toggle('hidden', !mostrar);
+  document.getElementById('vista-confirmar').classList.toggle('flex', mostrar);
+  document.getElementById('controles-confirmar').classList.toggle('hidden', !mostrar);
+  document.getElementById('controles-captura').classList.toggle('hidden', mostrar);
+  document.getElementById('video-camara').classList.toggle('hidden', mostrar);
+  document.getElementById('marco-vivo').classList.toggle('hidden', mostrar);
+  document.getElementById('titulo-guia').classList.toggle('hidden', mostrar);
+}
+
 function cerrarCamara() {
   const modal = document.getElementById('modal-camara');
   const video = document.getElementById('video-camara');
@@ -206,6 +230,8 @@ function cerrarCamara() {
     video.srcObject.getTracks().forEach(t => t.stop());
     video.srcObject = null;
   }
+  mostrarVistaConfirmar(false);
+  BLOB_CAPTURADO = null;
   modal.classList.add('hidden');
 }
 
@@ -224,14 +250,67 @@ document.getElementById('btn-capturar').addEventListener('click', () => {
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
   canvas.toBlob((blob) => {
-    const archivo = new File([blob], `captura_${Date.now()}.jpg`, { type: 'image/jpeg' });
-    const dt = new DataTransfer();
-    dt.items.add(archivo);
-    INPUT_OBJETIVO_CAPTURA.files = dt.files;
-    INPUT_OBJETIVO_CAPTURA.dispatchEvent(new Event('change'));
-    cerrarCamara();
+    BLOB_CAPTURADO = blob;
+    document.getElementById('img-confirmar').src = URL.createObjectURL(blob);
+    mostrarVistaConfirmar(true);
   }, 'image/jpeg', 0.9);
 });
+
+document.getElementById('btn-repetir-foto').addEventListener('click', () => {
+  mostrarVistaConfirmar(false);
+  BLOB_CAPTURADO = null;
+});
+
+document.getElementById('btn-usar-foto').addEventListener('click', () => {
+  if (!BLOB_CAPTURADO) return;
+  const archivo = new File([BLOB_CAPTURADO], `captura_${Date.now()}.jpg`, { type: 'image/jpeg' });
+  const dt = new DataTransfer();
+  dt.items.add(archivo);
+  INPUT_OBJETIVO_CAPTURA.files = dt.files;
+  INPUT_OBJETIVO_CAPTURA.dispatchEvent(new Event('change'));
+  cerrarCamara();
+});
+
+// v10: toda foto (venga de la cámara guiada, de la cámara nativa del
+// celular, o de "elegir archivo") se convierte a PDF de una sola página
+// ANTES de guardarse -- así lo que llega a Bodega/JAO y lo que después
+// se sube a Buk es siempre un PDF, nunca una foto suelta. Si algo falla
+// en la conversión, se sigue con la imagen original (el backend igual
+// acepta JPG/PNG) para no dejar al postulante bloqueado.
+function convertirImagenAPdf(archivo) {
+  return new Promise((resolve) => {
+    if (archivo.type !== 'image/jpeg' && archivo.type !== 'image/png') {
+      resolve(archivo); // ya es PDF u otro tipo permitido: no se toca
+      return;
+    }
+    const lector = new FileReader();
+    lector.onerror = () => resolve(archivo);
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => resolve(archivo);
+      img.onload = () => {
+        try {
+          const { jsPDF } = window.jspdf;
+          const vertical = img.height >= img.width;
+          const pdf = new jsPDF({
+            orientation: vertical ? 'portrait' : 'landscape',
+            unit: 'px',
+            format: [img.width, img.height],
+          });
+          const tipo = archivo.type === 'image/png' ? 'PNG' : 'JPEG';
+          pdf.addImage(lector.result, tipo, 0, 0, img.width, img.height);
+          const blob = pdf.output('blob');
+          const nombrePdf = archivo.name.replace(/\.[^.]+$/, '') + '.pdf';
+          resolve(new File([blob], nombrePdf, { type: 'application/pdf' }));
+        } catch (e) {
+          resolve(archivo); // conversión falló: seguimos con la imagen
+        }
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
 
 function mostrarAlertaSuave(mensaje) {
   alertaDiv.innerHTML = `<div class="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-lg px-4 py-3 mb-4">${mensaje}</div>`;

@@ -202,17 +202,28 @@
       <div id="marco-vivo" class="absolute inset-0 flex items-center justify-center pointer-events-none px-8 hidden">
         <div class="w-full border-4 border-white/90 rounded-xl" style="aspect-ratio:1.586;box-shadow:0 0 0 2000px rgba(0,0,0,0.55)"></div>
       </div>
+      <!-- v10: pantalla de revisión tras capturar -- nadie envía la foto
+           directamente, primero confirma que se ve completa y nítida. -->
+      <div id="vista-confirmar" class="absolute inset-0 hidden flex-col items-center justify-center bg-black px-6">
+        <img id="img-confirmar" class="max-w-full max-h-[70vh] rounded-lg border border-white/20" alt="Foto capturada">
+        <p class="text-white text-sm font-medium text-center mt-4 px-4">¿Se ve completa, nítida y sin recortes?</p>
+      </div>
       <p id="titulo-guia" class="absolute top-5 left-0 right-0 text-center text-white text-sm font-medium px-8"></p>
     </div>
-    <div class="p-5 flex items-center justify-center gap-6 bg-black">
+    <div id="controles-captura" class="p-5 flex items-center justify-center gap-6 bg-black">
       <button id="btn-cancelar-captura" type="button" class="text-white/80 text-sm font-medium">Cancelar</button>
       <button id="btn-capturar" type="button" aria-label="Capturar foto" class="hidden w-16 h-16 rounded-full bg-white border-4 border-gray-400"></button>
       <button id="btn-abrir-nativa" type="button" class="hidden bg-white text-black text-sm font-semibold px-6 py-3 rounded-full">Abrir cámara</button>
       <span class="w-12"></span>
     </div>
+    <div id="controles-confirmar" class="hidden p-5 flex items-center justify-center gap-4 bg-black">
+      <button id="btn-repetir-foto" type="button" class="flex-1 max-w-[160px] bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-6 py-3 rounded-full">↺ Repetir</button>
+      <button id="btn-usar-foto" type="button" class="flex-1 max-w-[160px] bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-full">✓ Usar esta foto</button>
+    </div>
   </div>
   <canvas id="canvas-captura" class="hidden"></canvas>
 
+  <script src="../assets/js/vendor/jspdf.umd.min.js"></script>
   <script src="../assets/js/config.js"></script>
   <script src="../assets/js/api.js"></script>
   <script src="../assets/js/completar.js"></script>
