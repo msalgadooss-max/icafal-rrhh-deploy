@@ -1,6 +1,6 @@
 # Nunca subir secretos ni datos reales al repositorio (es publico).
 backend/config/config.php
-vendor/
+/backend/vendor/
 composer.lock.bak
 backend/uploads/*
 !backend/uploads/.htaccess
