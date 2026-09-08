@@ -76,7 +76,11 @@ foreach ($personas as $p) {
 $zip->close();
 
 if ($agregadas === 0) {
-    unlink($tmpZip);
+    if (file_exists($tmpZip)) {
+        unlink($tmpZip); // v10: ZipArchive puede eliminar el temp file al
+                          // cerrar un archivo sin ninguna entrada -- no
+                          // tratar eso como error.
+    }
     responderError('Ninguna de las personas seleccionadas tiene todavía una carpeta de documentos generada.', 404);
 }
 
