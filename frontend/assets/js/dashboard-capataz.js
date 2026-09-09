@@ -11,10 +11,19 @@
  * en portería.
  *
  * v10.5 (Mejorar APP, punto 2): el postulante ya no elige cargo al
- * postular -- el Capataz lo asigna acá mismo, justo al seleccionarlo,
- * eligiendo entre los cargos que todavía tienen cupo.
+ * postular -- el Capataz lo asigna acá mismo, justo al seleccionarlo.
+ *
+ * v10.6 (Mejorar APP, puntos 3 y 4): idea de Ricardo -- en vez de un
+ * select, el Capataz ARRASTRA la tarjeta del postulante hasta la caja
+ * (con casquito) del cargo que le corresponde. Un solo gesto hace la
+ * selección y la asignación de cargo. Es arrastre real (Pointer Events,
+ * funciona con mouse y con el dedo), no un "tocar para elegir"
+ * simplificado -- confirmado explícitamente con el usuario. Mientras
+ * hay un arrastre en curso se pausa el refresco automático (ver
+ * ARRASTRANDO más abajo) para no destruirle la tarjeta bajo el dedo.
  */
 let CARGOS_CON_CUPO = [];
+let ARRASTRANDO = false;
 
 (async () => {
   const usuario = await protegerDashboard('Capataz');
@@ -23,6 +32,7 @@ let CARGOS_CON_CUPO = [];
   await cargarLista();
   configurarTabs();
   setInterval(() => {
+    if (ARRASTRANDO) return;
     if (TAB_ACTIVA === 'seleccion') { cargarCargosConCupo(); cargarLista(); }
     else cargarRecepcion();
   }, 15000);
@@ -32,17 +42,26 @@ async function cargarCargosConCupo() {
   try {
     const data = await apiFetch('/public/cargos_disponibles.php');
     CARGOS_CON_CUPO = data.cargos.filter(c => c.tiene_cupo);
+    renderZonasCargo();
   } catch (e) {
     CARGOS_CON_CUPO = [];
+    renderZonasCargo();
   }
 }
 
-function opcionesCargo(idPostulacion) {
+function renderZonasCargo() {
+  const cont = document.getElementById('zonas-cargo');
+  if (!cont) return;
   if (!CARGOS_CON_CUPO.length) {
-    return '<option value="">No hay cargos con cupo</option>';
+    cont.innerHTML = '<p class="col-span-full text-sm text-gray-400 bg-white rounded-xl shadow-sm px-4 py-6 text-center">No hay cargos con cupo abierto ahora mismo. Pide a Jefe de Terreno que abra cupos.</p>';
+    return;
   }
-  return '<option value="">Elige el cargo...</option>' +
-    CARGOS_CON_CUPO.map(c => `<option value="${c.id}">${c.nombre_cargo} (${c.cupos_disponibles} cupo(s))</option>`).join('');
+  cont.innerHTML = CARGOS_CON_CUPO.map(c => `
+    <div class="cargo-zone rounded-xl border-2 border-dashed border-orange-200 bg-orange-50/60 p-4 flex flex-col items-center justify-center gap-1 text-center" data-cargo-id="${c.id}">
+      <span class="text-3xl leading-none">⛑️</span>
+      <p class="text-sm font-bold text-gray-800 leading-tight">${c.nombre_cargo}</p>
+      <p class="text-xs text-orange-700 font-semibold">${c.cupos_disponibles} cupo(s)</p>
+    </div>`).join('');
 }
 
 // --- v7: pestañas (Selección en terreno / Recepción) -----------------------
@@ -82,48 +101,97 @@ async function cargarLista() {
     }
     vacio.classList.add('hidden');
     cont.innerHTML = data.postulaciones.map(p => `
-      <div class="bg-white rounded-xl shadow-sm p-5">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p class="text-2xl font-mono font-bold text-gray-900 tracking-wide">${celdaDocumento(p)}</p>
-            <p class="text-base font-semibold text-gray-800">${p.nombre_completo}</p>
-            <p class="text-sm text-gray-500">${p.comuna}</p>
-            <p class="text-xs text-green-700 mt-1">✓ Aprobado por Jefe de Terreno${p.aprobado_jt_por_nombre ? ` (${p.aprobado_jt_por_nombre})` : ''}</p>
+      <div class="postulante-card bg-white rounded-xl shadow-sm overflow-hidden" data-postulacion-id="${p.id}">
+        <div class="drag-handle flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-400 text-xs font-bold tracking-wide py-2 border-b border-gray-100 cursor-grab active:cursor-grabbing select-none">
+          <span class="text-base leading-none">⠿⠿⠿</span> ARRASTRA HACIA UN CARGO
+        </div>
+        <div class="p-5">
+          <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <p class="text-2xl font-mono font-bold text-gray-900 tracking-wide">${celdaDocumento(p)}</p>
+              <p class="text-base font-semibold text-gray-800">${p.nombre_completo}</p>
+              <p class="text-sm text-gray-500">${p.comuna}</p>
+              <p class="text-xs text-green-700 mt-1">✓ Aprobado por Jefe de Terreno${p.aprobado_jt_por_nombre ? ` (${p.aprobado_jt_por_nombre})` : ''}</p>
+            </div>
+            ${p.tiene_cv
+              ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline text-sm">Ver CV</a>`
+              : (p.experiencia_sin_cv
+                  ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV (ver experiencia) ⓘ</span>`
+                  : '<span class="text-gray-400 text-xs">Sin CV</span>')}
           </div>
-          ${p.tiene_cv
-            ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline text-sm">Ver CV</a>`
-            : (p.experiencia_sin_cv
-                ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV (ver experiencia) ⓘ</span>`
-                : '<span class="text-gray-400 text-xs">Sin CV</span>')}
-        </div>
-        <div class="mt-4">
-          <label class="block text-xs font-medium text-gray-500 mb-1">Cargo a asignar</label>
-          <select id="cargo-select-${p.id}" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            ${opcionesCargo(p.id)}
-          </select>
-        </div>
-        <div class="flex gap-3 mt-3">
-          <button class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold text-base rounded-lg py-3" onclick="seleccionar(${p.id})">
-            ✓ Selecciona (pasa a Etapa 2)
-          </button>
-          <button class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 font-bold text-base rounded-lg py-3" onclick="noSeleccionar(${p.id})">
+          <button class="no-arrastrar w-full mt-4 bg-red-100 hover:bg-red-200 text-red-700 font-bold text-base rounded-lg py-3" onclick="noSeleccionar(${p.id})">
             ✕ No selecciona
           </button>
         </div>
       </div>`).join('');
+    cont.querySelectorAll('.postulante-card').forEach((card) => {
+      const id = parseInt(card.dataset.postulacionId, 10);
+      const handle = card.querySelector('.drag-handle');
+      if (handle) iniciarArrastre(handle, card, id);
+    });
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }
 }
 
-async function seleccionar(id) {
-  const selectCargo = document.getElementById(`cargo-select-${id}`);
-  const cargoId = selectCargo ? selectCargo.value : '';
-  if (!cargoId) {
-    mostrarAlerta('alerta', 'Elige el cargo que le vas a asignar antes de seleccionarlo.');
-    if (selectCargo) selectCargo.focus();
-    return;
-  }
+// --- v10.6: arrastre real de la tarjeta hasta la caja del cargo -----------
+function iniciarArrastre(handle, card, postulacionId) {
+  handle.addEventListener('pointerdown', (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    ARRASTRANDO = true;
+    handle.setPointerCapture(e.pointerId);
+
+    const rect = card.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    const ghost = card.cloneNode(true);
+    ghost.classList.add('drag-ghost');
+    ghost.style.width = rect.width + 'px';
+    ghost.style.left = rect.left + 'px';
+    ghost.style.top = rect.top + 'px';
+    ghost.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(ghost);
+    card.classList.add('arrastrando-origen');
+
+    let zonaActual = null;
+
+    function mover(e2) {
+      ghost.style.left = (e2.clientX - offsetX) + 'px';
+      ghost.style.top = (e2.clientY - offsetY) + 'px';
+
+      const bajoElPuntero = document.elementFromPoint(e2.clientX, e2.clientY);
+      const zona = bajoElPuntero ? bajoElPuntero.closest('.cargo-zone') : null;
+      if (zona !== zonaActual) {
+        if (zonaActual) zonaActual.classList.remove('cargo-zone--hover');
+        if (zona) zona.classList.add('cargo-zone--hover');
+        zonaActual = zona;
+      }
+    }
+
+    async function soltar(e2) {
+      handle.removeEventListener('pointermove', mover);
+      handle.removeEventListener('pointerup', soltar);
+      handle.removeEventListener('pointercancel', soltar);
+      try { handle.releasePointerCapture(e2.pointerId); } catch (err) {}
+      ghost.remove();
+      card.classList.remove('arrastrando-origen');
+      if (zonaActual) zonaActual.classList.remove('cargo-zone--hover');
+      ARRASTRANDO = false;
+
+      if (zonaActual) {
+        await asignarCargoArrastrado(postulacionId, zonaActual.dataset.cargoId);
+      }
+    }
+
+    handle.addEventListener('pointermove', mover);
+    handle.addEventListener('pointerup', soltar);
+    handle.addEventListener('pointercancel', soltar);
+  });
+}
+
+async function asignarCargoArrastrado(id, cargoId) {
   try {
     await apiFetch('/terreno/aprobar.php', { method: 'POST', body: { postulacion_id: id, cargo_id: cargoId } });
     mostrarAlerta('alerta', 'Seleccionado. Pasa a revisión del Administrador de Contrato.', 'exito');
