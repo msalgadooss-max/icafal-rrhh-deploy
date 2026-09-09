@@ -97,11 +97,32 @@ define('SESSION_NAME', 'icafal_rrhh_sesion');
 define('APP_DEBUG', false);
 PHP
 
-# v6.8: estas carpetas viven en el disco efimero, asi que se recrean en
-# cada arranque -- y como ahora PHP corre como www-data (no como root, ver
-# Dockerfile), hay que volver a darles permiso de escritura cada vez.
-mkdir -p /app/backend/uploads /app/backend/carpetas_postulantes
-chown -R www-data:www-data /app/backend/uploads /app/backend/carpetas_postulantes
+# v10.11 (hallazgo critico, pedido explicito del usuario): estas dos
+# carpetas vivian en el disco efimero del CONTENEDOR (no en $DATADIR,
+# que es el unico disco persistente real de este servicio en Render --
+# confirmado en el dashboard, montado en /var/lib/mysql). Cualquier
+# redeploy o reinicio las borraba por completo, perdiendo para siempre
+# los CV y documentos que los postulantes ya habian subido -- la fila en
+# postulaciones/postulacion_documentos seguia apuntando a un archivo que
+# ya no existia. Ahora se guardan DENTRO del disco persistente (en
+# subcarpetas propias, sin tocar nada de lo que usa MariaDB) y se
+# enlazan con symlinks a las rutas de siempre -- el codigo PHP
+# (guardarArchivoSubido() y todo lo que despues lee o descarga esos
+# documentos) sigue usando exactamente las mismas rutas relativas, sin
+# ningun cambio. Efecto secundario util: el snapshot diario que Render
+# ya le hace a ese disco ahora tambien respalda los documentos.
+#
+# o+x en el datadir: el minimo necesario para que www-data pueda
+# ATRAVESAR /var/lib/mysql y llegar a sus dos subcarpetas -- no le da
+# permiso de leer ni listar los archivos propios de MariaDB, que siguen
+# siendo 700 mysql:mysql.
+chmod o+x "$DATADIR"
+mkdir -p "$DATADIR/app_uploads" "$DATADIR/app_carpetas_postulantes"
+chown -R www-data:www-data "$DATADIR/app_uploads" "$DATADIR/app_carpetas_postulantes"
+
+rm -rf /app/backend/uploads /app/backend/carpetas_postulantes
+ln -s "$DATADIR/app_uploads" /app/backend/uploads
+ln -s "$DATADIR/app_carpetas_postulantes" /app/backend/carpetas_postulantes
 
 # v6.8: Render entrega el puerto real en la variable $PORT en tiempo de
 # arranque (cambia entre despliegues), asi que el puerto de Apache no se

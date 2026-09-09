@@ -90,6 +90,13 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # "php -S", corria como root) -- www-data necesita permiso de escritura en
 # las carpetas donde el propio codigo PHP crea archivos en tiempo de
 # ejecucion (subidas de documentos, carpetas por postulante).
+#
+# v10.11: uploads/ y carpetas_postulantes/ de aca abajo son solo el
+# placeholder de la IMAGEN -- docker-entrypoint.sh los reemplaza por
+# symlinks al disco persistente (/var/lib/mysql/app_uploads y
+# .../app_carpetas_postulantes) apenas arranca el contenedor, para que
+# los documentos subidos sobrevivan a un redeploy. Ver el comentario
+# v10.11 en docker-entrypoint.sh para el detalle completo.
 RUN chmod +x /app/docker-entrypoint.sh \
     && mkdir -p /var/lib/mysql /run/mysqld /app/backend/uploads /app/backend/carpetas_postulantes \
     && chown -R mysql:mysql /var/lib/mysql /run/mysqld \
