@@ -21,6 +21,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install -j$(nproc) gd zip pdo_mysql \
     && rm -rf /var/lib/apt/lists/*
 
+# v10.4: mod_headers -- necesario para el Cache-Control de mas abajo, que
+# evita que el navegador se quede pegado en un .js viejo despues de un
+# deploy (paso a paso: se detecto en vivo que Chrome seguia mostrando el
+# confirm() de una version anterior de dashboard-admin-contrato.js pese a
+# refrescar la pagina, porque el archivo no traia ningun header de cache
+# y el navegador cachea por heuristica igual).
+RUN a2enmod headers
+
 # El DocumentRoot de la imagen oficial de Apache es /var/www/html; lo
 # apuntamos a /app (donde vive el proyecto) en vez de mover archivos. Se
 # escribe el vhost completo (en vez de sed sobre el original) para no
@@ -36,6 +44,9 @@ RUN { \
         echo '        AllowOverride None'; \
         echo '        Require all granted'; \
         echo '    </Directory>'; \
+        echo '    <FilesMatch "\.(js|css)$">'; \
+        echo '        Header set Cache-Control "no-cache, must-revalidate"'; \
+        echo '    </FilesMatch>'; \
         echo '    ErrorLog ${APACHE_LOG_DIR}/error.log'; \
         echo '    CustomLog ${APACHE_LOG_DIR}/access.log combined'; \
         echo '</VirtualHost>'; \
