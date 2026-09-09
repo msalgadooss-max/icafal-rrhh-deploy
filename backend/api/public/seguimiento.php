@@ -73,11 +73,14 @@ $enBanco = $estadoActual === 'En_banco';
 // enlace de Etapa 2, este mismo módulo de seguimiento -- ya protegido
 // por RUT + código de seguimiento -- le permite continuar sin depender
 // del correo. "puede_completar_etapa2" marca que ya le corresponde
-// (Admin_Contrato autorizó y aún no completa sus datos); "url_etapa2"
+// (el Capataz ya lo seleccionó y aún no completa sus datos); "url_etapa2"
 // solo viene si además tiene un token vigente ahora mismo -- si no,
 // el frontend ofrece "generar mi enlace" (ver reenviar_etapa2.php).
+//
+// v10.7: ya NO depende de admin_autorizado_at -- esa autorización pasó
+// a ser un dato interno (ver admin_contrato/autorizar.php) que no debe
+// condicionar nada de lo que ve o puede hacer el propio postulante.
 $puedeCompletarEtapa2 = $estadoActual === 'Pre_aprobado_terreno'
-    && $postulacion['admin_autorizado_at'] !== null
     && !$postulacion['etapa2_completada'];
 $tokenVigente = $postulacion['token_privado'] !== null
     && $postulacion['token_expira_at'] !== null

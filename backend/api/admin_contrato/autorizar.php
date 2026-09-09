@@ -1,15 +1,18 @@
 <?php
 /**
- * v6.5 - Administrador de Contrato autoriza la contratación. Vuelve al
- * orden SECUENCIAL: recien aqui se le otorga al postulante el acceso a
- * Etapa 2 (token + correo "tu contratación ha sido autorizada, completa
- * tus datos"). Antes de esto, el postulante no tiene ningun link -- ya
- * no se cruza en paralelo con que el postulante llene sus datos.
+ * v6.5 - Administrador de Contrato autoriza la contratación.
+ *
+ * v10.7 (pedido explícito del usuario): esta autorización pasó a ser un
+ * dato puramente INTERNO -- el postulante ya no la ve ni es notificado
+ * por ella. El correo con el link de Etapa 2 ahora sale antes, apenas
+ * el Capataz lo selecciona en portería (ver terreno/aprobar.php,
+ * otorgarAccesoEtapa2()); acá solo se deja registrado admin_autorizado_at
+ * como respaldo/trazabilidad interna.
  *
  * Sigue existiendo intentarAvanzarAAprobadoAdmin() porque el paso
- * siguiente (JAO) igual depende de dos condiciones (admin_autorizado_at
- * Y que exista datos_contratacion), solo que ahora la primera SIEMPRE
- * ocurre antes que la segunda por diseño.
+ * siguiente (JAO) igual depende de dos condiciones: que Admin_Contrato
+ * haya autorizado (admin_autorizado_at) Y que exista datos_contratacion
+ * -- ya no importa en qué orden ocurran esas dos.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -52,11 +55,7 @@ try {
         'UPDATE postulaciones SET admin_autorizado_at = NOW(), admin_autorizado_por = :uid WHERE id = :id'
     );
     $stmt->execute(['uid' => $usuario['id'], 'id' => $postulacionId]);
-    registrarLog($pdo, $postulacionId, $usuario['id'], 'Administrador de Contrato autorizó la contratación.');
-
-    // v6.5: aqui es donde el postulante recibe por primera vez el
-    // acceso a Etapa 2 -- antes de esto no tenia ningun token.
-    otorgarAccesoEtapa2($pdo, $postulacionId, $usuario['id']);
+    registrarLog($pdo, $postulacionId, $usuario['id'], 'Administrador de Contrato autorizó la contratación (registro interno).');
 
     $pdo->commit();
 } catch (RuntimeException $e) {
@@ -69,4 +68,4 @@ try {
     responderError('No fue posible autorizar la contratación.', 500);
 }
 
-responderOk(['mensaje' => 'Contratación autorizada. Se le envió al postulante el enlace para completar sus datos.']);
+responderOk(['mensaje' => 'Autorización registrada.']);

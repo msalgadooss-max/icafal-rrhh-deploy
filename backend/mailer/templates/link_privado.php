@@ -1,10 +1,11 @@
 <?php
 /**
- * Plantilla de correo enviado cuando Admin_Contrato autoriza que la
- * postulacion avance a la Etapa 2 (Fase 2). v10.2: nunca decirle
- * "contratación" al postulante aca -- todavia esta postulando, recien
- * le falta completar sus datos y documentos; se confirma o no mas
- * adelante (ver postulacion_no_continua.php / contratacion_exitosa_qr.php).
+ * Plantilla de correo enviado cuando el Capataz selecciona al postulante
+ * en portería (ver terreno/aprobar.php, otorgarAccesoEtapa2()), para que
+ * avance a la Etapa 2 (Fase 2). v10.2: nunca decirle "contratación" al
+ * postulante aca -- todavia esta postulando, recien le falta completar
+ * sus datos y documentos; se confirma o no mas adelante (ver
+ * postulacion_no_continua.php / contratacion_exitosa_qr.php).
  * Variables esperadas: $nombreCompleto, $urlFormularioPrivado
  */
 return <<<HTML

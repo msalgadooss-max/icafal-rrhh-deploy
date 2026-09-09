@@ -29,7 +29,7 @@ $documentoRut = normalizarRut($documentoCrudo);
 
 $pdo = obtenerConexion();
 $stmt = $pdo->prepare(
-    'SELECT id, estado, admin_autorizado_at,
+    'SELECT id, estado,
             (SELECT COUNT(*) FROM datos_contratacion d WHERE d.postulacion_id = postulaciones.id) > 0 AS etapa2_completada
        FROM postulaciones
       WHERE (rut = :doc_crudo OR rut = :doc_rut) AND codigo_seguimiento = :codigo
@@ -41,7 +41,9 @@ $postulacion = $stmt->fetch();
 if (!$postulacion) {
     responderError('No se encontró una postulación con esos datos.', 404);
 }
-if ($postulacion['admin_autorizado_at'] === null || $postulacion['estado'] !== 'Pre_aprobado_terreno') {
+// v10.7: ya no depende de admin_autorizado_at (dato interno) -- basta
+// con que el Capataz ya lo haya seleccionado (ver terreno/aprobar.php).
+if ($postulacion['estado'] !== 'Pre_aprobado_terreno') {
     responderError('Todavía no está disponible el siguiente paso de tu postulación.', 409);
 }
 if ((bool)$postulacion['etapa2_completada']) {

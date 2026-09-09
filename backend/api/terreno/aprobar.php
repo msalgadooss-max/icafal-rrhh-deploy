@@ -21,6 +21,15 @@
  *     este paso, cuando el Capataz selecciona a la persona en persona,
  *     donde se asigna el cargo real -- por eso el chequeo de cupos
  *     (que antes vivía en public/postular.php) se movió para acá.
+ *
+ *   - v10.7 (pedido explícito del usuario, tras describir el proceso
+ *     completo en detalle): el correo con el link de Etapa 2 ahora se
+ *     envía JUSTO ACÁ, apenas el Capataz selecciona a la persona en
+ *     portería -- para que lo llene ahí mismo, en la sala de espera, con
+ *     su celular. Antes salía recién cuando el Administrador de
+ *     Contrato autorizaba por separado (otro rol, otro momento); esa
+ *     autorización ahora es un dato puramente interno que el postulante
+ *     nunca ve ni es notificado (ver admin_contrato/autorizar.php).
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -111,6 +120,11 @@ try {
           WHERE id = :id AND estado = "Pendiente"'
     );
     $stmt->execute(['cargo_id' => $cargoId, 'id' => $postulacionId]);
+
+    // v10.7: recién ahora el postulante recibe su primer correo para
+    // seguir avanzando -- el link de Etapa 2 (datos personales + subir
+    // documentos), para completarlo ahí mismo en la sala de espera.
+    otorgarAccesoEtapa2($pdo, $postulacionId, $usuario['id']);
 
     $pdo->commit();
 } catch (RuntimeException $e) {

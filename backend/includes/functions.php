@@ -139,14 +139,20 @@ function ordenEstadosActivos(): array
 }
 
 /**
- * v6.5: se llama cuando el postulante termina su Etapa 2. Verifica que
- * Admin_Contrato ya haya autorizado (admin_autorizado_at) -- con el
- * flujo SECUENCIAL actual esto siempre es cierto, porque el postulante
- * no puede ni empezar la Etapa 2 sin que Admin_Contrato autorice
- * primero (ver admin_contrato/autorizar.php). Se deja esta doble
- * verificacion de todos modos como defensa: si algun dia se necesita
- * volver al flujo en paralelo, esta funcion ya sabe manejarlo sin
- * cambios.
+ * v6.5: se llama cuando el postulante termina su Etapa 2 (también se
+ * intenta desde el lado de Admin_Contrato, por si el orden fue al
+ * revés). Solo avanza a 'Aprobado_admin' cuando AMBAS condiciones ya
+ * ocurrieron: Admin_Contrato autorizó (admin_autorizado_at) Y el
+ * postulante completó sus datos.
+ *
+ * v10.7: el orden entre esas dos ya NO está fijo. Antes (flujo
+ * SECUENCIAL) el postulante no podía ni empezar Etapa 2 sin que
+ * Admin_Contrato autorizara primero, porque esa autorización era lo
+ * que le entregaba el link por correo. Ahora el link sale antes,
+ * apenas el Capataz lo selecciona (ver terreno/aprobar.php) -- así que
+ * el postulante bien puede completar sus datos ANTES de que
+ * Admin_Contrato autorice. Por eso esta función sigue revisando ambas
+ * condiciones sin asumir cuál ocurrió primero.
  */
 function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
 {
@@ -195,13 +201,17 @@ function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
  * v6.5: punto unico donde una postulacion recibe acceso a la Fase 2
  * (datos personales/bancarios + documentos). Genera el token, deja el
  * estado en 'Pre_aprobado_terreno' (ya lo estaba) y envia el correo con
- * el link privado. La llama admin_contrato/autorizar.php -- el flujo
- * volvio a ser SECUENCIAL: Terreno pre-aprueba primero (sin dar acceso
- * todavia), Admin_Contrato autoriza despues, y recien ahi el postulante
- * se entera que puede continuar. (Antes, en v3.1, esto lo llamaban
- * terreno/aprobar.php y terreno/banco_invitar.php para correr en
- * paralelo con la autorizacion del administrador; ver git history si
- * hace falta volver a ese modelo.)
+ * el link privado.
+ *
+ * v10.7 (pedido explicito del usuario, tras describir el proceso
+ * completo en persona): ahora la llama terreno/aprobar.php, justo
+ * cuando el Capataz selecciona a la persona en porteria -- para que
+ * llene sus datos ahi mismo, en la sala de espera. Antes la llamaba
+ * admin_contrato/autorizar.php (flujo SECUENCIAL: Admin_Contrato
+ * autorizaba y recien ahi el postulante se enteraba); esa autorizacion
+ * ahora es un dato puramente interno que ya no condiciona nada de lo
+ * que ve o puede hacer el postulante (ver admin_contrato/autorizar.php
+ * e intentarAvanzarAAprobadoAdmin() mas abajo).
  *
  * v6.6: $usuarioId ahora acepta null -- reenviar_etapa2.php tambien la
  * llama cuando es el propio postulante (sin sesion interna) quien pide

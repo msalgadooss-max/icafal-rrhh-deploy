@@ -172,7 +172,10 @@ async function cargarLista() {
 }
 
 async function autorizar(id) {
-  if (!confirm('¿Autorizar esta contratación? Se le enviará al postulante el enlace para completar sus datos (Etapa 2).')) return;
+  // v10.7: esto ya no le envía nada al postulante -- el correo con el
+  // link de Etapa 2 se le manda antes, apenas el Capataz lo selecciona
+  // en portería. Esto queda solo como respaldo/registro interno.
+  if (!confirm('¿Autorizar esta contratación? Es un registro interno -- el postulante ya recibió antes el enlace para completar sus datos, apenas el Capataz lo seleccionó.')) return;
   try {
     const data = await apiFetch('/admin_contrato/autorizar.php', { method: 'POST', body: { postulacion_id: id } });
     mostrarAlerta('alerta', data.mensaje, 'exito');
