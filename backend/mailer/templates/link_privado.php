@@ -1,13 +1,18 @@
 <?php
 /**
- * Plantilla de correo enviado al autorizar la contratación (Fase 2).
+ * Plantilla de correo enviado cuando Admin_Contrato autoriza que la
+ * postulacion avance a la Etapa 2 (Fase 2). v10.2: nunca decirle
+ * "contratación" al postulante aca -- todavia esta postulando, recien
+ * le falta completar sus datos y documentos; se confirma o no mas
+ * adelante (ver postulacion_no_continua.php / contratacion_exitosa_qr.php).
  * Variables esperadas: $nombreCompleto, $urlFormularioPrivado
  */
 return <<<HTML
 <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#1f2937">
-  <h2 style="color:#111827">¡Felicitaciones, {$nombreCompleto}!</h2>
-  <p>Tu contratación ha sido autorizada. Para continuar con el proceso
-  necesitamos que completes tus datos personales y de contratación.</p>
+  <h2 style="color:#111827">¡Buenas noticias, {$nombreCompleto}!</h2>
+  <p>Tu postulación avanzó a la siguiente etapa. Para continuar necesitamos
+  que completes tus datos personales y previsionales, y subas tus
+  documentos.</p>
   <p style="text-align:center;margin:24px 0">
     <a href="{$urlFormularioPrivado}" style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold">
       Completar mis datos
