@@ -9,17 +9,41 @@
  * No incluye Banco de Postulantes ni límite diario de aprobaciones --
  * esas son herramientas de gestión de Jefe_Terreno, no de la selección
  * en portería.
+ *
+ * v10.5 (Mejorar APP, punto 2): el postulante ya no elige cargo al
+ * postular -- el Capataz lo asigna acá mismo, justo al seleccionarlo,
+ * eligiendo entre los cargos que todavía tienen cupo.
  */
+let CARGOS_CON_CUPO = [];
+
 (async () => {
   const usuario = await protegerDashboard('Capataz');
   if (!usuario) return;
+  await cargarCargosConCupo();
   await cargarLista();
   configurarTabs();
   setInterval(() => {
-    if (TAB_ACTIVA === 'seleccion') cargarLista();
+    if (TAB_ACTIVA === 'seleccion') { cargarCargosConCupo(); cargarLista(); }
     else cargarRecepcion();
   }, 15000);
 })();
+
+async function cargarCargosConCupo() {
+  try {
+    const data = await apiFetch('/public/cargos_disponibles.php');
+    CARGOS_CON_CUPO = data.cargos.filter(c => c.tiene_cupo);
+  } catch (e) {
+    CARGOS_CON_CUPO = [];
+  }
+}
+
+function opcionesCargo(idPostulacion) {
+  if (!CARGOS_CON_CUPO.length) {
+    return '<option value="">No hay cargos con cupo</option>';
+  }
+  return '<option value="">Elige el cargo...</option>' +
+    CARGOS_CON_CUPO.map(c => `<option value="${c.id}">${c.nombre_cargo} (${c.cupos_disponibles} cupo(s))</option>`).join('');
+}
 
 // --- v7: pestañas (Selección en terreno / Recepción) -----------------------
 let TAB_ACTIVA = 'seleccion';
@@ -63,7 +87,7 @@ async function cargarLista() {
           <div>
             <p class="text-2xl font-mono font-bold text-gray-900 tracking-wide">${celdaDocumento(p)}</p>
             <p class="text-base font-semibold text-gray-800">${p.nombre_completo}</p>
-            <p class="text-sm text-gray-500">${p.nombre_cargo} · ${p.comuna}</p>
+            <p class="text-sm text-gray-500">${p.comuna}</p>
             <p class="text-xs text-green-700 mt-1">✓ Aprobado por Jefe de Terreno${p.aprobado_jt_por_nombre ? ` (${p.aprobado_jt_por_nombre})` : ''}</p>
           </div>
           ${p.tiene_cv
@@ -72,7 +96,13 @@ async function cargarLista() {
                 ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV (ver experiencia) ⓘ</span>`
                 : '<span class="text-gray-400 text-xs">Sin CV</span>')}
         </div>
-        <div class="flex gap-3 mt-4">
+        <div class="mt-4">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Cargo a asignar</label>
+          <select id="cargo-select-${p.id}" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            ${opcionesCargo(p.id)}
+          </select>
+        </div>
+        <div class="flex gap-3 mt-3">
           <button class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold text-base rounded-lg py-3" onclick="seleccionar(${p.id})">
             ✓ Selecciona (pasa a Etapa 2)
           </button>
@@ -87,9 +117,17 @@ async function cargarLista() {
 }
 
 async function seleccionar(id) {
+  const selectCargo = document.getElementById(`cargo-select-${id}`);
+  const cargoId = selectCargo ? selectCargo.value : '';
+  if (!cargoId) {
+    mostrarAlerta('alerta', 'Elige el cargo que le vas a asignar antes de seleccionarlo.');
+    if (selectCargo) selectCargo.focus();
+    return;
+  }
   try {
-    await apiFetch('/terreno/aprobar.php', { method: 'POST', body: { postulacion_id: id } });
+    await apiFetch('/terreno/aprobar.php', { method: 'POST', body: { postulacion_id: id, cargo_id: cargoId } });
     mostrarAlerta('alerta', 'Seleccionado. Pasa a revisión del Administrador de Contrato.', 'exito');
+    await cargarCargosConCupo();
     await cargarLista();
   } catch (err) {
     mostrarAlerta('alerta', err.message);

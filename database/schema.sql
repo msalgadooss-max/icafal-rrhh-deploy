@@ -628,6 +628,16 @@ INSERT INTO cargos (nombre_cargo, cupos_totales, cupos_activos) VALUES
     ('Jornal Picador', 0, 0),
     ('Jornal Excavador', 0, 0);
 
+-- v10.5 (Mejorar APP, punto 2): el postulante ya no elige cargo al
+-- postular -- el Capataz se lo asigna despues, en persona, cuando lo
+-- selecciona en terreno (ver terreno/aprobar.php). Toda postulacion
+-- nueva nace apuntando a este cargo interno "Por asignar" (nunca se le
+-- muestra al postulante) hasta que el Capataz la reemplaza por el
+-- cargo real. activo=0 para que jamas aparezca en los selectores de
+-- cargos reales (cargos_disponibles.php, solicitar_cupo, etc).
+INSERT INTO cargos (nombre_cargo, cupos_totales, cupos_activos, activo) VALUES
+    ('Por asignar', 0, 0, 0);
+
 -- Usuario administrativo de ejemplo (contraseña: "CambiarAhora123!").
 -- Generado con password_hash('CambiarAhora123!', PASSWORD_BCRYPT).
 -- CAMBIAR esta contraseña / hash antes de ir a produccion.

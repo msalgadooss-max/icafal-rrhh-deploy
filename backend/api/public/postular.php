@@ -14,6 +14,14 @@
  * v2 - Banco de Postulantes: si el cargo elegido existe pero no tiene
  * cupos_activos, la postulacion queda en estado 'En_banco' en vez de
  * ser rechazada (ver backend/api/terreno/banco_invitar.php).
+ *
+ * v10.5 (Mejorar APP, punto 2) - El postulante YA NO elige cargo: el
+ * Capataz se lo asigna despues, en persona, al seleccionarlo en terreno
+ * (ver terreno/aprobar.php). Toda postulacion nueva nace apuntando al
+ * cargo interno "Por asignar" y siempre en estado 'Pendiente' -- el
+ * chequeo de cupos se movio integro al momento en que el Capataz asigna
+ * el cargo real, asi que el camino de "Banco de Postulantes" de aqui ya
+ * no se activa nunca (queda su tabla/flujo intactos por si se retoma).
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -32,7 +40,6 @@ $telefono         = limpiarTexto($_POST['telefono'] ?? '', 20);
 $correo           = filter_var(trim((string)($_POST['correo'] ?? '')), FILTER_VALIDATE_EMAIL);
 $region           = limpiarTexto($_POST['region'] ?? '', 100);
 $comuna           = limpiarTexto($_POST['comuna'] ?? '', 100);
-$cargoId          = (int)($_POST['cargo_id'] ?? 0);
 $consentimiento   = (bool)($_POST['consentimiento_ley19628'] ?? false);
 
 $listas = listasBuk();
@@ -54,7 +61,6 @@ if (!isset($regionesComunas[$region]))       $errores[] = 'Región inválida.';
 elseif (!in_array($comuna, $regionesComunas[$region], true)) {
     $errores[] = 'La comuna no corresponde a la región seleccionada.';
 }
-if ($cargoId <= 0)                           $errores[] = 'Debe seleccionar un cargo.';
 if (!$consentimiento)                        $errores[] = 'Debe aceptar el tratamiento de datos personales (Ley 19.628).';
 
 if ($errores) {
@@ -66,16 +72,19 @@ $nombreCompleto = trim($nombre . ' ' . $apellido . ' ' . $segundoApellido);
 
 $pdo = obtenerConexion();
 
-// El cargo debe existir y estar activo (los cupos ya no son requisito
-// para poder postular: sin cupos, la persona queda en el Banco).
-$stmtCargo = $pdo->prepare('SELECT id, cupos_activos FROM cargos WHERE id = :id AND activo = 1');
-$stmtCargo->execute(['id' => $cargoId]);
-$cargo = $stmtCargo->fetch();
-if (!$cargo) {
-    responderError('El cargo seleccionado no existe.', 404);
+// v10.5: ya no se le pide cargo al postulante -- nace apuntando al
+// cargo interno "Por asignar" (nunca visible para el, ver comentario de
+// cabecera) y siempre en estado 'Pendiente'. El Capataz reemplaza este
+// cargo por el real, y ahi recien se valida que tenga cupos.
+$stmtCargoAsignar = $pdo->prepare("SELECT id FROM cargos WHERE nombre_cargo = 'Por asignar' LIMIT 1");
+$stmtCargoAsignar->execute();
+$cargoAsignar = $stmtCargoAsignar->fetch();
+if (!$cargoAsignar) {
+    error_log('postular.php: falta el cargo interno "Por asignar" en la tabla cargos.');
+    responderError('No fue posible registrar tu postulación. Intenta más tarde.', 500);
 }
-$tieneCupo = (int)$cargo['cupos_activos'] > 0;
-$estadoInicial = $tieneCupo ? 'Pendiente' : 'En_banco';
+$cargoId = (int)$cargoAsignar['id'];
+$estadoInicial = 'Pendiente';
 
 // Documento unico: una persona no puede tener mas de una postulacion activa.
 $stmtDup = $pdo->prepare('SELECT id FROM postulaciones WHERE rut = :rut');
@@ -143,10 +152,7 @@ $stmt->execute([
 ]);
 
 $postulacionId = (int)$pdo->lastInsertId();
-$accionLog = $tieneCupo
-    ? 'Postulación creada por el postulante (Etapa 1).'
-    : 'Quedó en el Banco de Postulantes (Etapa 1): el cargo elegido no tenía cupos disponibles al momento de postular.';
-registrarLog($pdo, $postulacionId, null, $accionLog);
+registrarLog($pdo, $postulacionId, null, 'Postulación creada por el postulante (Etapa 1). Cargo pendiente de asignar por el Capataz.');
 
 // --- Correo de confirmacion (no bloqueante: si falla, igual respondemos) --
 $urlSeguimiento = BASE_URL . '/frontend/public/seguimiento.html?rut=' . urlencode($numeroDocumento);
@@ -156,9 +162,7 @@ $html = (function () use ($nombreCompleto, $codigoSeguimiento, $urlSeguimiento) 
 Mailer::enviar($correo, $nombreCompleto, 'Confirmación de tu postulación - ICAFAL', $html);
 
 responderOk([
-    'mensaje' => $tieneCupo
-        ? 'Postulación registrada correctamente.'
-        : 'En este momento no hay cupos para ese cargo. Guardamos tus datos en nuestro Banco de Postulantes y te contactaremos apenas se abra uno.',
-    'en_banco'           => !$tieneCupo,
+    'mensaje' => 'Postulación registrada correctamente.',
+    'en_banco'           => false,
     'codigo_seguimiento' => $codigoSeguimiento,
 ], 201);

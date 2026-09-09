@@ -15,6 +15,12 @@
  *     NULL). Su selección es la que de verdad hace avanzar el estado a
  *     'Pre_aprobado_terreno' -- mismo comportamiento que existía antes
  *     de este cambio.
+ *
+ *   - v10.5 (Mejorar APP, punto 2): el postulante ya no elige cargo al
+ *     postular (nace con el cargo interno "Por asignar"). Es justo en
+ *     este paso, cuando el Capataz selecciona a la persona en persona,
+ *     donde se asigna el cargo real -- por eso el chequeo de cupos
+ *     (que antes vivía en public/postular.php) se movió para acá.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -30,6 +36,9 @@ $postulacionId = (int)($body['postulacion_id'] ?? 0);
 if ($postulacionId <= 0) {
     responderError('postulacion_id inválido.', 422);
 }
+// v10.5: solo lo usa la rama Capataz (ver más abajo), pero se lee acá
+// arriba junto al resto del body por prolijidad.
+$cargoId = (int)($body['cargo_id'] ?? 0);
 
 $pdo = obtenerConexion();
 
@@ -61,6 +70,10 @@ if ($usuario['rol'] === 'Jefe_Terreno') {
 }
 
 // --- Capataz: selección final, en persona -------------------------------
+if ($cargoId <= 0) {
+    responderError('Debes indicar el cargo que le vas a asignar.', 422);
+}
+
 exigirCupoDiarioAprobaciones($pdo, $usuario['id']);
 
 $pdo->beginTransaction();
@@ -80,9 +93,24 @@ try {
         throw new RuntimeException('Esta postulación todavía no pasa el primer filtro de Jefe de Terreno.|409');
     }
 
+    // v10.5: el cargo real recién se valida y se fija acá -- antes de
+    // esto la postulación apuntaba al cargo interno "Por asignar".
+    $stmtCargo = $pdo->prepare('SELECT id, cupos_activos FROM cargos WHERE id = :id AND activo = 1 FOR UPDATE');
+    $stmtCargo->execute(['id' => $cargoId]);
+    $cargo = $stmtCargo->fetch();
+    if (!$cargo) {
+        throw new RuntimeException('El cargo seleccionado no existe.|404');
+    }
+    if ((int)$cargo['cupos_activos'] <= 0) {
+        throw new RuntimeException('Ese cargo ya no tiene cupos disponibles. Elige otro.|409');
+    }
+
     fijarUsuarioContextoBD($pdo, $usuario['id']);
-    $stmt = $pdo->prepare('UPDATE postulaciones SET estado = "Pre_aprobado_terreno" WHERE id = :id AND estado = "Pendiente"');
-    $stmt->execute(['id' => $postulacionId]);
+    $stmt = $pdo->prepare(
+        'UPDATE postulaciones SET estado = "Pre_aprobado_terreno", cargo_id = :cargo_id
+          WHERE id = :id AND estado = "Pendiente"'
+    );
+    $stmt->execute(['cargo_id' => $cargoId, 'id' => $postulacionId]);
 
     $pdo->commit();
 } catch (RuntimeException $e) {

@@ -12,7 +12,6 @@ const rutError = document.getElementById('rut-error');
 const docNota = document.getElementById('doc-nota');
 const regionSelect = document.getElementById('region');
 const comunaSelect = document.getElementById('comuna');
-const cargoSelect = document.getElementById('cargo_id');
 const form = document.getElementById('form-postulacion');
 const resultadoDiv = document.getElementById('resultado');
 const btnEnviar = document.getElementById('btn-enviar');
@@ -46,6 +45,7 @@ async function cargarListas() {
   try {
     const data = await apiFetch('/public/listas.php');
     REGIONES_COMUNAS = data.regiones_comunas;
+    obraBanner.textContent = '📍 ' + (data.obra || 'Obra ICAFAL');
 
     tipoDocumentoSelect.innerHTML = data.listas.tipo_documento
       .map(v => `<option value="${v}">${v}</option>`).join('');
@@ -91,26 +91,7 @@ regionSelect.addEventListener('change', () => {
   comunaSelect.disabled = false;
 });
 
-// v3: se listan TODOS los cargos activos, incluso sin cupo -- postular
-// a uno sin cupo ya no se bloquea, la persona queda en el Banco de
-// Postulantes (ver postular.php) en vez de no tener ninguna opción.
-async function cargarCargos() {
-  try {
-    const data = await apiFetch('/public/cargos_disponibles.php');
-    obraBanner.textContent = '📍 ' + (data.obra || 'Obra ICAFAL');
-    if (!data.cargos.length) {
-      cargoSelect.innerHTML = '<option value="">No hay cargos disponibles por el momento</option>';
-      return;
-    }
-    cargoSelect.innerHTML = '<option value="">Selecciona un cargo</option>' +
-      data.cargos.map(c => `<option value="${c.id}">${c.nombre_cargo}: ${c.tiene_cupo ? `${c.cupos_disponibles} cupo(s) disponible(s)` : 'sin cupo, quedarás en el Banco de Postulantes'}</option>`).join('');
-  } catch (e) {
-    cargoSelect.innerHTML = '<option value="">Error al cargar cargos</option>';
-  }
-}
-
 cargarListas();
-cargarCargos();
 
 // v6.9: "No tengo CV" -- Ricardo pidió no bloquear al postulante que
 // nunca ha trabajado o no tiene su CV a mano; en vez de eso, se le pide
@@ -164,7 +145,6 @@ form.addEventListener('submit', async (e) => {
     formData.append('correo', document.getElementById('correo').value);
     formData.append('region', regionSelect.value);
     formData.append('comuna', comunaSelect.value);
-    formData.append('cargo_id', cargoSelect.value);
     formData.append('consentimiento_ley19628', document.getElementById('consentimiento').checked ? '1' : '');
     if (sinCvCheckbox.checked) {
       formData.append('experiencia_cargo', document.getElementById('experiencia_cargo').value);
