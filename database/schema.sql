@@ -206,7 +206,7 @@ CREATE TABLE postulaciones (
     -- se llega a 'Aprobado_admin' (mismo momento en que hoy se avisa a
     -- Prevencion/Bodega, ver notificarIngresoFaena()). Portico escanea
     -- ese QR (con la camara de su celular, sin apps ni login: el QR
-    -- codifica una URL publica) y confirma en persona -- reci�n ahi el
+    -- codifica una URL publica) y confirma en persona -- recien ahi el
     -- JAO puede empezar a verificar documentos (ver
     -- admin_general/verificar_identidad.php). No es lo mismo que el QR
     -- de "acceso a la obra" del correo de contratacion exitosa (ese
