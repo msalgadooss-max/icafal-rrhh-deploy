@@ -9,6 +9,11 @@
  * cargo_nuevo_nombre con texto), el cargo recién se crea aquí, al
  * aprobar -- nunca antes, para no llenar el catálogo con propuestas que
  * el Administrador termina rechazando.
+ *
+ * v10.3 - Admin_Contrato ahora puede abrir una cantidad DISTINTA a la
+ * pedida (ej. pidieron 5, solo hay presupuesto para 3) y dejar una
+ * observación. `cantidad` (lo pedido) nunca se toca -- se guarda aparte
+ * `cantidad_aprobada` (lo realmente abierto) para trazabilidad.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -21,8 +26,16 @@ exigirCsrfValido();
 
 $body = leerJsonBody();
 $solicitudId = (int)($body['solicitud_id'] ?? 0);
+$cantidadOverride = array_key_exists('cantidad', $body) && $body['cantidad'] !== null && $body['cantidad'] !== ''
+    ? (int)$body['cantidad']
+    : null;
+$observacion = limpiarTexto($body['observacion'] ?? '', 255);
+
 if ($solicitudId <= 0) {
     responderError('solicitud_id inválido.', 422);
+}
+if ($cantidadOverride !== null && $cantidadOverride < 1) {
+    responderError('La cantidad a abrir debe ser al menos 1. Si quieres abrir 0, rechaza la solicitud en vez de aprobarla.', 422);
 }
 
 $pdo = obtenerConexion();
@@ -45,6 +58,8 @@ try {
     if ($solicitud['estado'] !== 'Pendiente') {
         throw new RuntimeException('Esta solicitud ya fue resuelta.|409');
     }
+
+    $cantidadAprobada = $cantidadOverride ?? (int)$solicitud['cantidad'];
 
     $cargoId = $solicitud['cargo_id'];
     $nombreCargo = $solicitud['nombre_cargo'];
@@ -70,8 +85,8 @@ try {
                   WHERE id = :cargo_id'
             );
             $stmtCargo->execute([
-                'cantidad1' => $solicitud['cantidad'],
-                'cantidad2' => $solicitud['cantidad'],
+                'cantidad1' => $cantidadAprobada,
+                'cantidad2' => $cantidadAprobada,
                 'cargo_id' => $cargoId,
             ]);
         } else {
@@ -83,8 +98,8 @@ try {
             );
             $stmtCrear->execute([
                 'nombre' => $nombreCargo,
-                'cantidad1' => $solicitud['cantidad'],
-                'cantidad2' => $solicitud['cantidad'],
+                'cantidad1' => $cantidadAprobada,
+                'cantidad2' => $cantidadAprobada,
             ]);
             $cargoId = (int)$pdo->lastInsertId();
         }
@@ -99,18 +114,24 @@ try {
               WHERE id = :cargo_id'
         );
         $stmtCargo->execute([
-            'cantidad1' => $solicitud['cantidad'],
-            'cantidad2' => $solicitud['cantidad'],
+            'cantidad1' => $cantidadAprobada,
+            'cantidad2' => $cantidadAprobada,
             'cargo_id' => $cargoId,
         ]);
     }
 
     $stmtUpdate = $pdo->prepare(
         'UPDATE solicitudes_cupo
-            SET estado = "Aprobada", resuelta_por = :uid, resuelta_at = NOW()
+            SET estado = "Aprobada", resuelta_por = :uid, resuelta_at = NOW(),
+                cantidad_aprobada = :cantidad_aprobada, observacion_aprobacion = :observacion
           WHERE id = :id'
     );
-    $stmtUpdate->execute(['uid' => $usuario['id'], 'id' => $solicitudId]);
+    $stmtUpdate->execute([
+        'uid' => $usuario['id'],
+        'id' => $solicitudId,
+        'cantidad_aprobada' => $cantidadAprobada,
+        'observacion' => $observacion !== '' ? $observacion : null,
+    ]);
 
     $pdo->commit();
 } catch (RuntimeException $e) {
@@ -123,4 +144,8 @@ try {
     responderError('No fue posible aprobar la solicitud.', 500);
 }
 
-responderOk(['mensaje' => "Vacante abierta: {$solicitud['cantidad']} cupos de \"{$nombreCargo}\"."]);
+$mensaje = "Vacante abierta: {$cantidadAprobada} cupos de \"{$nombreCargo}\".";
+if ($cantidadAprobada !== (int)$solicitud['cantidad']) {
+    $mensaje .= " (se pidieron {$solicitud['cantidad']})";
+}
+responderOk(['mensaje' => $mensaje]);

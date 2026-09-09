@@ -58,6 +58,9 @@ async function cargarSolicitudesCupo() {
       return;
     }
     vacio.classList.add('hidden');
+    solicitudesCupoPorId = {};
+    data.solicitudes.forEach(s => { solicitudesCupoPorId[s.id] = s; });
+
     tbody.innerHTML = data.solicitudes.map(s => `
       <tr class="border-t">
         <td class="px-4 py-3">${s.nombre_cargo}${s.es_cargo_nuevo ? ' <span class="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold align-middle">🆕 cargo nuevo</span>' : ''}</td>
@@ -74,10 +77,18 @@ async function cargarSolicitudesCupo() {
   }
 }
 
+let solicitudesCupoPorId = {};
+
 async function aprobarSolicitudCupo(id) {
-  if (!confirm('¿Aprobar esta solicitud de cupos? Se abrirá la vacante de inmediato.')) return;
+  const solicitud = solicitudesCupoPorId[id];
+  if (!solicitud) return;
+  const respuesta = await pedirAprobacionCupo(solicitud.cantidad, solicitud.nombre_cargo);
+  if (respuesta === null) return;
   try {
-    const data = await apiFetch('/admin_contrato/solicitudes_cupo_aprobar.php', { method: 'POST', body: { solicitud_id: id } });
+    const data = await apiFetch('/admin_contrato/solicitudes_cupo_aprobar.php', {
+      method: 'POST',
+      body: { solicitud_id: id, cantidad: respuesta.cantidad, observacion: respuesta.observacion },
+    });
     mostrarAlerta('alerta', data.mensaje, 'exito');
     await cargarSolicitudesCupo();
   } catch (err) {

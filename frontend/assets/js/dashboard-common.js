@@ -124,6 +124,56 @@ function pedirMotivoRechazo() {
   });
 }
 
+// --- v10.3: Admin_Contrato puede ajustar la cantidad al aprobar un ------
+// cupo (ej. pidieron 5, solo hay presupuesto para 3) y dejar una
+// observación. Mismo patrón de modal que pedirMotivoRechazo().
+function pedirAprobacionCupo(cantidadPedida, nombreCargo) {
+  return new Promise((resolve) => {
+    let modal = document.getElementById('modal-aprobar-cupo');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modal-aprobar-cupo';
+      modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+      document.body.appendChild(modal);
+    }
+
+    const cerrar = (valor) => { modal.classList.add('hidden'); resolve(valor); };
+
+    modal.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+        <h3 class="font-bold text-gray-900 mb-1">Aprobar cupos de "${nombreCargo}"</h3>
+        <p class="text-xs text-gray-500 mb-4">Pidieron ${cantidadPedida}. Puedes abrir esa misma cantidad, o subirla/bajarla.</p>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Cantidad a abrir</label>
+        <input id="input-cantidad-aprobar" type="number" min="1" value="${cantidadPedida}"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3">
+        <label class="block text-xs font-medium text-gray-700 mb-1">Observación (opcional)</label>
+        <textarea id="input-observacion-aprobar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3"
+                  rows="2" placeholder="Ej: se aprueban 3 por presupuesto, el resto queda para el próximo mes."></textarea>
+        <div class="flex gap-3">
+          <button id="btn-cancelar-aprobar-cupo" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg py-2">Cancelar</button>
+          <button id="btn-confirmar-aprobar-cupo" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg py-2">Aprobar</button>
+        </div>
+      </div>`;
+    modal.classList.remove('hidden');
+
+    const inputCantidad = document.getElementById('input-cantidad-aprobar');
+    inputCantidad.focus();
+    inputCantidad.select();
+
+    document.getElementById('btn-cancelar-aprobar-cupo').addEventListener('click', () => cerrar(null));
+    modal.addEventListener('click', (e) => { if (e.target === modal) cerrar(null); });
+    document.getElementById('btn-confirmar-aprobar-cupo').addEventListener('click', () => {
+      const cantidad = parseInt(inputCantidad.value, 10);
+      if (!Number.isFinite(cantidad) || cantidad < 1) {
+        inputCantidad.focus();
+        return;
+      }
+      const observacion = document.getElementById('input-observacion-aprobar').value.trim();
+      cerrar({ cantidad, observacion });
+    });
+  });
+}
+
 function mostrarAlerta(contenedorId, mensaje, tipo = 'error') {
   const el = document.getElementById(contenedorId);
   if (!el) return;

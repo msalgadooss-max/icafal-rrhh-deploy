@@ -92,6 +92,12 @@ CREATE TABLE solicitudes_cupo (
     resuelta_por        INT UNSIGNED NULL,
     resuelta_at         DATETIME NULL,
     motivo_rechazo      VARCHAR(255) NULL,
+    -- v10.3: Admin_Contrato puede abrir MENOS o MAS cupos que los pedidos
+    -- por Jefe_Terreno (ej. pidio 5, pero solo hay presupuesto para 3).
+    -- `cantidad` arriba sigue siendo el pedido ORIGINAL, sin tocar, para
+    -- que quede trazabilidad de que se pidio versus que se aprobo.
+    cantidad_aprobada     INT UNSIGNED NULL,
+    observacion_aprobacion VARCHAR(255) NULL,
     creado_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_solicitud_cargo
         FOREIGN KEY (cargo_id) REFERENCES cargos(id),
