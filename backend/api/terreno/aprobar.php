@@ -30,6 +30,15 @@
  *     Contrato autorizaba por separado (otro rol, otro momento); esa
  *     autorización ahora es un dato puramente interno que el postulante
  *     nunca ve ni es notificado (ver admin_contrato/autorizar.php).
+ *
+ *   - v10.9 (mismo pedido, misma descripción del proceso): el correo con
+ *     el QR de "ingreso a faena" -- el que Portería escanea para dejarlo
+ *     pasar a la sala de espera -- también sale JUSTO ACÁ, junto con el
+ *     de Etapa 2. Antes salía mucho después (recién cuando la
+ *     postulación llegaba a 'Aprobado_admin', es decir, después de que
+ *     el postulante ya había completado su Etapa 2 a distancia), lo que
+ *     no calzaba con una sola visita continua: portería no podía dejarlo
+ *     entrar a llenar sus datos porque ese QR todavía no existía.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -125,6 +134,16 @@ try {
     // seguir avanzando -- el link de Etapa 2 (datos personales + subir
     // documentos), para completarlo ahí mismo en la sala de espera.
     otorgarAccesoEtapa2($pdo, $postulacionId, $usuario['id']);
+
+    // v10.9: y también el QR de "ingreso a faena" -- el que Portería
+    // escanea para dejarlo pasar a la sala de espera a llenar esos
+    // datos. Antes de esto no tenía ninguna forma de que Portería lo
+    // dejara entrar.
+    try {
+        notificarIngresoFaena($pdo, $postulacionId);
+    } catch (\Throwable $e) {
+        error_log('notificarIngresoFaena error: ' . $e->getMessage());
+    }
 
     $pdo->commit();
 } catch (RuntimeException $e) {

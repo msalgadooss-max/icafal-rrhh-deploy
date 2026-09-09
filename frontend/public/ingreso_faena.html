@@ -20,10 +20,11 @@
   <script>
     /**
      * v7 - Pantalla que ve Portería al escanear (con la cámara de su
-     * propio celular) el QR de "ingreso a faena" que le llega al
-     * postulante por correo apenas es autorizado. Muestra Nombre, RUT y
-     * Cargo, y si corresponde, un botón para confirmar el ingreso --
-     * recién con eso el JAO puede empezar a verificar sus documentos.
+     * propio celular o tablet) el QR de "ingreso a faena" que le llega
+     * al postulante por correo apenas el Capataz lo selecciona (v10.9).
+     * Muestra Nombre, RUT y Cargo, y si corresponde, un botón para
+     * confirmar el ingreso -- recién con eso puede pasar a la sala de
+     * espera a completar sus datos.
      */
     const params = new URLSearchParams(window.location.search);
     const rut = params.get('rut') || '';
@@ -64,7 +65,7 @@
       try {
         const data = await apiFetch(`/porteria/ingreso_estado.php?rut=${encodeURIComponent(rut)}&codigo=${encodeURIComponent(codigo)}`);
         if (data.ya_confirmado) {
-          contenedor.innerHTML = tarjeta('bg-green-600', 'INGRESO CONFIRMADO', 'Puede pasar a oficina JAO a revisar sus documentos.', data);
+          contenedor.innerHTML = tarjeta('bg-green-600', 'INGRESO CONFIRMADO', 'Puede pasar a la sala de espera a completar sus datos.', data);
         } else if (data.puede_confirmar) {
           contenedor.innerHTML = tarjeta('bg-blue-600', 'LISTO PARA INGRESAR', 'Confirma que esta persona se presentó en faena.', data,
             `<button id="btn-confirmar" onclick="confirmar()" class="mt-5 w-full bg-white text-blue-700 font-bold rounded-lg py-3 text-base">Confirmar ingreso</button>`);

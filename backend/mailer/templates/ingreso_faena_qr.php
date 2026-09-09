@@ -1,18 +1,20 @@
 <?php
 /**
- * v7 - Correo enviado apenas la postulación llega a 'Aprobado_admin'
- * (Administrador de Contrato autorizó Y el postulante ya completó su
- * Etapa 2). Incluye el QR que Portería escanea, con la cámara de su
- * propio celular, para confirmar que la persona se presentó -- recién
- * ahí el JAO puede empezar a verificar sus documentos.
+ * v7 - Correo con el QR que Portería escanea, con su propia cámara o
+ * tablet, para confirmar que la persona se presentó y dejarla pasar.
+ *
+ * v10.9 (pedido explícito del usuario): ahora sale JUSTO cuando el
+ * Capataz selecciona a la persona en portería (junto con el correo del
+ * link de Etapa 2) -- todavía no llenó sus datos ni subió documentos,
+ * eso lo hace recién adentro, en la sala de espera.
  * Variables esperadas: $nombreCompleto, $cargo, $qrDataUri
  */
 return <<<HTML
 <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#1f2937">
   <h2 style="color:#1d4e89">¡Ya vienes avanzando, {$nombreCompleto}!</h2>
-  <p>Tu postulación para el cargo de <strong>{$cargo}</strong> fue autorizada y ya completaste
-  tus datos. El siguiente paso es presentarte en la obra para que el equipo administrativo
-  revise tus documentos.</p>
+  <p>Fuiste seleccionado para el cargo de <strong>{$cargo}</strong>. Este es tu código para
+  que Portería te deje pasar a la sala de espera, donde vas a completar tus datos
+  personales y subir tus documentos.</p>
 
   <div style="background:#eaf1fa;border:1px solid #bcd4ee;border-radius:10px;padding:18px;text-align:center;margin:20px 0">
     <p style="margin:0 0 12px;font-weight:bold;color:#1d4e89">Tu código de ingreso a faena</p>

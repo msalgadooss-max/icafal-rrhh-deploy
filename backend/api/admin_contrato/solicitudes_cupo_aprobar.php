@@ -14,6 +14,11 @@
  * pedida (ej. pidieron 5, solo hay presupuesto para 3) y dejar una
  * observación. `cantidad` (lo pedido) nunca se toca -- se guarda aparte
  * `cantidad_aprobada` (lo realmente abierto) para trazabilidad.
+ *
+ * v10.8 (pedido explícito del usuario) - Se avisa por correo a quien
+ * pidió los cupos (Jefe_Terreno) y a todos los Capataz activos: antes
+ * nadie se enteraba de que ya podían seleccionar gente para ese cargo
+ * salvo entrando a revisar el dashboard a cada rato.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -43,7 +48,7 @@ $pdo->beginTransaction();
 
 try {
     $stmtCheck = $pdo->prepare(
-        'SELECT s.estado, s.cantidad, s.cargo_id, s.cargo_nuevo_nombre, c.nombre_cargo
+        'SELECT s.estado, s.cantidad, s.cargo_id, s.cargo_nuevo_nombre, s.usuario_id, c.nombre_cargo
            FROM solicitudes_cupo s
            LEFT JOIN cargos c ON c.id = s.cargo_id
           WHERE s.id = :id
@@ -142,6 +147,21 @@ try {
     $pdo->rollBack();
     error_log('solicitudes_cupo_aprobar error: ' . $e->getMessage());
     responderError('No fue posible aprobar la solicitud.', 500);
+}
+
+// v10.8: fuera de la transacción, igual que el resto de los
+// "notificar*" -- que el correo falle no debe revertir la aprobación.
+try {
+    notificarCuposAprobados(
+        $pdo,
+        $solicitud['usuario_id'] !== null ? (int)$solicitud['usuario_id'] : null,
+        $nombreCargo,
+        $cantidadAprobada,
+        (int)$solicitud['cantidad'],
+        $observacion !== '' ? $observacion : null
+    );
+} catch (Throwable $e) {
+    error_log('notificarCuposAprobados error: ' . $e->getMessage());
 }
 
 $mensaje = "Vacante abierta: {$cantidadAprobada} cupos de \"{$nombreCargo}\".";

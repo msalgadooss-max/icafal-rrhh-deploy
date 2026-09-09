@@ -187,14 +187,10 @@ function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
     // -- por eso las tallas de EPP ya estan disponibles), se avisa
     // tambien a Prevencion y Bodega.
     notificarPrevencionYBodega($pdo, $postulacion);
-    // v7: y se le envia al propio postulante el QR de "ingreso a faena"
-    // -- el que Porteria escanea al dia siguiente para dejarlo pasar a
-    // ver al JAO (ver notificarIngresoFaena()).
-    try {
-        notificarIngresoFaena($pdo, $postulacion);
-    } catch (\Throwable $e) {
-        error_log('notificarIngresoFaena error: ' . $e->getMessage());
-    }
+    // v10.7: el QR de "ingreso a faena" (notificarIngresoFaena()) ya NO
+    // se manda aca -- se movio a terreno/aprobar.php, junto con el link
+    // de Etapa 2, para que Porteria pueda dejarlo pasar a la sala de
+    // espera ANTES de que llene sus datos, no despues.
 }
 
 /**
@@ -274,16 +270,89 @@ function notificarAprobacionAJao(PDO $pdo, array $postulacion): void
 }
 
 /**
- * v7: correo al propio postulante con el QR de "ingreso a faena" (día
- * siguiente) -- Portería lo escanea con la cámara de su celular (el QR
+ * v10.8 (pedido explícito del usuario, tras describir el proceso
+ * completo): cuando Admin_Contrato aprueba una solicitud de cupos, se
+ * avisa por correo a quien la pidió (Jefe_Terreno) y a todos los
+ * Capataz activos -- antes nadie se enteraba salvo entrando a revisar
+ * el dashboard a cada rato. Se llama desde
+ * admin_contrato/solicitudes_cupo_aprobar.php, fuera de su transacción
+ * (igual que el resto de los "notificar*", para no hacer fallar la
+ * aprobación si el envío de correo falla).
+ */
+function notificarCuposAprobados(
+    PDO $pdo,
+    ?int $usuarioSolicitanteId,
+    string $nombreCargo,
+    int $cantidadAprobada,
+    int $cantidadPedida,
+    ?string $observacion
+): void {
+    require_once __DIR__ . '/../mailer/Mailer.php';
+
+    $destinatarios = [];
+    if ($usuarioSolicitanteId !== null) {
+        $stmtSolicitante = $pdo->prepare('SELECT nombre, correo FROM usuarios WHERE id = :id AND activo = 1');
+        $stmtSolicitante->execute(['id' => $usuarioSolicitanteId]);
+        $solicitante = $stmtSolicitante->fetch();
+        if ($solicitante) {
+            $destinatarios[] = $solicitante;
+        }
+    }
+    $stmtCapataces = $pdo->query("SELECT nombre, correo FROM usuarios WHERE rol = 'Capataz' AND activo = 1");
+    foreach ($stmtCapataces->fetchAll() as $capataz) {
+        $destinatarios[] = $capataz;
+    }
+    if (!$destinatarios) {
+        return;
+    }
+
+    $cantidadDistinta = $cantidadAprobada !== $cantidadPedida
+        ? " (se pidieron {$cantidadPedida})"
+        : '';
+    $bloqueObservacion = $observacion !== null && $observacion !== ''
+        ? '<p style="background:#f3f4f6;border-radius:6px;padding:10px 14px;color:#374151"><strong>Observación:</strong> ' . htmlspecialchars($observacion, ENT_QUOTES, 'UTF-8') . '</p>'
+        : '';
+    $html = (function () use ($nombreCargo, $cantidadAprobada, $cantidadDistinta, $bloqueObservacion) {
+        return require __DIR__ . '/../mailer/templates/notificacion_cupos_aprobados.php';
+    })();
+
+    // v10.8: dedupe por correo -- si Jefe_Terreno pidió los cupos y
+    // además es (raro, pero posible) el mismo correo de un Capataz, no
+    // le llega dos veces.
+    $yaEnviados = [];
+    foreach ($destinatarios as $destinatario) {
+        $correo = strtolower($destinatario['correo']);
+        if (isset($yaEnviados[$correo])) {
+            continue;
+        }
+        $yaEnviados[$correo] = true;
+        Mailer::enviar($destinatario['correo'], $destinatario['nombre'], "Cupos aprobados: {$nombreCargo} - ICAFAL", $html);
+    }
+}
+
+/**
+ * v7: correo al propio postulante con el QR de "ingreso a faena" --
+ * Portería lo escanea con la cámara de su celular o tablet (el QR
  * codifica una URL pública, no requiere app ni login) y confirma en
  * persona que la persona llegó. Recién con eso el JAO puede empezar a
  * verificar sus documentos (ver admin_general/verificar_identidad.php).
  * No es lo mismo que el QR de "acceso a la obra" del correo de
  * contratación exitosa (notificarContratacionExitosa) -- ese es el
  * cierre del día 2, este es la entrada del día 1.
+ *
+ * v10.9 (pedido explícito del usuario, tras describir el proceso
+ * completo): antes este correo salía recién cuando la postulación
+ * llegaba a 'Aprobado_admin' (Admin_Contrato autorizó Y el postulante
+ * ya había completado su Etapa 2 a distancia) -- eso no calzaba con una
+ * sola visita continua: el postulante no podía ni entrar a la sala de
+ * espera a llenar sus datos sin que antes existiera este QR. Ahora sale
+ * ANTES, junto con el link de Etapa 2 (ver terreno/aprobar.php), así
+ * que recibe la firma como parámetro (todavía no existe fila en
+ * datos_contratacion en este momento, así que ya no puede armar el
+ * array `$postulacion` ella sola desde afuera) y hace su propia
+ * consulta a la base para tener nombre/rut/correo/cargo frescos.
  */
-function notificarIngresoFaena(PDO $pdo, array $postulacion): void
+function notificarIngresoFaena(PDO $pdo, int $postulacionId): void
 {
     require_once __DIR__ . '/../mailer/Mailer.php';
     $vendorAutoload = __DIR__ . '/../../vendor/autoload.php';
@@ -291,6 +360,18 @@ function notificarIngresoFaena(PDO $pdo, array $postulacion): void
         return; // sin Composer no hay libreria de QR -- no se envia este correo
     }
     require_once $vendorAutoload;
+
+    $stmt = $pdo->prepare(
+        'SELECT p.nombre_completo, p.rut, p.correo, p.codigo_seguimiento, c.nombre_cargo
+           FROM postulaciones p
+           JOIN cargos c ON c.id = p.cargo_id
+          WHERE p.id = :id'
+    );
+    $stmt->execute(['id' => $postulacionId]);
+    $postulacion = $stmt->fetch();
+    if (!$postulacion) {
+        return;
+    }
 
     $urlValidacion = BASE_URL . '/frontend/public/ingreso_faena.html'
         . '?rut=' . urlencode($postulacion['rut'])
@@ -310,7 +391,7 @@ function notificarIngresoFaena(PDO $pdo, array $postulacion): void
         return require __DIR__ . '/../mailer/templates/ingreso_faena_qr.php';
     })();
 
-    Mailer::enviar($postulacion['correo'], $nombreCompleto, 'Preséntate en obra - Código de ingreso - ICAFAL', $html);
+    Mailer::enviar($postulacion['correo'], $nombreCompleto, 'Preséntate en portería - Código de ingreso - ICAFAL', $html);
 }
 
 /**

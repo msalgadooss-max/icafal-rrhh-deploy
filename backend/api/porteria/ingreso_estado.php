@@ -1,10 +1,14 @@
 <?php
 /**
- * v7 - Consulta pública (sin login) para el QR de "ingreso a faena" del
- * día 1 -- ver notificarIngresoFaena() y frontend/public/ingreso_faena.html.
+ * v7 - Consulta pública (sin login) para el QR de "ingreso a faena" --
+ * ver notificarIngresoFaena() y frontend/public/ingreso_faena.html.
  * Muestra lo mínimo (nombre, RUT, cargo) más si todavía se puede
  * confirmar el ingreso o si ya se hizo antes. Nunca datos de
  * datos_contratacion.
+ *
+ * v10.9: "puede_confirmar" ya no exige 'Aprobado_admin' -- basta con
+ * que el Capataz ya haya seleccionado a la persona (ver
+ * terreno/aprobar.php, que es donde ahora se envía este QR).
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -35,7 +39,8 @@ if (!$postulacion) {
 }
 
 $yaConfirmado = $postulacion['ingreso_faena_at'] !== null;
-$puedeConfirmar = !$yaConfirmado && $postulacion['estado'] === 'Aprobado_admin';
+$puedeConfirmar = !$yaConfirmado
+    && !in_array($postulacion['estado'], ['Pendiente', 'En_banco', 'Rechazado'], true);
 
 responderOk([
     'nombre_completo'   => $postulacion['nombre_completo'],

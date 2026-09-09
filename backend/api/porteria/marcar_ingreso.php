@@ -1,6 +1,6 @@
 <?php
 /**
- * v7 - Confirma el "ingreso a faena" del día 1: Portería lo llama desde
+ * v7 - Confirma el "ingreso a faena": Portería lo llama desde
  * el QR público (frontend/public/ingreso_faena.html) o desde su propio
  * dashboard autenticado (frontend/dashboards/porteria.html) -- en ambos
  * casos el "crédito" para hacer esta acción es tener el par correcto
@@ -8,6 +8,12 @@
  * Portería (nunca requiere sesión). Cambio: ingreso_faena_at = NOW().
  * No cambia `estado` -- es un sub-gate, igual que aprobado_jt_at, que
  * habilita la siguiente acción (ver admin_general/verificar_identidad.php).
+ *
+ * v10.9 (pedido explícito del usuario): antes exigía estado
+ * 'Aprobado_admin' (es decir, recién después de que el postulante ya
+ * había completado su Etapa 2). Ahora Portería puede confirmar el
+ * ingreso apenas el Capataz lo seleccionó -- para dejarlo pasar a la
+ * sala de espera y que llene sus datos ahí mismo, no antes de entrar.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -44,7 +50,10 @@ try {
     if ($postulacion['ingreso_faena_at'] !== null) {
         throw new RuntimeException('El ingreso de esta persona ya estaba confirmado.|409');
     }
-    if ($postulacion['estado'] !== 'Aprobado_admin') {
+    // v10.9: basta con que el Capataz ya lo haya seleccionado (o que
+    // haya avanzado más allá) -- ya no depende de que además haya
+    // completado su Etapa 2.
+    if (in_array($postulacion['estado'], ['Pendiente', 'En_banco', 'Rechazado'], true)) {
         throw new RuntimeException('Esta postulación todavía no está lista para confirmar ingreso a faena.|409');
     }
 
