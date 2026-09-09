@@ -11,10 +11,17 @@
  *
  * La fase se calcula, no se guarda: combina el `estado` con
  * admin_autorizado_at y si ya existe su fila en datos_contratacion.
- * Desde v6.5 el flujo es SECUENCIAL (ya no en paralelo): el postulante
- * no puede tener datos_contratacion sin que admin_autorizado_at ya
- * esté puesto, porque es justo esa autorización la que le entrega el
- * acceso a Etapa 2 (ver admin_contrato/autorizar.php).
+ *
+ * v10.9: desde que el link de Etapa 2 sale al seleccionar el Capataz
+ * (no al autorizar Admin_Contrato, ver terreno/aprobar.php), estas dos
+ * condiciones ya NO tienen un orden fijo entre sí -- el postulante bien
+ * puede completar sus datos antes de que Admin_Contrato autorice.
+ *
+ * v10.10: se agrega el `estado` crudo a la respuesta (antes solo se
+ * exponía la fase ya traducida a texto) para que el frontend pueda
+ * decidir localmente si mostrar acciones que dependen del estado
+ * exacto -- ej. "Deshacer selección" del Capataz, solo mientras sigue
+ * en 'Pre_aprobado_terreno' (ver terreno/deshacer_seleccion.php).
  */
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/auth.php';
@@ -126,14 +133,14 @@ function pasosProgreso(array $p): array
         }
         $pasos[] = ['etiqueta' => $etiquetas[$estado] ?? $estado, 'completado' => $idxActual !== false && $idx <= $idxActual];
         if ($estado === 'Pre_aprobado_terreno') {
-            // v6.5: dos hitos sinteticos (no son estados reales), ahora en
-            // orden SECUENCIAL real: Admin_Contrato autoriza PRIMERO, y
-            // recien ahi el postulante recibe el acceso a Etapa 2 (ver
-            // admin_contrato/autorizar.php). intentarAvanzarAAprobadoAdmin()
-            // igual valida ambas condiciones antes de pasar a 'Aprobado_admin'.
+            // v6.5: dos hitos sinteticos (no son estados reales) que
+            // intentarAvanzarAAprobadoAdmin() exige ambos antes de pasar a
+            // 'Aprobado_admin'. v10.9: ya no ocurren en un orden fijo entre
+            // sí -- se listan igual una junto a otra, pero cada una se
+            // completa de forma independiente.
             $yaSuperado = $idxActual !== false && $idx < $idxActual;
-            $pasos[] = ['etiqueta' => 'Autorización Administrador de contrato', 'completado' => $autorizadoAdmin || $yaSuperado];
             $pasos[] = ['etiqueta' => 'Datos completados por el postulante', 'completado' => $completo || $yaSuperado];
+            $pasos[] = ['etiqueta' => 'Autorización interna (Administrador de Contrato)', 'completado' => $autorizadoAdmin || $yaSuperado];
         }
     }
     return $pasos;
@@ -144,6 +151,7 @@ $resultado = array_map(function ($p) use ($usuario) {
         'id' => (int)$p['id'],
         'nombre_completo' => $p['nombre_completo'],
         'nombre_cargo' => $p['nombre_cargo'],
+        'estado' => $p['estado'],
         'fase' => faseVisual($p),
         'contratado' => in_array($p['estado'], ['Contratado', 'Proceso_completo'], true),
         'pasos' => pasosProgreso($p),

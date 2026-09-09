@@ -24,6 +24,10 @@
  */
 let CARGOS_CON_CUPO = [];
 let ARRASTRANDO = false;
+// v10.10: habilita el botón "Deshacer selección" dentro del modal de
+// detalle de "Estado en vivo" (ver estado-vivo.js) -- solo en este
+// dashboard, para el error típico de "arrastré a la caja equivocada".
+ESTADO_VIVO_MOSTRAR_DESHACER = true;
 
 (async () => {
   const usuario = await protegerDashboard('Capataz');
@@ -31,12 +35,21 @@ let ARRASTRANDO = false;
   await cargarCargosConCupo();
   await cargarLista();
   configurarTabs();
+  iniciarEstadoVivo();
   setInterval(() => {
     if (ARRASTRANDO) return;
     if (TAB_ACTIVA === 'seleccion') { cargarCargosConCupo(); cargarLista(); }
     else cargarRecepcion();
   }, 15000);
 })();
+
+// v10.10: cuando se deshace una selección (ver estado-vivo.js), refresca
+// también los cupos y la lista propia de este dashboard -- la
+// postulación vuelve a aparecer ahí para elegir el cargo correcto.
+function onDeshacerSeleccion() {
+  cargarCargosConCupo();
+  if (TAB_ACTIVA === 'seleccion') cargarLista();
+}
 
 async function cargarCargosConCupo() {
   try {
@@ -197,6 +210,14 @@ async function asignarCargoArrastrado(id, cargoId) {
     mostrarAlerta('alerta', 'Seleccionado. Pasa a revisión del Administrador de Contrato.', 'exito');
     await cargarCargosConCupo();
     await cargarLista();
+    // v10.10: destello en la caja del cargo recién usado -- para que la
+    // rebaja del cupo sea visible de un vistazo, no un numero que
+    // cambio en silencio en el re-render.
+    const zona = document.querySelector(`.cargo-zone[data-cargo-id="${cargoId}"]`);
+    if (zona) {
+      zona.classList.add('cargo-zone--rebajado');
+      setTimeout(() => zona.classList.remove('cargo-zone--rebajado'), 900);
+    }
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }

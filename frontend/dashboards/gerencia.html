@@ -45,22 +45,33 @@
     </div>
 
     <!-- Filtro -->
-    <div class="flex items-center gap-3 mb-3">
-      <label class="text-sm text-gray-600">Filtrar por estado:</label>
-      <select id="filtro-estado" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
-        <option value="">Todos</option>
-        <option value="En_banco">En banco</option>
-        <option value="Pendiente">Pendiente</option>
-        <option value="Pre_aprobado_terreno">Pre-aprobado terreno</option>
-        <option value="Aprobado_admin">Aprobado admin</option>
-        <option value="Datos_completados">Datos completados</option>
-        <option value="Induccion_ok">Inducción OK</option>
-        <option value="EPP_listo">EPP listo</option>
-        <option value="Contratado">Contratado</option>
-        <option value="Proceso_completo">Proceso completo</option>
-        <option value="Rechazado">Rechazado</option>
-      </select>
-      <span id="contador" class="text-xs text-gray-400"></span>
+    <div class="flex flex-wrap items-end gap-3 mb-3">
+      <div>
+        <label class="text-sm text-gray-600 block mb-1">Filtrar por estado:</label>
+        <select id="filtro-estado" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+          <option value="">Todos</option>
+          <option value="En_banco">En banco</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Pre_aprobado_terreno">Pre-aprobado terreno</option>
+          <option value="Aprobado_admin">Aprobado admin</option>
+          <option value="Datos_completados">Datos completados</option>
+          <option value="Induccion_ok">Inducción OK</option>
+          <option value="EPP_listo">EPP listo</option>
+          <option value="Contratado">Contratado</option>
+          <option value="Proceso_completo">Proceso completo</option>
+          <option value="Rechazado">Rechazado</option>
+        </select>
+      </div>
+      <span id="contador" class="text-xs text-gray-400 mb-2"></span>
+
+      <!-- v10.10: descarga en Excel, filtrando por rango de fecha de postulación -->
+      <div class="ml-auto flex flex-wrap items-end gap-3">
+        <div><label class="block text-xs text-gray-600 mb-1">Desde</label>
+          <input type="datetime-local" id="desde-gerencia" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
+        <div><label class="block text-xs text-gray-600 mb-1">Hasta</label>
+          <input type="datetime-local" id="hasta-gerencia" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
+        <button class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="exportarGerenciaExcel()">Descargar Excel</button>
+      </div>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm overflow-x-auto">

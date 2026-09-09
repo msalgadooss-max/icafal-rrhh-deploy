@@ -14,6 +14,13 @@
   .drag-handle { touch-action: none; }
   .cargo-zone { transition: transform .12s ease, background-color .12s ease, border-color .12s ease; }
   .cargo-zone--hover { transform: scale(1.06); border-color: #E8590C; border-style: solid; background-color: #FFF1E6; }
+  /* v10.10: destello al bajar el cupo -- para que la rebaja sea
+     visible de un vistazo, no solo un numero que cambio en silencio. */
+  @keyframes cupoRebajado {
+    0%   { background-color: #DCFCE7; border-color: #22C55E; transform: scale(1.08); }
+    100% { background-color: initial; border-color: initial; transform: scale(1); }
+  }
+  .cargo-zone--rebajado { animation: cupoRebajado 900ms ease-out; }
   .postulante-card.arrastrando-origen { opacity: .35; }
   .drag-ghost {
     position: fixed;
@@ -45,6 +52,9 @@
 
   <main class="max-w-3xl mx-auto p-6">
     <div id="alerta"></div>
+    <!-- v10.10: "Estado en vivo" -- para que el Capataz vea en qué paso
+         va cada postulante sin tener que preguntarle a otro rol. -->
+    <div id="estado-vivo"></div>
 
     <div class="flex gap-1 border-b border-gray-200 mb-6" id="tabs">
       <button data-tab="seleccion" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Selección en terreno</button>
@@ -78,6 +88,7 @@
   <script src="../assets/js/api.js"></script>
   <script src="../assets/js/dashboard-common.js"></script>
   <script src="../assets/js/guia-proceso.js"></script>
+  <script src="../assets/js/estado-vivo.js"></script>
   <script src="../assets/js/dashboard-capataz.js"></script>
 </body>
 </html>

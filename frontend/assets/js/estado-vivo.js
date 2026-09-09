@@ -1,18 +1,31 @@
 /**
- * v3.4 - "Estado en vivo": widget compartido por los 4 dashboards
- * (Terreno, Admin_Contrato, JAO, Gerencia). Se actualiza solo cada 10
- * segundos, estilo rastreo de pedido -- nombre + cargo + en qué fase
- * está. No requiere lógica distinta por rol: el backend ya entrega
- * texto listo para mostrar y nunca datos sensibles.
+ * v3.4 - "Estado en vivo": widget compartido por los dashboards internos
+ * (Terreno, Admin_Contrato, JAO, Gerencia, y desde v10.10 Capataz). Se
+ * actualiza solo cada 10 segundos, estilo rastreo de pedido -- nombre +
+ * cargo + en qué fase está. No requiere lógica distinta por rol: el
+ * backend ya entrega texto listo para mostrar y nunca datos sensibles.
  *
  * v4: cada tarjeta es clickeable -- abre un panel con una línea de
  * progreso "inicio -> meta" (mismos pasos que ve el propio postulante
  * en su seguimiento), calculada por el backend en estado_vivo.php.
  *
+ * v10.10: rediseño del panel de detalle (pedido explícito del usuario:
+ * "cada paso se ve muy junto y las letras se cruzan, extiéndelo... y
+ * agrega inicio y término al final, tipo vista atlética") -- panel más
+ * ancho, más espacio entre pasos, y banderas de Inicio/Meta a los
+ * costados. También agrega el botón "Deshacer selección" del Capataz
+ * (ver ESTADO_VIVO_MOSTRAR_DESHACER más abajo).
+ *
  * Uso: <div id="estado-vivo"></div> en el HTML, y llamar
- * iniciarEstadoVivo() una vez cargada la página.
+ * iniciarEstadoVivo() una vez cargada la página. Si el dashboard debe
+ * ofrecer "Deshacer selección" (hoy solo Capataz), definir
+ * `ESTADO_VIVO_MOSTRAR_DESHACER = true` ANTES de llamar a
+ * iniciarEstadoVivo().
  */
 let ESTADO_VIVO_ULTIMO = [];
+if (typeof ESTADO_VIVO_MOSTRAR_DESHACER === 'undefined') {
+  var ESTADO_VIVO_MOSTRAR_DESHACER = false;
+}
 
 function iniciarEstadoVivo() {
   const cont = document.getElementById('estado-vivo');
@@ -31,7 +44,7 @@ function iniciarEstadoVivo() {
       <div id="estado-vivo-lista" class="flex gap-3 overflow-x-auto pb-1"></div>
     </div>
     <div id="estado-vivo-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this) cerrarDetalleTrabajador()">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 relative">
         <button onclick="cerrarDetalleTrabajador()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
         <div id="estado-vivo-modal-contenido"></div>
       </div>
@@ -62,11 +75,20 @@ async function cargarEstadoVivo() {
 
     // Si el modal de detalle está abierto para alguien que sigue en la
     // lista, refresca su contenido con el dato nuevo (sin cerrarlo).
+    // v10.10: si el usuario había hecho scroll en el track (muchos
+    // pasos), se guarda y se restaura -- si no, el refresco automático
+    // de cada 10s lo devolvía siempre al principio.
     const modal = document.getElementById('estado-vivo-modal');
     if (modal && !modal.classList.contains('hidden')) {
       const idAbierto = Number(modal.dataset.idAbierto);
       const actualizado = data.trabajadores.find(t => t.id === idAbierto);
-      if (actualizado) renderDetalleTrabajador(actualizado);
+      if (actualizado) {
+        const trackViejo = document.querySelector('#estado-vivo-modal-contenido .overflow-x-auto');
+        const scrollPrevio = trackViejo ? trackViejo.scrollLeft : 0;
+        renderDetalleTrabajador(actualizado);
+        const trackNuevo = document.querySelector('#estado-vivo-modal-contenido .overflow-x-auto');
+        if (trackNuevo) trackNuevo.scrollLeft = scrollPrevio;
+      }
     }
 
     // v6.5: hook opcional para dashboards que además muestran esta misma
@@ -100,25 +122,45 @@ function renderDetalleTrabajador(t) {
 
   const pasos = t.pasos || [];
   const completados = pasos.filter(p => p.completado).length;
-  const pctLinea = pasos.length > 1 ? (Math.max(completados - 1, 0) / (pasos.length - 1)) * 100 : 0;
   const idxActual = Math.min(completados, pasos.length - 1);
 
+  // v10.10: cada paso tiene un ANCHO FIJO (no flex:1) y el track completo
+  // es un solo scroll horizontal -- así, con muchos pasos, nunca se
+  // aprietan ni se cruzan las letras (antes se repartían el ancho fijo
+  // del modal entre todos los pasos, y con 8-10 pasos el texto quedaba
+  // ilegible). El conector entre cada par de pasos se dibuja aparte
+  // (segmento por segmento), en vez de una sola barra de ancho variable
+  // calculada en %, que no funciona bien dentro de un contenedor con
+  // scroll propio.
+  const ANCHO_PASO = 108;
   const puntos = pasos.map((p, idx) => {
     const esActual = idx === idxActual && !t.contratado;
     let circulo;
     if (p.completado && !esActual) {
-      circulo = `<div class="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">✓</div>`;
+      circulo = `<div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold shadow-sm shrink-0">✓</div>`;
     } else if (esActual) {
-      circulo = `<div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px] font-bold shadow-md ring-4 ring-blue-100 animate-pulse">●</div>`;
+      circulo = `<div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-md ring-4 ring-blue-100 animate-pulse shrink-0">●</div>`;
     } else {
-      circulo = `<div class="w-7 h-7 rounded-full bg-gray-200 border border-gray-300"></div>`;
+      circulo = `<div class="w-8 h-8 rounded-full bg-gray-200 border border-gray-300 shrink-0"></div>`;
     }
-    return `
-      <div class="flex flex-col items-center text-center gap-2" style="flex:1; min-width:0;">
-        ${circulo}
-        <p class="text-[11px] leading-tight ${p.completado || esActual ? 'text-gray-800 font-medium' : 'text-gray-400'}" style="max-width:88px;">${p.etiqueta}</p>
+    // El segmento conector a la IZQUIERDA de este paso está "hecho" si
+    // el paso anterior ya se completó (o si este es el primero: no hay
+    // conector, ese lugar lo ocupa la bandera de Inicio).
+    const conector = idx === 0 ? '' : `
+      <div class="flex items-center shrink-0" style="width:28px">
+        <div class="h-1 w-full rounded-full ${pasos[idx - 1].completado ? 'bg-green-500' : 'bg-gray-200'}"></div>
       </div>`;
-  }).join('<div style="flex:0.4;"></div>');
+    return conector + `
+      <div class="flex flex-col items-center text-center gap-2 shrink-0" style="width:${ANCHO_PASO}px">
+        ${circulo}
+        <p class="text-[11px] leading-tight ${p.completado || esActual ? 'text-gray-800 font-medium' : 'text-gray-400'}">${p.etiqueta}</p>
+      </div>`;
+  }).join('');
+
+  const conectorFinal = `
+    <div class="flex items-center shrink-0" style="width:28px">
+      <div class="h-1 w-full rounded-full ${pasos.length && pasos[pasos.length - 1].completado ? 'bg-green-500' : 'bg-gray-200'}"></div>
+    </div>`;
 
   cont.innerHTML = `
     <div class="mb-5">
@@ -127,14 +169,50 @@ function renderDetalleTrabajador(t) {
       <p class="text-sm text-gray-500">${t.nombre_cargo}</p>
     </div>
 
-    <div class="relative mb-2 px-3">
-      <div class="absolute left-3 right-3 h-1 bg-gray-200 rounded-full" style="top:14px;"></div>
-      <div class="absolute left-3 h-1 bg-green-500 rounded-full transition-all duration-500" style="top:14px; width:calc((100% - 24px) * ${pctLinea / 100});"></div>
-      <div class="relative flex items-start">${puntos}</div>
+    <div class="overflow-x-auto pb-2 -mx-2 px-2">
+      <div class="flex items-start" style="width:max-content">
+        <div class="flex flex-col items-center text-center gap-2 shrink-0" style="width:56px">
+          <div class="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center text-sm shrink-0">🚩</div>
+          <p class="text-[11px] leading-tight text-gray-500 font-semibold">Inicio</p>
+        </div>
+        ${puntos}
+        ${conectorFinal}
+        <div class="flex flex-col items-center text-center gap-2 shrink-0" style="width:56px">
+          <div class="w-8 h-8 rounded-full ${t.contratado ? 'bg-green-500' : 'bg-gray-200 border border-gray-300'} flex items-center justify-center text-sm shrink-0">🏁</div>
+          <p class="text-[11px] leading-tight ${t.contratado ? 'text-green-700' : 'text-gray-400'} font-semibold">Meta</p>
+        </div>
+      </div>
     </div>
 
-    <div class="mt-6 rounded-xl px-4 py-3 text-sm font-semibold text-center ${t.contratado ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}">
+    <div class="mt-4 rounded-xl px-4 py-3 text-sm font-semibold text-center ${t.contratado ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}">
       ${t.fase}
     </div>
-    ${t.pendiente_de_ti ? '<div class="mt-3 rounded-xl px-4 py-3 text-sm font-semibold text-center bg-amber-50 text-amber-800 border border-amber-200">👉 El postulante está pendiente en tu bandeja</div>' : ''}`;
+    ${t.pendiente_de_ti ? '<div class="mt-3 rounded-xl px-4 py-3 text-sm font-semibold text-center bg-amber-50 text-amber-800 border border-amber-200">👉 El postulante está pendiente en tu bandeja</div>' : ''}
+    ${ESTADO_VIVO_MOSTRAR_DESHACER && t.estado === 'Pre_aprobado_terreno' ? `
+    <div class="mt-4 pt-4 border-t border-gray-100">
+      <button id="btn-deshacer-seleccion" onclick="deshacerSeleccion(${t.id})" class="w-full bg-white border border-red-200 hover:bg-red-50 text-red-600 text-sm font-semibold rounded-lg py-2.5">
+        ↩ Deshacer selección (me equivoqué de cargo)
+      </button>
+    </div>` : ''}`;
+}
+
+// --- v10.10: Capataz puede deshacer una selección reciente si se
+// equivocó de cargo -- ver terreno/deshacer_seleccion.php. Vive acá
+// (no en dashboard-capataz.js) porque se dispara desde este mismo
+// modal de detalle.
+async function deshacerSeleccion(id) {
+  const btn = document.getElementById('btn-deshacer-seleccion');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deshaciendo...'; }
+  try {
+    const data = await apiFetch('/terreno/deshacer_seleccion.php', { method: 'POST', body: { postulacion_id: id } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
+    cerrarDetalleTrabajador();
+    await cargarEstadoVivo();
+    // v10.10: hook opcional -- dashboard-capataz.js lo define para
+    // refrescar también su propia lista de selección en terreno.
+    if (typeof onDeshacerSeleccion === 'function') onDeshacerSeleccion();
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+    if (btn) { btn.disabled = false; btn.textContent = '↩ Deshacer selección (me equivoqué de cargo)'; }
+  }
 }

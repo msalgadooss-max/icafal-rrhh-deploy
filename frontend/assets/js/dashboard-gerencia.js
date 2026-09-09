@@ -148,3 +148,27 @@ function renderTabla() {
       <td class="px-4 py-3 text-gray-500">${new Date(p.actualizado_at).toLocaleString('es-CL')}</td>
     </tr>`).join('');
 }
+
+// --- v10.10: descarga en Excel, filtrando por rango de fecha de postulación
+async function exportarGerenciaExcel() {
+  const desde = document.getElementById('desde-gerencia').value; // "AAAA-MM-DDTHH:MM"
+  const hasta = document.getElementById('hasta-gerencia').value;
+  const params = new URLSearchParams();
+  if (desde) params.set('desde', desde.replace('T', ' ') + ':00');
+  if (hasta) params.set('hasta', hasta.replace('T', ' ') + ':00');
+
+  try {
+    const res = await apiFetch(`/gerencia/exportar_excel.php?${params.toString()}`);
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'proceso_completo.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    mostrarAlerta('alerta', err.message || 'No hay datos para exportar en ese rango.');
+  }
+}
