@@ -160,11 +160,9 @@ form.addEventListener('submit', async (e) => {
     resultadoDiv.classList.remove('hidden');
     resultadoDiv.innerHTML = `
       <div class="text-green-600 text-4xl">✔</div>
-      <h2 class="text-lg font-bold text-gray-900">${data.en_banco ? '¡Quedaste en el Banco de Postulantes!' : '¡Postulación enviada!'}</h2>
-      <p class="text-sm text-gray-600">${data.mensaje}</p>
-      <p class="text-sm text-gray-600 mt-2">Tu código de seguimiento es:</p>
-      <p class="text-3xl font-bold tracking-widest bg-gray-100 rounded-lg py-3">${data.codigo_seguimiento}</p>
-      <p class="text-xs text-gray-500">Guárdalo junto a tu documento. También te lo enviamos por correo.</p>
+      <h2 class="text-lg font-bold text-gray-900">¡Postulación enviada!</h2>
+      <p class="text-sm text-gray-600">Gracias por postular a ICAFAL.</p>
+      <p class="text-sm text-gray-600 mt-2">Para ver el estado de tu postulación, accede con tu RUT y tu correo electrónico.</p>
       <a href="seguimiento.html" class="inline-block mt-2 bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium">Ir a seguimiento</a>
     `;
   } catch (err) {

@@ -3,15 +3,18 @@
  * o Proceso_completo, esta pantalla cambia a verde y genera el QR de
  * acceso para portería, codificando la URL pública de validación
  * (backend/api/porteria/validar.php) con rut + codigo_seguimiento.
+ *
+ * v10.14 (pedido explícito del usuario, item 13 de la lista post-prueba):
+ * se quita la línea de tiempo detallada por estado interno (el
+ * postulante no tiene por qué saber que lo aprueba "el Administrador"
+ * o "el Jefe de Terreno") -- se muestra en cambio una sola fase breve
+ * y general, en FASES_POSTULANTE más abajo.
  */
-const ETIQUETAS_ESTADO = {
-  Pendiente: 'Postulación recibida',
-  Pre_aprobado_terreno: 'Pre-aprobado por Jefe de Terreno',
-  Aprobado_admin: 'En revisión Jefe Administrativo',
-  Induccion_ok: 'Inducción de seguridad realizada',
-  EPP_listo: 'Kit de EPP listo',
-  Contratado: 'Contratado -- EPP entregado',
-  Proceso_completo: 'Recibido en terreno -- proceso completo',
+const FASES_POSTULANTE = {
+  Pendiente: '📋 Tu postulación está en revisión',
+  Pre_aprobado_terreno: '📝 Completa tus datos para avanzar',
+  Aprobado_admin: '🔍 Estamos revisando tus documentos',
+  Induccion_ok: '🔍 Estamos revisando tus documentos',
 };
 
 const form = document.getElementById('form-seguimiento');
@@ -121,7 +124,6 @@ function renderResultado(p) {
         <div id="qr" class="bg-white inline-block p-3 rounded-lg mt-4"></div>
         <p class="text-xs mt-2 opacity-80">${pie}</p>
       </div>
-      ${timelineHtml(p)}
     `;
     // El QR apunta a una página HTML de resultado (no directo a la API)
     // para que el guardia vea una credencial legible, no un JSON crudo.
@@ -138,13 +140,13 @@ function renderResultado(p) {
     if (p.url_etapa2) {
       bloqueEtapa2 = `
         <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4">
-          <p class="text-sm text-blue-800 font-medium mb-2">Tu postulación fue autorizada. Ya puedes completar tus datos.</p>
+          <p class="text-sm text-blue-800 font-medium mb-2">Avanza completando tus datos.</p>
           <a href="${p.url_etapa2}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Continuar completando mis datos</a>
         </div>`;
     } else {
       bloqueEtapa2 = `
         <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4" id="zona-reenviar-etapa2">
-          <p class="text-sm text-blue-800 font-medium mb-2">Tu postulación fue autorizada. Te enviamos un correo para completar tus datos: si no te llegó, genera tu enlace aquí:</p>
+          <p class="text-sm text-blue-800 font-medium mb-2">Avanza completando tus datos. Te enviamos un correo con el link: si no te llegó, genera uno nuevo aquí:</p>
           <button id="btn-reenviar-etapa2" onclick="reenviarEtapa2()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Generar mi enlace para continuar</button>
         </div>`;
     }
@@ -168,32 +170,18 @@ function renderResultado(p) {
         <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm text-amber-800">
           ⚠ Hay una observación en uno de tus documentos. Revisa tu correo para ver el detalle y el link para corregirlo.
         </div>` : ''}
-      ${timelineHtml(p)}
+      ${faseHtml(p)}
     </div>`;
 }
 
-function timelineHtml(p) {
-  const idxActual = p.orden_estados.indexOf(p.estado);
-
-  // v6.5: flujo SECUENCIAL -- "Autorización Administrador de contrato" y
-  // "Datos completados por el postulante" no son parte de `orden_estados`
-  // (no son estados reales) -- se insertan como pasos visuales aparte,
-  // justo después de "Pre-aprobado por Jefe de Terreno". El Administrador
-  // autoriza PRIMERO (recién ahí el postulante recibe el acceso a Etapa
-  // 2), así que ese paso siempre se enciende antes que el segundo.
-  const pasos = [];
-  p.orden_estados.forEach((estado, idx) => {
-    pasos.push({ etiqueta: ETIQUETAS_ESTADO[estado], completado: idx <= idxActual });
-    if (estado === 'Pre_aprobado_terreno') {
-      pasos.push({ etiqueta: 'Autorización Administrador de contrato', completado: p.admin_autorizado || idx < idxActual });
-      pasos.push({ etiqueta: 'Datos completados por el postulante', completado: p.etapa2_completada || idx < idxActual });
-    }
-  });
-
-  const html = pasos.map(paso => `
-      <li class="flex items-center gap-3 py-1.5">
-        <span class="w-3 h-3 rounded-full flex-shrink-0 ${paso.completado ? 'bg-green-500' : 'bg-gray-300'}"></span>
-        <span class="text-sm ${paso.completado ? 'text-gray-900 font-medium' : 'text-gray-400'}">${paso.etiqueta}</span>
-      </li>`).join('');
-  return `<ul class="mt-4">${html}</ul>`;
+// v10.14 (pedido explícito del usuario, item 13): una sola fase breve y
+// general, en vez de la línea de tiempo detallada por estado interno --
+// el postulante no tiene por qué saber que lo aprueba "el Administrador"
+// o "el Jefe de Terreno", solo en qué anda su proceso ahora mismo.
+function faseHtml(p) {
+  const fase = FASES_POSTULANTE[p.estado] || '📋 Tu postulación está en proceso';
+  return `
+    <div class="mt-2 bg-gray-50 rounded-lg px-4 py-3 text-sm font-medium text-gray-700">
+      ${fase}
+    </div>`;
 }
