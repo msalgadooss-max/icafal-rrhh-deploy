@@ -1,21 +1,27 @@
 <?php
 /**
- * v3.2 - Histórico de Jefe de Terreno: "Personal Aprobado en Proceso"
- * y "Personal Contratado", separados de la cola de "Postulantes" y del
- * "Banco de Postulantes" (esos dos siguen en terreno/listar.php y
- * terreno/banco_listar.php). Se puede filtrar por rango de fechas y
- * por quién aprobó (útil cuando haya más de un Jefe_Terreno).
+ * v3.2 - Histórico de Jefe de Terreno: "Postulantes" (antes "Personal
+ * Aprobado en Proceso") y "Personal Contratado". Se puede filtrar por
+ * rango de fechas y por quién seleccionó (útil cuando haya más de un
+ * Capataz).
  *
- * "Quién aprobó" y "cuándo" no son columnas propias: se leen de
+ * "Quién seleccionó" y "cuándo" no son columnas propias: se leen de
  * trazabilidad_logs, tomando la PRIMERA vez que la postulación entró a
- * 'Pre_aprobado_terreno' (ya sea por aprobación directa o por
- * invitación desde el Banco de Postulantes).
+ * 'Pre_aprobado_terreno'.
+ *
+ * v10.14 (pedido explícito del usuario, item 5 de la lista post-prueba):
+ * quien hace esa transición ahora es siempre el Capataz (Jefe_Terreno
+ * ya no aprueba nada) -- el filtro "aprobado por" y su lista de
+ * nombres pasan de Jefe_Terreno a Capataz.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 
 iniciarSesionSegura();
-requireRol(['Jefe_Terreno']);
+// v10.14 (pedido explícito del usuario, item 9): el Capataz también
+// usa este endpoint (solo vista=contratados) para su propia pestaña
+// "Personal Contratado".
+requireRol(['Jefe_Terreno', 'Capataz']);
 exigirMetodo('GET');
 
 $vista = $_GET['vista'] ?? 'en_proceso';
@@ -75,9 +81,9 @@ $sql .= ' ORDER BY ap.fecha_hora DESC';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 
-$stmtTerrenos = $pdo->query("SELECT id, nombre FROM usuarios WHERE rol = 'Jefe_Terreno' AND activo = 1 ORDER BY nombre");
+$stmtCapataces = $pdo->query("SELECT id, nombre FROM usuarios WHERE rol = 'Capataz' AND activo = 1 ORDER BY nombre");
 
 responderOk([
     'postulaciones' => $stmt->fetchAll(),
-    'jefes_terreno' => $stmtTerrenos->fetchAll(),
+    'jefes_terreno' => $stmtCapataces->fetchAll(),
 ]);

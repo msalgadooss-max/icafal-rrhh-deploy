@@ -13,7 +13,7 @@
       <img src="../assets/img/logo-icafal.png" alt="ICAFAL" class="h-9">
       <div>
         <h1 class="font-bold text-gray-900">Dashboard Jefe de Terreno</h1>
-        <p class="text-xs text-gray-500">Fase 1 · Aprobación y seguimiento del personal</p>
+        <p class="text-xs text-gray-500">Solicitud y seguimiento personal directo</p>
       </div>
     </div>
     <div class="flex items-center gap-4">
@@ -28,66 +28,17 @@
   <main class="max-w-6xl mx-auto p-6">
     <div id="alerta"></div>
     <div id="estado-vivo"></div>
-    <div id="limite-aprobaciones" class="mb-4"></div>
 
     <div class="flex gap-1 border-b border-gray-200 mb-6" id="tabs">
-      <button data-tab="postulantes" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Postulantes</button>
+      <button data-tab="en_proceso" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Postulantes</button>
       <button data-tab="banco" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Banco de Postulantes</button>
-      <button data-tab="en_proceso" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Aprobado en Proceso</button>
       <button data-tab="contratados" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Contratado</button>
-      <button data-tab="recepcion" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Recepción</button>
       <button data-tab="cupos" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Solicitar Cupos</button>
     </div>
 
-    <!-- Tab: Postulantes -->
-    <section id="panel-postulantes" class="tab-panel">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4 text-sm text-blue-800">
-        Primer filtro (paso 1 de 2): al aprobar, la postulación pasa al Capataz, que hace la selección final en persona en portería.
-      </div>
-      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-gray-500 text-left">
-            <tr>
-              <th class="px-4 py-3">RUT</th>
-              <th class="px-4 py-3">Nombre</th>
-              <th class="px-4 py-3">Cargo</th>
-              <th class="px-4 py-3">Comuna</th>
-              <th class="px-4 py-3">Teléfono</th>
-              <th class="px-4 py-3">Recibido</th>
-              <th class="px-4 py-3">CV</th>
-              <th class="px-4 py-3 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-postulaciones"></tbody>
-        </table>
-        <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden">No hay postulaciones pendientes.</p>
-      </div>
-    </section>
-
-    <!-- Tab: Banco de Postulantes -->
-    <section id="panel-banco" class="tab-panel hidden">
-      <p class="text-xs text-gray-500 mb-3">Personas interesadas en un cargo que no tenía cupo al momento de postular. Invítalas cuando se abra uno.</p>
-      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-gray-500 text-left">
-            <tr>
-              <th class="px-4 py-3">RUT</th>
-              <th class="px-4 py-3">Nombre</th>
-              <th class="px-4 py-3">Cargo de interés</th>
-              <th class="px-4 py-3">Comuna</th>
-              <th class="px-4 py-3">En banco desde</th>
-              <th class="px-4 py-3">Datos hasta</th>
-              <th class="px-4 py-3 text-right">Invitar a cupo</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-banco"></tbody>
-        </table>
-        <p id="banco-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie en el banco por ahora.</p>
-      </div>
-    </section>
-
-    <!-- Tab: Personal Aprobado en Proceso -->
-    <section id="panel-en_proceso" class="tab-panel hidden">
+    <!-- Tab: Postulantes (v10.14: antes "Personal Aprobado en Proceso" --
+         quienes ya seleccionó el Capataz y siguen avanzando). -->
+    <section id="panel-en_proceso" class="tab-panel">
       <div id="filtros-en_proceso" class="flex flex-wrap items-end gap-3 mb-4"></div>
       <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
         <table class="w-full text-sm">
@@ -97,13 +48,35 @@
               <th class="px-4 py-3">Nombre</th>
               <th class="px-4 py-3">Cargo</th>
               <th class="px-4 py-3">Etapa actual</th>
-              <th class="px-4 py-3">Aprobado por</th>
-              <th class="px-4 py-3">Fecha aprobación</th>
+              <th class="px-4 py-3">Seleccionado por</th>
+              <th class="px-4 py-3">Fecha selección</th>
             </tr>
           </thead>
           <tbody id="tbody-en_proceso"></tbody>
         </table>
         <p id="en_proceso-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie en proceso por ahora.</p>
+      </div>
+    </section>
+
+    <!-- Tab: Banco de Postulantes (v10.14: ahora es de solo lectura --
+         todos los que llegaron por el QR y el Capataz aún no selecciona). -->
+    <section id="panel-banco" class="tab-panel hidden">
+      <p class="text-xs text-gray-500 mb-3">Recién llegados por el formulario público. El Capataz los selecciona en persona, en portería -- acá solo los ves, no hay ninguna acción que tomar.</p>
+      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 text-left">
+            <tr>
+              <th class="px-4 py-3">RUT</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Comuna</th>
+              <th class="px-4 py-3">Teléfono</th>
+              <th class="px-4 py-3">Recibido</th>
+              <th class="px-4 py-3">CV</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-banco"></tbody>
+        </table>
+        <p id="banco-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie esperando selección en este momento.</p>
       </div>
     </section>
 
@@ -117,34 +90,14 @@
               <th class="px-4 py-3">RUT</th>
               <th class="px-4 py-3">Nombre</th>
               <th class="px-4 py-3">Cargo</th>
-              <th class="px-4 py-3">Aprobado por</th>
-              <th class="px-4 py-3">Fecha aprobación</th>
+              <th class="px-4 py-3">Seleccionado por</th>
+              <th class="px-4 py-3">Fecha selección</th>
+              <th class="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody id="tbody-contratados"></tbody>
         </table>
         <p id="contratados-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie contratado todavía.</p>
-      </div>
-    </section>
-
-    <!-- Tab: Recepción (cierre operativo) -->
-    <section id="panel-recepcion" class="tab-panel hidden">
-      <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-4 text-sm text-green-800">
-        Bodega ya les entregó el EPP -- ve a sala de reuniones o a Bodega a buscarlos y confirma aquí. Con esto se da por terminado el proceso completo.
-      </div>
-      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-gray-500 text-left">
-            <tr>
-              <th class="px-4 py-3">RUT</th>
-              <th class="px-4 py-3">Nombre</th>
-              <th class="px-4 py-3">Cargo</th>
-              <th class="px-4 py-3 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-recepcion"></tbody>
-        </table>
-        <p id="recepcion-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie esperando recepción en este momento.</p>
       </div>
     </section>
 

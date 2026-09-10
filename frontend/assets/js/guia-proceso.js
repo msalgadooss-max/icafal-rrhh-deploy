@@ -46,30 +46,29 @@ const GUIA_POR_ROL = {
   terreno: {
     titulo: 'Guía de uso · Jefe de Terreno',
     contenido: `
-      <p class="text-gray-700 mb-4">Desde el rediseño de la reunión con Ricardo (31-ago), la selección en terreno quedó en <b>dos pasos secuenciales</b>: tú haces el primer filtro, y recién lo que apruebas le llega al Capataz para la selección final en portería.</p>
+      <p class="text-gray-700 mb-4">Tu rol es <b>solicitar cupos y hacer seguimiento</b> -- ya no apruebas ni rechazas postulantes uno por uno; eso lo hace el Capataz, en persona, en portería.</p>
       <ul class="space-y-2.5 text-gray-700">
         <li>• <b>Pestaña "Solicitar Cupos":</b> pide, por ejemplo, "5 jornales". La solicitud queda <b>Pendiente</b> hasta que el Administrador de Contrato la aprueba -- recién ahí se abre la vacante y el cargo muestra cupos disponibles. En la tabla de abajo ves el estado de tus solicitudes (Pendiente/Aprobada/Rechazada).</li>
         <li>• <b>¿El cargo que necesitas no está en la lista?</b> Elige "➕ Otro (agregar cargo nuevo)" y escribe su nombre -- el cargo se crea en el catálogo recién cuando el Administrador de Contrato apruebe esa solicitud, no antes.</li>
-        <li>• <b>Pestaña "Pendientes":</b> primer filtro (paso 1 de 2). Revisa el CV/experiencia y decide <b>Aprobar</b> o <b>Rechazar</b>. Al aprobar, la postulación <u>no</u> avanza de estado todavía -- solo pasa a aparecer en el panel del Capataz, que hace la selección final en persona.</li>
-        <li>• <b>Límite diario:</b> el Capataz puede seleccionar hasta 25 postulaciones por día en su paso. El contador se reinicia a medianoche.</li>
-        <li>• <b>Banco de Postulantes:</b> si un cargo no tiene cupos disponibles en este momento, el postulante queda "En banco" en vez de perderse. Desde esa pestaña puedes invitarlo más adelante a cualquier cargo que sí tenga cupo -- eso equivale a pre-aprobarlo.</li>
-        <li>• <b>Rechazar:</b> eliges un motivo estandarizado (no hay cupos, no cumple requisitos, etc.) -- queda solo en el registro interno, el postulante recibe siempre el mismo mensaje genérico y legal.</li>
-        <li>• <b>Pestaña "Recepción":</b> aparecen quienes Bodega ya marcó Contratado (EPP ya entregado). Ve a sala de reuniones o Bodega a buscarlos y confirma aquí -- con eso el proceso queda 100% cerrado. La ve también el Capataz: cualquiera de los dos puede confirmar.</li>
-        <li>• <b>Estado en vivo:</b> el widget de arriba te muestra en qué fase está cada postulante activo, aunque ya no dependa de ti. Se pone ámbar y dice "pendiente en tu bandeja" solo cuando de verdad te toca actuar a ti.</li>
+        <li>• <b>Pestaña "Banco de Postulantes":</b> de solo lectura -- todos los que acaban de llegar por el formulario público (QR), esperando que el Capataz los seleccione en persona. No hay ninguna acción que tomar aquí, solo seguimiento.</li>
+        <li>• <b>Pestaña "Postulantes":</b> quienes el Capataz ya seleccionó y siguen avanzando (completando Etapa 2, en revisión del JAO, etc.).</li>
+        <li>• <b>Pestaña "Personal Contratado":</b> cuando alguien queda contratado, aparece acá con el botón <b>"Ya lo retiré"</b> -- apriétalo cuando vayas a buscarlo y se lo lleves a su cuadrilla. Con eso el proceso de esa persona queda 100% cerrado. La ve también el Capataz: cualquiera de los dos puede confirmarlo.</li>
+        <li>• <b>Estado en vivo:</b> el widget de arriba te muestra en qué fase está cada postulante activo.</li>
       </ul>`,
   },
   capataz: {
     titulo: 'Guía de uso · Capataz',
     contenido: `
-      <p class="text-gray-700 mb-4">Tu trabajo es la <b>selección final en portería</b>, en persona -- el segundo y último filtro en terreno. Solo ves a quienes el Jefe de Terreno ya aprobó en su propio panel (paso 1 de 2).</p>
+      <p class="text-gray-700 mb-4">Tu trabajo es la <b>selección en portería</b>, en persona -- ves directamente a todos los que acaban de postular por el QR, sin ningún filtro previo.</p>
       <ul class="space-y-2.5 text-gray-700">
         <li>• Ves a cada postulante en espera con su <b>RUT bien grande</b>, para compararlo al toque con su cédula física.</li>
-        <li>• Revisa que traiga lo básico (por ejemplo, su certificado de AFP) -- no se piden antecedentes, eso ya está resuelto por diseño legal.</li>
-        <li>• <b>"✓ Selecciona":</b> recién aquí la postulación avanza de estado y pasa a revisión del Administrador de Contrato.</li>
+        <li>• Marca <b>"Trae sus documentos"</b> primero -- recién ahí se habilita el asa para arrastrar su tarjeta.</li>
+        <li>• <b>Arrastra su tarjeta hasta la caja del cargo que le corresponde</b> (arriba, con su casquito ⛑️) -- un solo gesto lo selecciona y le asigna el cargo real. Cada arrastre baja en 1 el cupo disponible de esa caja.</li>
+        <li>• <b>¿Te equivocaste de caja?</b> Apenas sueltas, aparece un botón "↩ Me equivoqué, deshacer" junto al aviso de "Seleccionado" -- solo funciona por un rato corto, mientras la postulación no haya avanzado más.</li>
         <li>• <b>"✕ No selecciona":</b> eliges un motivo estandarizado (no hay cupos, documentación incompleta, etc.). El postulante recibe un correo genérico, nunca el motivo real completo.</li>
-        <li>• Solo ves postulantes de cargos con <b>vacante abierta</b> (una solicitud de cupos ya aprobada por el Administrador de Contrato) <b>y</b> ya aprobados por Jefe de Terreno -- si no ves a alguien que debería estar ahí, revisa esos dos requisitos primero.</li>
+        <li>• Solo aparecen cajas de cargos con <b>vacante abierta</b> (una solicitud de cupos ya aprobada por el Administrador de Contrato) -- si no ves el cargo que necesitas, pide a Jefe de Terreno que solicite más cupos.</li>
         <li>• La pantalla se actualiza sola cada 15 segundos, para que la puedas dejar abierta mientras atiendes a la fila.</li>
-        <li>• <b>Pestaña "Recepción":</b> cuando Bodega ya entregó el EPP de alguien, aparece aquí -- ve a buscarlo y confirma. Con eso el proceso de esa persona queda 100% cerrado. La ve también Jefe de Terreno: cualquiera de los dos puede confirmar.</li>
+        <li>• <b>Pestaña "Personal Contratado":</b> cuando alguien queda contratado, aparece acá con el botón <b>"Ya lo retiré"</b> -- apriétalo cuando lo vayas a buscar y se lo lleves a su cuadrilla. La ve también Jefe de Terreno: cualquiera de los dos puede confirmarlo.</li>
       </ul>`,
   },
   admin_contrato: {
@@ -165,26 +164,19 @@ const FLUJO_DIAGRAMA_HTML = `
     ${pasoFlujo(1, 'Jefe de Terreno solicita cupos', 'Ej: "necesito 5 jornales". La solicitud queda Pendiente.', {
       rama: ramaFlujo('Administrador rechaza la solicitud → no se abre ningún cupo, el cargo sigue igual.'),
     })}
-    ${pasoFlujo(2, 'Administrador de Contrato aprueba → se abre la vacante', 'Recién aquí el cargo suma cupos disponibles. Sin esto, nadie puede postular a ese cargo.')}
-    ${pasoFlujo(3, 'Postulante postula (Etapa 1)', 'Llena datos básicos, sube su CV y su cédula (frente y reverso), desde el formulario público (QR en portería).')}
-    ${pasoFlujo(4, 'Jefe de Terreno hace el primer filtro', 'Revisa el CV/experiencia y decide. No cambia el estado de la postulación todavía -- solo la deja lista para que el Capataz la vea en su panel.', {
-      rama: ramaFlujo('Rechaza → el postulante recibe un correo genérico con un motivo estandarizado, sin el motivo real completo. No sigue el proceso.'),
+    ${pasoFlujo(2, 'Administrador de Contrato aprueba → se abre la vacante', 'Recién aquí el cargo suma cupos disponibles. Avisa por correo a Jefe de Terreno, a los Capataz y al JAO. Su rol termina acá: ya no revisa postulaciones una por una.')}
+    ${pasoFlujo(3, 'Postulante postula (Etapa 1)', 'Llena datos básicos, sube su CV y su cédula (frente y reverso), desde el formulario público (QR en portería). No elige cargo -- eso lo asigna el Capataz al seleccionarlo.')}
+    ${pasoFlujo(4, 'Capataz selecciona en persona, en portería', 'Único filtro en terreno: marca que trae sus documentos y arrastra su tarjeta hasta la caja (con cupo) del cargo que le corresponde -- un solo gesto selecciona y asigna el cargo real. En ese momento le llegan al postulante, juntos: el link para completar Etapa 2 y el QR para que Portería lo deje pasar a la sala de espera. El JAO recibe un aviso de que viene en camino.', {
+      rama: ramaFlujo('No selecciona → el postulante recibe un correo genérico con un motivo estandarizado, sin el motivo real completo. No sigue el proceso.'),
     })}
-    ${pasoFlujo(5, 'Capataz selecciona en persona, en portería', 'Segundo y último filtro en terreno: compara el RUT declarado contra la cédula física y revisa documentos básicos. Recién aquí la postulación avanza de estado.', {
-      rama: ramaFlujo('No selecciona → mismo correo genérico que en el paso anterior. No sigue el proceso.'),
-    })}
-    ${pasoFlujo(6, 'Administrador de Contrato revisa', 'Ve lo que seleccionó el Capataz y decide.', {
-      rama: ramaFlujo('Rechaza → mismo correo genérico que en los pasos anteriores. No sigue el proceso.'),
-    })}
-    ${pasoFlujo(7, 'Administrador autoriza → se activa la Etapa 2', 'Este es el paso clave: recién aquí el postulante recibe el correo con el enlace para completar sus datos. Antes de esto, ese enlace no existe.')}
-    ${pasoFlujo(8, 'Postulante completa Etapa 2', 'Datos personales, previsionales, bancarios + documentos: cédula, certificado de AFP, de salud, de residencia y (si aplica) último finiquito. Al terminar, recibe un correo con un código QR para presentarse en la obra.')}
-    ${pasoFlujo(9, 'Se presenta en obra -- Portería confirma el ingreso', 'Muestra el QR en Portería (o dicta RUT + código). Sin este ingreso confirmado, el JAO todavía no puede verificar su identidad.')}
-    ${pasoFlujo(10, 'Día 1: JAO verifica identidad y Prevención hace la inducción', 'El JAO compara el RUT declarado contra la cédula subida. El postulante ya viene rindiendo el catálogo de cursos de Prevención (video + evaluación) desde su celular; cuando Prevención aprueba todos, marca la inducción como realizada.', {
+    ${pasoFlujo(5, 'Portería confirma el ingreso con el QR', 'Lo deja pasar a la sala de espera -- ahí mismo, con su celular, completa sus datos y documentos.')}
+    ${pasoFlujo(6, 'Postulante completa Etapa 2', 'Datos personales, previsionales, bancarios + documentos: cédula, certificado de AFP, de salud, de residencia y (si aplica) último finiquito. Al terminar, el JAO recibe el aviso de que ya está listo para revisión.')}
+    ${pasoFlujo(7, 'Día 1: JAO verifica identidad', 'Compara el RUT declarado contra la cédula subida. Al confirmar, el postulante recibe un correo: "preséntate mañana a las 8am para ser contratado, hacer tu IRL y recibir tu kit de EPP".', {
       rama: ramaFlujo('El JAO observa un documento → el postulante recibe un correo pidiéndole que lo vuelva a subir, y vuelve a este mismo paso apenas lo corrige. El resto de lo ya aprobado no se pierde.', 'observacion'),
     })}
-    ${pasoFlujo(11, 'Día 2, 8am: JAO firma el Contrato', 'Se habilita recién con la identidad verificada y sin documentos observados. Bodega ya sabe que el trabajador viene y tiene su kit de EPP preparado.')}
-    ${pasoFlujo(12, 'Bodega entrega el EPP → Contratado', 'Recién aquí se descuenta el cupo del cargo. El postulante recibe el correo de éxito con el QR final, y se avisa a Capataz/Jefe de Terreno para que lo vayan a buscar.')}
-    ${pasoFlujo(13, 'Capataz o Jefe de Terreno confirman la recepción', 'Van a sala de reuniones o Bodega a buscarlo y confirman en su panel. Con eso el ciclo completo queda cerrado, desde la postulación hasta el primer día en el frente de trabajo.', { ultimo: true })}
+    ${pasoFlujo(8, 'Día 2: se presenta con el mismo QR', 'Portería lo reconoce ("viene por su proceso de contratación") y lo deja pasar de nuevo a la sala de espera.')}
+    ${pasoFlujo(9, 'Día 2: JAO cierra -- firma el Contrato', 'En esta etapa del piloto, Prevención y Bodega todavía no son candados digitales propios (la charla IRL y la entrega de EPP se hacen en la vida real) -- este mismo paso del JAO cierra todo: descuenta el cupo, deja Contratado, avisa al postulante con el QR final de acceso a la obra, y avisa a Capataz/Jefe de Terreno que ya pueden retirarlo de la sala de espera.')}
+    ${pasoFlujo(10, 'Capataz o Jefe de Terreno confirman que lo retiraron', 'Lo van a buscar a la sala de espera y confirman en su panel ("Ya lo retiré"), en la pestaña Personal Contratado. Con eso el ciclo completo queda cerrado, desde la postulación hasta el primer día en su cuadrilla.', { ultimo: true })}
   </div>`;
 
 function abrirFlujo() {

@@ -17,7 +17,10 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 
 iniciarSesionSegura();
-requireRol(['Jefe_Administrativo']);
+// v10.14 (pedido explícito del usuario, item 14): Admin de Contrato y
+// Subgerente también pueden ver el detalle de tiempos por trabajador
+// (antes solo el JAO).
+requireRol(['Jefe_Administrativo', 'Admin_Contrato', 'Gerencia']);
 exigirMetodo('GET');
 
 $postulacionId = (int)($_GET['postulacion_id'] ?? 0);

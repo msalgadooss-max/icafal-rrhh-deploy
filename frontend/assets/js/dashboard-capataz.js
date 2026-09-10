@@ -1,14 +1,9 @@
 /**
  * v6.9 - Panel de Capataz: la selección rápida en portería que propuso
- * Ricardo (reunión 28-ago). Reutiliza los mismos endpoints de
- * Jefe_Terreno (/terreno/listar.php, aprobar.php, rechazar.php,
- * ver_cv.php -- todos ya abiertos también al rol Capataz), pero con una
- * pantalla pensada para hacerse de pie, rápido: RUT grande para
- * comparar con la cédula, y dos botones grandes.
- *
- * No incluye Banco de Postulantes ni límite diario de aprobaciones --
- * esas son herramientas de gestión de Jefe_Terreno, no de la selección
- * en portería.
+ * Ricardo (reunión 28-ago). Reutiliza los mismos endpoints de Terreno
+ * (/terreno/listar.php, aprobar.php, rechazar.php, ver_cv.php), pero
+ * con una pantalla pensada para hacerse de pie, rápido: RUT grande
+ * para comparar con la cédula, y dos botones grandes.
  *
  * v10.5 (Mejorar APP, punto 2): el postulante ya no elige cargo al
  * postular -- el Capataz lo asigna acá mismo, justo al seleccionarlo.
@@ -21,6 +16,16 @@
  * simplificado -- confirmado explícitamente con el usuario. Mientras
  * hay un arrastre en curso se pausa el refresco automático (ver
  * ARRASTRANDO más abajo) para no destruirle la tarjeta bajo el dedo.
+ *
+ * v10.14 (pedido explícito del usuario, lista post-prueba):
+ *   - item 5: ya no dice "Aprobado por Jefe de Terreno" -- ese primer
+ *     filtro se eliminó, el Capataz ve directamente todo lo que llega
+ *     por el QR.
+ *   - item 9: se retira la pestaña "Recepción" -- ahora es un botón
+ *     dentro de la nueva pestaña "Personal Contratado".
+ *   - item 11: antes de poder arrastrar, hay que marcar "Trae sus
+ *     documentos" -- el asa de arrastre queda deshabilitada hasta
+ *     entonces.
  */
 let CARGOS_CON_CUPO = [];
 let ARRASTRANDO = false;
@@ -39,7 +44,7 @@ ESTADO_VIVO_MOSTRAR_DESHACER = true;
   setInterval(() => {
     if (ARRASTRANDO) return;
     if (TAB_ACTIVA === 'seleccion') { cargarCargosConCupo(); cargarLista(); }
-    else cargarRecepcion();
+    else cargarContratados();
   }, 15000);
 })();
 
@@ -57,7 +62,7 @@ function onDeshacerSeleccion() {
 function actualizarTodo() {
   cargarCargosConCupo();
   cargarLista();
-  cargarRecepcion();
+  cargarContratados();
   cargarEstadoVivo();
   mostrarAlerta('alerta', 'Actualizado.', 'exito');
 }
@@ -88,8 +93,9 @@ function renderZonasCargo() {
     </div>`).join('');
 }
 
-// --- v7: pestañas (Selección en terreno / Recepción) -----------------------
+// --- v10.14: pestañas (Selección en terreno / Personal Contratado) --------
 let TAB_ACTIVA = 'seleccion';
+let CONTRATADOS_CARGADO = false;
 
 function configurarTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -110,7 +116,7 @@ function cambiarTab(tab) {
     panel.classList.toggle('hidden', panel.id !== `panel-${tab}`);
   });
   if (tab === 'seleccion') cargarLista();
-  if (tab === 'recepcion') cargarRecepcion();
+  if (tab === 'contratados') cargarContratados();
 }
 
 async function cargarLista() {
@@ -126,8 +132,12 @@ async function cargarLista() {
     vacio.classList.add('hidden');
     cont.innerHTML = data.postulaciones.map(p => `
       <div class="postulante-card bg-white rounded-xl shadow-sm overflow-hidden" data-postulacion-id="${p.id}">
-        <div class="drag-handle flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-400 text-xs font-bold tracking-wide py-2 border-b border-gray-100 cursor-grab active:cursor-grabbing select-none">
-          <span class="text-base leading-none">⠿⠿⠿</span> ARRASTRA HACIA UN CARGO
+        <label class="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-100 text-sm font-semibold text-amber-800 cursor-pointer">
+          <input type="checkbox" class="check-documentos w-4 h-4 accent-amber-600" onchange="toggleArrastre(${p.id}, this.checked)">
+          Trae sus documentos
+        </label>
+        <div class="drag-handle flex items-center justify-center gap-2 bg-gray-100 text-gray-300 text-xs font-bold tracking-wide py-2 border-b border-gray-100 select-none" data-habilitado="false" style="pointer-events:none">
+          <span class="text-base leading-none">⠿⠿⠿</span> MARCA DOCUMENTOS PARA ARRASTRAR
         </div>
         <div class="p-5">
           <div class="flex items-start justify-between gap-4 flex-wrap">
@@ -135,7 +145,6 @@ async function cargarLista() {
               <p class="text-2xl font-mono font-bold text-gray-900 tracking-wide">${celdaDocumento(p)}</p>
               <p class="text-base font-semibold text-gray-800">${p.nombre_completo}</p>
               <p class="text-sm text-gray-500">${p.comuna}</p>
-              <p class="text-xs text-green-700 mt-1">✓ Aprobado por Jefe de Terreno${p.aprobado_jt_por_nombre ? ` (${p.aprobado_jt_por_nombre})` : ''}</p>
             </div>
             ${p.tiene_cv
               ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline text-sm">Ver CV</a>`
@@ -156,6 +165,28 @@ async function cargarLista() {
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }
+}
+
+// v10.14 (pedido explícito del usuario, item 11): "antes debe indicar
+// que trae sus documentos... y luego puede arrastrarlo" -- el asa
+// queda deshabilitada (gris, sin puntero) hasta marcar el check.
+function toggleArrastre(postulacionId, habilitado) {
+  const card = document.querySelector(`.postulante-card[data-postulacion-id="${postulacionId}"]`);
+  if (!card) return;
+  const handle = card.querySelector('.drag-handle');
+  if (!handle) return;
+  handle.dataset.habilitado = habilitado ? 'true' : 'false';
+  handle.style.pointerEvents = habilitado ? 'auto' : 'none';
+  handle.classList.toggle('bg-gray-100', !habilitado);
+  handle.classList.toggle('text-gray-300', !habilitado);
+  handle.classList.toggle('bg-gray-50', habilitado);
+  handle.classList.toggle('text-gray-400', habilitado);
+  handle.classList.toggle('hover:bg-gray-100', habilitado);
+  handle.classList.toggle('cursor-grab', habilitado);
+  handle.classList.toggle('active:cursor-grabbing', habilitado);
+  handle.innerHTML = habilitado
+    ? '<span class="text-base leading-none">⠿⠿⠿</span> ARRASTRA HACIA UN CARGO'
+    : '<span class="text-base leading-none">⠿⠿⠿</span> MARCA DOCUMENTOS PARA ARRASTRAR';
 }
 
 // v10.14 (pedido explícito del usuario: "no me aparece [deshacer]"): el
@@ -179,6 +210,7 @@ function mostrarAlertaConDeshacer(postulacionId) {
 // --- v10.6: arrastre real de la tarjeta hasta la caja del cargo -----------
 function iniciarArrastre(handle, card, postulacionId) {
   handle.addEventListener('pointerdown', (e) => {
+    if (handle.dataset.habilitado !== 'true') return; // v10.14: falta marcar "trae sus documentos"
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
     ARRASTRANDO = true;
@@ -264,31 +296,33 @@ async function noSeleccionar(id) {
   }
 }
 
-// --- v7: Recepción (cierre operativo, Bodega ya entregó el EPP) -----------
-async function cargarRecepcion() {
-  const cont = document.getElementById('lista-recepcion');
-  const vacio = document.getElementById('recepcion-vacio');
+// --- v10.14: Personal Contratado (reemplaza la vieja pestaña "Recepción") -
+// Reutiliza terreno/historico.php?vista=contratados (misma data que ve
+// Jefe de Terreno), sin filtros de fecha -- panel pensado para
+// hacerse de pie, rápido.
+async function cargarContratados() {
+  const tbody = document.getElementById('tbody-contratados');
+  const vacio = document.getElementById('contratados-vacio');
   try {
-    const data = await apiFetch('/terreno/recepcion_listar.php');
+    const data = await apiFetch('/terreno/historico.php?vista=contratados');
     if (!data.postulaciones.length) {
-      cont.innerHTML = '';
+      tbody.innerHTML = '';
       vacio.classList.remove('hidden');
       return;
     }
     vacio.classList.add('hidden');
-    cont.innerHTML = data.postulaciones.map(p => `
-      <div class="bg-white rounded-xl shadow-sm p-5">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p class="text-2xl font-mono font-bold text-gray-900 tracking-wide">${p.rut}</p>
-            <p class="text-base font-semibold text-gray-800">${p.nombre_completo}</p>
-            <p class="text-sm text-gray-500">${p.nombre_cargo}</p>
-          </div>
-        </div>
-        <button class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold text-base rounded-lg py-3" onclick="confirmarRecepcion(${p.id})">
-          ✓ Confirmar recepción
-        </button>
-      </div>`).join('');
+    tbody.innerHTML = data.postulaciones.map(p => {
+      const accion = p.estado === 'Contratado'
+        ? `<button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="confirmarRecepcion(${p.id})">Ya lo retiré</button>`
+        : '<span class="text-xs text-gray-400">Ya retirado</span>';
+      return `<tr class="border-t">
+        <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
+        <td class="px-4 py-3">${p.nombre_completo}</td>
+        <td class="px-4 py-3">${p.nombre_cargo}</td>
+        <td class="px-4 py-3">${p.aprobado_por_nombre || '-'}</td>
+        <td class="px-4 py-3 text-right">${accion}</td>
+      </tr>`;
+    }).join('');
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }
@@ -299,7 +333,7 @@ async function confirmarRecepcion(id) {
   try {
     const data = await apiFetch('/terreno/recepcion_confirmar.php', { method: 'POST', body: { postulacion_id: id } });
     mostrarAlerta('alerta', data.mensaje, 'exito');
-    await cargarRecepcion();
+    await cargarContratados();
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }

@@ -476,69 +476,9 @@ function seleccionarTodosExport(valor) {
   document.querySelectorAll('.chk-export').forEach(chk => { chk.checked = valor; });
 }
 
-// --- v6.7: detalle de tiempos por trabajador (fecha/hora al segundo) ------
-async function abrirDetalleTiempos(id) {
-  const modal = document.getElementById('modal-tiempos');
-  const cont = document.getElementById('contenido-tiempos');
-  cont.innerHTML = '<p class="text-sm text-gray-400 py-8 text-center">Cargando...</p>';
-  modal.classList.remove('hidden');
-  try {
-    const data = await apiFetch(`/admin_general/detalle_tiempos.php?postulacion_id=${id}`);
-    cont.innerHTML = renderTiemposHtml(data);
-  } catch (err) {
-    cont.innerHTML = `<p class="text-sm text-red-600 py-8 text-center">${err.message}</p>`;
-  }
-}
-
-function cerrarDetalleTiempos() {
-  document.getElementById('modal-tiempos').classList.add('hidden');
-}
-
-function fechaHoraLegible(fechaHoraSql) {
-  // "AAAA-MM-DD HH:MM:SS" -> "28-08-2026, 17:04:30" (con segundos, tal
-  // como lo pidió el JAO -- toLocaleString por defecto los omite).
-  const d = new Date(fechaHoraSql.replace(' ', 'T'));
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${dd}-${mm}-${yyyy}, ${hh}:${mi}:${ss}`;
-}
-
-function renderTiemposHtml(data) {
-  const filas = data.hitos.map((h, idx) => `
-    <div class="flex gap-3 ${idx > 0 ? 'mt-1' : ''}">
-      <div class="flex flex-col items-center">
-        <span class="w-2.5 h-2.5 rounded-full ${idx === data.hitos.length - 1 && !data.proceso_en_curso ? 'bg-green-500' : 'bg-blue-500'} shrink-0 mt-1"></span>
-        ${idx < data.hitos.length - 1 ? '<span class="w-px flex-1 bg-gray-200 my-0.5"></span>' : ''}
-      </div>
-      <div class="pb-4 flex-1">
-        <p class="text-sm font-semibold text-gray-900">${h.etiqueta}</p>
-        <p class="text-xs text-gray-500 font-mono">${fechaHoraLegible(h.fecha_hora)}</p>
-        ${h.quien ? `<p class="text-xs text-gray-400">por ${h.quien}</p>` : ''}
-        ${h.duracion_desde_anterior ? `<p class="text-xs text-blue-600 font-medium mt-0.5">⏱ +${h.duracion_desde_anterior} desde el paso anterior</p>` : ''}
-      </div>
-    </div>`).join('');
-
-  return `
-    <div class="mb-5">
-      <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-1">Detalle de tiempos</p>
-      <h3 class="text-lg font-bold text-gray-900">${data.nombre_completo}</h3>
-      <p class="text-sm text-gray-500 font-mono">${data.rut} · ${data.cargo}</p>
-    </div>
-
-    <div class="rounded-xl px-4 py-3 mb-5 text-sm font-semibold text-center ${data.proceso_en_curso ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-green-50 text-green-700 border border-green-200'}">
-      ${data.duracion_total_desde_terreno
-        ? (data.proceso_en_curso
-            ? `⏱ Lleva ${data.duracion_total_desde_terreno} desde que Terreno pre-aprobó (aún en curso)`
-            : `⏱ Tardó ${data.duracion_total_desde_terreno} desde que Terreno pre-aprobó hasta ${data.estado === 'Contratado' ? 'ser contratado' : 'este punto'}`)
-        : 'Todavía no hay suficientes hitos para calcular una duración total.'}
-    </div>
-
-    <div>${filas}</div>`;
-}
+// v10.14 (pedido explícito del usuario, item 14): abrirDetalleTiempos()
+// y sus funciones auxiliares se mudaron a dashboard-common.js -- ahora
+// también las usan Admin de Contrato y Subgerente, no solo el JAO.
 
 // --- v10: descargar carpeta(s) de documentos para subir a Buk ------------
 function seleccionarTodosContratados(valor) {

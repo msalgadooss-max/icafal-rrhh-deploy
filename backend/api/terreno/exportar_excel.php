@@ -1,8 +1,9 @@
 <?php
 /**
- * v3.5 - Exporta a Excel el histórico de Jefe de Terreno ("Personal
- * Aprobado en Proceso" o "Personal Contratado"), con los mismos
- * filtros de fecha y "aprobado por" que la vista en pantalla.
+ * v3.5 - Exporta a Excel el histórico que ve Jefe de Terreno
+ * ("Postulantes" o "Personal Contratado"), con los mismos filtros de
+ * fecha y "aprobado por" (Capataz, ver v10.14 en historico.php) que la
+ * vista en pantalla.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';

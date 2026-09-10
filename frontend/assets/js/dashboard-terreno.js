@@ -1,35 +1,34 @@
+/**
+ * v10.14 (pedido explícito del usuario, items 5, 6 y 8 de la lista
+ * post-prueba): "el Jefe de Terreno no debe aprobar, el que
+ * selecciona es el Capataz... solo solicitará cupos al administrador".
+ * Se retira por completo la acción de aprobar/rechazar de este panel
+ * -- Jefe de Terreno pasa a ser de solo lectura (ve quién ya
+ * seleccionó el Capataz y quién sigue esperando) + solicitar cupos.
+ * También se retira la pestaña "Recepción" -- ese cierre ahora es un
+ * botón dentro de la misma fila en "Personal Contratado".
+ */
 (async () => {
   const usuario = await protegerDashboard('Jefe_Terreno');
   if (!usuario) return;
-  await cargarLista();
-  await cargarBanco();
   configurarTabs();
+  inicializarFiltros('en_proceso');
+  await cargarHistorico('en_proceso');
+  await cargarBanco();
   iniciarEstadoVivo();
 })();
 
-// v10.13 (pedido explícito del usuario): botón "🔄 Actualizar" en el
-// header -- por si el proceso "parece pegado", refresca todo sin
-// recargar la página ni salir del panel.
 function actualizarTodo() {
-  cargarLista();
+  cargarHistorico(TAB_ACTIVA === 'contratados' ? 'contratados' : 'en_proceso');
   cargarBanco();
   cargarEstadoVivo();
   mostrarAlerta('alerta', 'Actualizado.', 'exito');
 }
 
-// --- v4: límite diario de aprobaciones ------------------------------------
-function renderLimiteAprobaciones(usadas, limite) {
-  const cont = document.getElementById('limite-aprobaciones');
-  if (!cont) return;
-  const alTope = usadas >= limite;
-  cont.innerHTML = `
-    <div class="rounded-lg px-4 py-2.5 text-sm font-medium border ${alTope ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-200 text-gray-600'}">
-      Aprobaciones de hoy: <strong>${usadas} / ${limite}</strong>
-      ${alTope ? ' (alcanzaste el límite diario, podrás aprobar de nuevo mañana).' : ''}
-    </div>`;
-}
-
 // --- v3.2: pestañas -------------------------------------------------------
+let TAB_ACTIVA = 'en_proceso';
+let CONTRATADOS_CARGADO = false;
+
 function configurarTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => cambiarTab(btn.dataset.tab));
@@ -37,6 +36,7 @@ function configurarTabs() {
 }
 
 function cambiarTab(tab) {
+  TAB_ACTIVA = tab;
   document.querySelectorAll('.tab-btn').forEach(btn => {
     const activo = btn.dataset.tab === tab;
     btn.classList.toggle('border-blue-600', activo);
@@ -47,10 +47,11 @@ function cambiarTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('hidden', panel.id !== `panel-${tab}`);
   });
-  if (tab === 'en_proceso' && !EN_PROCESO_CARGADO) {
-    EN_PROCESO_CARGADO = true;
-    inicializarFiltros('en_proceso');
+  if (tab === 'en_proceso') {
     cargarHistorico('en_proceso');
+  }
+  if (tab === 'banco') {
+    cargarBanco();
   }
   if (tab === 'contratados' && !CONTRATADOS_CARGADO) {
     CONTRATADOS_CARGADO = true;
@@ -61,17 +62,17 @@ function cambiarTab(tab) {
     cargarCupos();
     cargarMisSolicitudes();
   }
-  if (tab === 'recepcion') {
-    cargarRecepcion();
-  }
 }
 
-// --- v7: Recepción (cierre operativo, Bodega ya entregó el EPP) -----------
-async function cargarRecepcion() {
-  const tbody = document.getElementById('tbody-recepcion');
-  const vacio = document.getElementById('recepcion-vacio');
+// --- v10.14: "Banco de Postulantes" -- ahora de solo lectura, muestra a
+// todos los recién llegados por el QR que el Capataz aún no selecciona.
+// Reutiliza terreno/listar.php (la misma data que ve el Capataz para
+// arrastrar), sin ningún botón de acción.
+async function cargarBanco() {
+  const tbody = document.getElementById('tbody-banco');
+  const vacio = document.getElementById('banco-vacio');
   try {
-    const data = await apiFetch('/terreno/recepcion_listar.php');
+    const data = await apiFetch('/terreno/listar.php');
     if (!data.postulaciones.length) {
       tbody.innerHTML = '';
       vacio.classList.remove('hidden');
@@ -80,24 +81,17 @@ async function cargarRecepcion() {
     vacio.classList.add('hidden');
     tbody.innerHTML = data.postulaciones.map(p => `
       <tr class="border-t">
-        <td class="px-4 py-3 font-mono">${p.rut}</td>
+        <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
         <td class="px-4 py-3">${p.nombre_completo}</td>
-        <td class="px-4 py-3">${p.nombre_cargo}</td>
-        <td class="px-4 py-3 text-right">
-          <button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="confirmarRecepcion(${p.id})">Confirmar recepción</button>
-        </td>
+        <td class="px-4 py-3">${p.comuna}</td>
+        <td class="px-4 py-3">${p.telefono}</td>
+        <td class="px-4 py-3 text-gray-500">${new Date(p.creado_at).toLocaleString('es-CL')}</td>
+        <td class="px-4 py-3">${p.tiene_cv
+          ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline">Ver CV</a>`
+          : (p.experiencia_sin_cv
+              ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV (ver experiencia) ⓘ</span>`
+              : '<span class="text-gray-400 text-xs">Sin CV</span>')}</td>
       </tr>`).join('');
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-async function confirmarRecepcion(id) {
-  if (!confirm('¿Confirmas que fuiste a buscar a esta persona? Esto da por terminado el proceso completo.')) return;
-  try {
-    const data = await apiFetch('/terreno/recepcion_confirmar.php', { method: 'POST', body: { postulacion_id: id } });
-    mostrarAlerta('alerta', data.mensaje, 'exito');
-    await cargarRecepcion();
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }
@@ -196,126 +190,11 @@ document.getElementById('form-cupo').addEventListener('submit', async (e) => {
   }
 });
 
-async function cargarLista() {
-  const tbody = document.getElementById('tbody-postulaciones');
-  const vacio = document.getElementById('vacio');
-  try {
-    const data = await apiFetch('/terreno/listar.php');
-    renderLimiteAprobaciones(data.aprobaciones_hoy, data.limite_aprobaciones_diarias);
-    if (!data.postulaciones.length) {
-      tbody.innerHTML = '';
-      vacio.classList.remove('hidden');
-      return;
-    }
-    vacio.classList.add('hidden');
-    tbody.innerHTML = data.postulaciones.map(p => `
-      <tr class="border-t">
-        <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
-        <td class="px-4 py-3">${p.nombre_completo}</td>
-        <td class="px-4 py-3">${p.nombre_cargo}</td>
-        <td class="px-4 py-3">${p.comuna}</td>
-        <td class="px-4 py-3">${p.telefono}</td>
-        <td class="px-4 py-3 text-gray-500">${new Date(p.creado_at).toLocaleString('es-CL')}</td>
-        <td class="px-4 py-3">${p.tiene_cv
-          ? `<a href="${API_BASE_URL}/terreno/ver_cv.php?postulacion_id=${p.id}" target="_blank" class="text-blue-600 font-medium underline">Ver CV</a>`
-          : (p.experiencia_sin_cv
-              ? `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded cursor-help" title="${p.experiencia_sin_cv.replace(/"/g, '&quot;')}">Sin CV (ver experiencia) ⓘ</span>`
-              : '<span class="text-gray-400 text-xs">Sin CV</span>')}</td>
-        <td class="px-4 py-3 text-right space-x-2">
-          <button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="aprobar(${p.id})" title="Pasa a selección del Capataz en terreno">Aprobar</button>
-          <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="rechazar(${p.id})">Rechazar</button>
-        </td>
-      </tr>`).join('');
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-async function aprobar(id) {
-  try {
-    const data = await apiFetch('/terreno/aprobar.php', { method: 'POST', body: { postulacion_id: id } });
-    mostrarAlerta('alerta', data.mensaje, 'exito');
-    await cargarLista();
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-async function rechazar(id) {
-  const motivo = await pedirMotivoRechazo();
-  if (motivo === null) return;
-  try {
-    await apiFetch('/terreno/rechazar.php', { method: 'POST', body: { postulacion_id: id, motivo } });
-    mostrarAlerta('alerta', 'Postulación rechazada.', 'exito');
-    await cargarLista();
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-// --- v2: Banco de Postulantes ---------------------------------------------
-let CARGOS_CON_CUPO = [];
-
-async function cargarBanco() {
-  const tbody = document.getElementById('tbody-banco');
-  const vacio = document.getElementById('banco-vacio');
-  try {
-    const data = await apiFetch('/terreno/banco_listar.php');
-    CARGOS_CON_CUPO = data.cargos_con_cupo;
-    if (!data.banco.length) {
-      tbody.innerHTML = '';
-      vacio.classList.remove('hidden');
-      return;
-    }
-    vacio.classList.add('hidden');
-    tbody.innerHTML = data.banco.map(p => `
-      <tr class="border-t">
-        <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
-        <td class="px-4 py-3">${p.nombre_completo}</td>
-        <td class="px-4 py-3">${p.cargo_interes}</td>
-        <td class="px-4 py-3">${p.comuna}</td>
-        <td class="px-4 py-3 text-gray-500">${new Date(p.creado_at).toLocaleDateString('es-CL')}</td>
-        <td class="px-4 py-3 text-gray-500">${p.retencion_hasta}</td>
-        <td class="px-4 py-3 text-right">${botonInvitar(p.id)}</td>
-      </tr>`).join('');
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-function botonInvitar(postulacionId) {
-  if (!CARGOS_CON_CUPO.length) {
-    return '<span class="text-xs text-gray-400">Sin cupos abiertos</span>';
-  }
-  const opciones = CARGOS_CON_CUPO.map(c => `<option value="${c.id}">${c.nombre_cargo}</option>`).join('');
-  return `
-    <div class="flex items-center gap-2 justify-end">
-      <select id="cargo-invitar-${postulacionId}" class="border border-gray-300 rounded-lg px-2 py-1 text-xs">${opciones}</select>
-      <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="invitarDelBanco(${postulacionId})">Invitar</button>
-    </div>`;
-}
-
-async function invitarDelBanco(postulacionId) {
-  const select = document.getElementById(`cargo-invitar-${postulacionId}`);
-  const cargoId = Number(select.value);
-  try {
-    await apiFetch('/terreno/banco_invitar.php', { method: 'POST', body: { postulacion_id: postulacionId, cargo_id: cargoId } });
-    mostrarAlerta('alerta', 'Persona invitada al proceso.', 'exito');
-    await cargarLista();
-    await cargarBanco();
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-// --- v3.2: Histórico (Personal Aprobado en Proceso / Contratado) ----------
-let EN_PROCESO_CARGADO = false;
-let CONTRATADOS_CARGADO = false;
-
+// --- v3.2: Histórico (Postulantes en proceso / Contratado) -----------------
 const ETIQUETAS_ETAPA = {
   Pre_aprobado_terreno: 'Esperando Etapa 2 / autorización',
   Datos_completados: 'Datos completados',
-  Aprobado_admin: 'Autorizado, en cierre',
+  Aprobado_admin: 'En revisión JAO',
   Induccion_ok: 'Inducción realizada',
   EPP_listo: 'EPP listo',
 };
@@ -327,7 +206,7 @@ function inicializarFiltros(vista) {
       <input type="date" id="desde-${vista}" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
     <div><label class="block text-xs text-gray-600 mb-1">Hasta</label>
       <input type="date" id="hasta-${vista}" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
-    <div><label class="block text-xs text-gray-600 mb-1">Aprobado por</label>
+    <div><label class="block text-xs text-gray-600 mb-1">Seleccionado por</label>
       <select id="aprobado_por-${vista}" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"><option value="">Todos</option></select></div>
     <button class="bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="cargarHistorico('${vista}')">Filtrar</button>
     <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg" onclick="limpiarFiltros('${vista}')">Limpiar</button>
@@ -409,11 +288,35 @@ async function cargarHistorico(vista) {
           <td class="px-4 py-3 text-gray-500">${fecha}</td>
         </tr>`;
       }
+      // v10.14 (pedido explícito del usuario, item 6): se retira la
+      // pestaña "Recepción" propia -- el mismo botón de cierre ahora
+      // vive acá, en la fila de "Personal Contratado", solo mientras
+      // sigue en 'Contratado' (todavía no se confirmó que lo retiraron).
+      const accion = p.estado === 'Contratado'
+        ? `<button class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="confirmarRecepcion(${p.id})">Ya lo retiré</button>`
+        : '<span class="text-xs text-gray-400">Ya retirado</span>';
       return `<tr class="border-t">${filasComunes}
         <td class="px-4 py-3">${aprobador}</td>
         <td class="px-4 py-3 text-gray-500">${fecha}</td>
+        <td class="px-4 py-3 text-right">${accion}</td>
       </tr>`;
     }).join('');
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
+// v10.14 (pedido explícito del usuario, item 6): "ya lo retiré, se lo
+// lleva a una cuadrilla" -- antes era su propia pestaña "Recepción",
+// ahora es un botón dentro de "Personal Contratado". Reutiliza el mismo
+// endpoint de siempre (terreno/recepcion_confirmar.php), solo cambia
+// desde dónde se llama.
+async function confirmarRecepcion(id) {
+  if (!confirm('¿Confirmas que fuiste a buscar a esta persona? Esto da por terminado el proceso completo.')) return;
+  try {
+    const data = await apiFetch('/terreno/recepcion_confirmar.php', { method: 'POST', body: { postulacion_id: id } });
+    mostrarAlerta('alerta', data.mensaje, 'exito');
+    await cargarHistorico('contratados');
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }

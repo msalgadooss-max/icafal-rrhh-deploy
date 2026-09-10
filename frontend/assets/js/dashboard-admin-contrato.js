@@ -137,8 +137,9 @@ function renderEstadoProcesoTabla() {
         <span class="text-xs font-medium ${t.contratado ? 'text-green-700' : 'text-blue-700'}">${t.fase}</span>
         ${t.pendiente_de_ti ? '<span class="ml-2 text-[11px] font-semibold text-amber-700">👉 Pendiente en tu bandeja</span>' : ''}
       </td>
-      <td class="px-4 py-3 text-right">
+      <td class="px-4 py-3 text-right space-x-3">
         <button class="text-xs font-semibold text-blue-600 underline" onclick="abrirDetalleTrabajador(${t.id})">Ver pasos</button>
+        <button class="text-xs font-semibold text-indigo-600 underline" onclick="abrirDetalleTiempos(${t.id})">⏱ Ver tiempos</button>
       </td>
     </tr>`).join('');
 }

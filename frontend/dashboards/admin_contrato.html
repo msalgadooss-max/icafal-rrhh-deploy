@@ -120,6 +120,15 @@
     </section>
   </main>
 
+  <!-- v10.14 (pedido explícito del usuario, item 14): "Ver tiempos" --
+       antes solo el JAO lo tenía. -->
+  <div id="modal-tiempos" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this) cerrarDetalleTiempos()">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative max-h-[85vh] overflow-y-auto">
+      <button onclick="cerrarDetalleTiempos()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+      <div id="contenido-tiempos"></div>
+    </div>
+  </div>
+
   <script src="../assets/js/config.js"></script>
   <script src="../assets/js/api.js"></script>
   <script src="../assets/js/dashboard-common.js"></script>

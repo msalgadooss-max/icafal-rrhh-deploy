@@ -156,6 +156,9 @@ function renderTabla() {
       <td class="px-4 py-3">${p.comuna}</td>
       <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-medium ${COLOR_ESTADO[p.estado] || 'bg-gray-100 text-gray-700'}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span></td>
       <td class="px-4 py-3 text-gray-500">${new Date(p.actualizado_at).toLocaleString('es-CL')}</td>
+      <td class="px-4 py-3 text-right">
+        <button class="text-xs font-semibold text-indigo-600 underline" onclick="abrirDetalleTiempos(${p.id})">⏱ Ver tiempos</button>
+      </td>
     </tr>`).join('');
 }
 

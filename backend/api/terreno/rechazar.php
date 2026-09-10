@@ -1,21 +1,21 @@
 <?php
 /**
- * Jefe de Terreno / Capataz rechaza una postulacion 'Pendiente'.
+ * Capataz rechaza una postulación 'Pendiente' ("No selecciona").
  * Cambio de estado: Pendiente -> Rechazado. El motivo se guarda como
- * log manual (ademas del log automatico del trigger) para dejar
+ * log manual (además del log automático del trigger) para dejar
  * constancia del porqué, no solo del qué.
  *
- * v7: cada rol solo puede rechazar lo que le corresponde ver en su
- * propio paso (ver terreno/listar.php) -- Jefe_Terreno lo que aún no
- * filtró (aprobado_jt_at IS NULL), Capataz lo que Jefe_Terreno ya le
- * pasó (aprobado_jt_at IS NOT NULL).
+ * v10.14 (pedido explícito del usuario, item 5 de la lista post-prueba):
+ * antes también lo podía usar Jefe_Terreno para su "primer filtro" --
+ * ese paso se elimina; ahora solo el Capataz decide, en el mismo
+ * gesto que antes usaba para seleccionar (arrastrar) o rechazar.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/csrf.php';
 
 iniciarSesionSegura();
-$usuario = requireRol(['Jefe_Terreno', 'Capataz']);
+$usuario = requireRol(['Capataz']);
 exigirMetodo('POST');
 exigirCsrfValido();
 
@@ -30,7 +30,7 @@ if ($postulacionId <= 0) {
 $pdo = obtenerConexion();
 
 $stmtCheck = $pdo->prepare(
-    'SELECT p.estado, p.aprobado_jt_at, p.nombre_completo, p.correo, c.nombre_cargo
+    'SELECT p.estado, p.nombre_completo, p.correo, c.nombre_cargo
        FROM postulaciones p
        JOIN cargos c ON c.id = p.cargo_id
       WHERE p.id = :id'
@@ -43,14 +43,6 @@ if (!$postulacion) {
 }
 if ($postulacion['estado'] !== 'Pendiente') {
     responderError('La postulación ya no está en estado Pendiente.', 409);
-}
-
-$yaFiltradaPorJT = $postulacion['aprobado_jt_at'] !== null;
-if ($usuario['rol'] === 'Jefe_Terreno' && $yaFiltradaPorJT) {
-    responderError('Esta postulación ya pasó a manos del Capataz.', 409);
-}
-if ($usuario['rol'] === 'Capataz' && !$yaFiltradaPorJT) {
-    responderError('Esta postulación todavía no pasa el primer filtro de Jefe de Terreno.', 409);
 }
 
 fijarUsuarioContextoBD($pdo, $usuario['id']);
