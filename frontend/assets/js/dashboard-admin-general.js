@@ -246,7 +246,7 @@ function tarjeta(p) {
             ? `<p class="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mt-3">Todavía en día 1 -- falta la inducción de seguridad con Prevención antes de poder firmar el contrato.</p>`
             : `<p class="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mt-3">Todavía en día 1 -- falta verificar la identidad y/o completar la nómina antes de poder firmar el contrato.</p>`)
         : ''}
-      ${!MODULO_PREVENCION_ACTIVO && p.puede_firmar ? `<p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3">Etapa 1 del piloto: al firmar, esta acción cierra la contratación directamente (Prevención y Bodega todavía no participan en la app).</p>` : ''}
+      ${!MODULO_PREVENCION_ACTIVO && p.puede_firmar ? `<p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3">Etapa 1 del piloto: al firmar, esta acción cierra la contratación directamente.</p>` : ''}
 
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm mt-3 text-gray-700">
         <p><span class="text-gray-400">AFP:</span> ${p.afp}</p>
