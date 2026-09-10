@@ -472,7 +472,11 @@ INSERT INTO cierre_remuneraciones (id, activo) VALUES (1, 0);
 -- ---------------------------------------------------------------------
 CREATE TABLE encuesta_satisfaccion (
     id                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    nombre               VARCHAR(150) NULL,
+    -- v10.14 (pedido explícito del usuario): "sin nombres y con edad
+    -- como dato... es importante marcar eso... para sacar una medición
+    -- y promedio" -- se mantiene anónima (nada de nombre) pero se pide
+    -- la edad, para poder cruzarla luego contra las respuestas.
+    edad                 TINYINT UNSIGNED NOT NULL,
     cargo_probado        VARCHAR(100) NULL,
     claridad_pasos       TINYINT UNSIGNED NOT NULL,
     facilidad_datos      TINYINT UNSIGNED NOT NULL,

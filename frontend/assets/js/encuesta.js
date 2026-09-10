@@ -70,6 +70,16 @@ document.getElementById('form-encuesta').addEventListener('submit', async (e) =>
     return;
   }
 
+  // v10.14 (pedido explícito del usuario): la edad es obligatoria --
+  // sirve para sacar mediciones y promedios más adelante, y no se pide
+  // nombre (la encuesta queda anónima).
+  const edad = document.getElementById('edad').value;
+  if (!edad) {
+    alertaDiv.innerHTML = `<div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3 mb-4">Indica tu edad antes de enviar.</div>`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
   const btn = document.getElementById('btn-enviar');
   btn.disabled = true;
   btn.textContent = 'Enviando...';
@@ -79,7 +89,7 @@ document.getElementById('form-encuesta').addEventListener('submit', async (e) =>
       method: 'POST',
       body: {
         ...respuestas,
-        nombre: document.getElementById('nombre').value,
+        edad,
         cargo_probado: document.getElementById('cargo_probado').value,
         comentario: document.getElementById('comentario').value,
       },

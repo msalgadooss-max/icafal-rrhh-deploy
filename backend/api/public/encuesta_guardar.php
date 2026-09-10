@@ -28,20 +28,28 @@ foreach ($preguntas as $clave) {
     $valores[$clave] = $valor;
 }
 
-$nombre = limpiarTexto($body['nombre'] ?? '', 150);
+// v10.14 (pedido explícito del usuario): "sin nombres y con edad como
+// dato... es importante marcar eso... para sacar una medición y
+// promedio" -- se pide la edad (obligatoria, para el promedio) y se
+// quita el nombre por completo, la encuesta queda anónima.
+$edad = (int)($body['edad'] ?? 0);
+if ($edad < 15 || $edad > 90) {
+    responderError('Indica una edad válida.', 422);
+}
+
 $cargoProbado = limpiarTexto($body['cargo_probado'] ?? '', 100);
 $comentario = limpiarTexto($body['comentario'] ?? '', 1000);
 
 $pdo = obtenerConexion();
 $stmt = $pdo->prepare(
     'INSERT INTO encuesta_satisfaccion
-        (nombre, cargo_probado, claridad_pasos, facilidad_datos, facilidad_documentos,
+        (edad, cargo_probado, claridad_pasos, facilidad_datos, facilidad_documentos,
          claridad_correos, tiempo_espera, claridad_seguimiento, dificultad_general,
          recomendaria, comentario)
-     VALUES (:nombre, :cargo, :p1, :p2, :p3, :p4, :p5, :p6, :p7, :p8, :comentario)'
+     VALUES (:edad, :cargo, :p1, :p2, :p3, :p4, :p5, :p6, :p7, :p8, :comentario)'
 );
 $stmt->execute([
-    'nombre'     => $nombre !== '' ? $nombre : null,
+    'edad'       => $edad,
     'cargo'      => $cargoProbado !== '' ? $cargoProbado : null,
     'p1'         => $valores['claridad_pasos'],
     'p2'         => $valores['facilidad_datos'],
