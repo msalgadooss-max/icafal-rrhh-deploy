@@ -33,7 +33,35 @@ const ETIQUETAS_ROL = {
   await cargarUsuarios();
   configurarTabs();
   mostrarQr();
+  mostrarQrEncuesta();
 })();
+
+// v10.14 (pedido explícito del usuario): QR de la encuesta del piloto,
+// reutilizando el mismo generador de imagen que ya arma el QR de
+// portería (qr_imagen.php) -- no hace falta la librería QRCode.js para
+// este, es una imagen normal.
+function mostrarQrEncuesta() {
+  const urlEncuesta = `${window.location.origin}/frontend/public/encuesta.html`;
+  document.getElementById('url-encuesta').textContent = urlEncuesta;
+  document.getElementById('qr-encuesta').src = `${API_BASE_URL}/public/qr_imagen.php?u=${encodeURIComponent(urlEncuesta)}`;
+}
+
+async function descargarEncuestaExcel() {
+  try {
+    const res = await apiFetch('/dev/encuesta_exportar_excel.php');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'encuesta_piloto.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    mostrarAlerta('alerta', err.message || 'Todavía no hay respuestas para descargar.');
+  }
+}
 
 let USUARIOS_INTERNOS = [];
 

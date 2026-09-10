@@ -33,6 +33,23 @@
       <div id="lista-usuarios" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
     </section>
 
+    <!-- v10.14 (pedido explícito del usuario): QR + descarga de la
+         encuesta de satisfacción del piloto, para no tener que generarla
+         a mano cada vez. -->
+    <section class="bg-white rounded-xl shadow-sm p-5 mb-6">
+      <h2 class="text-sm font-semibold text-gray-700 mb-1">Encuesta del piloto</h2>
+      <p class="text-xs text-gray-500 mb-4">Muestra este QR a los trabajadores de prueba para que evalúen el proceso (1 a 7, anónima). Descarga las respuestas cuando quieras para sacar tus mediciones.</p>
+      <div class="flex flex-col sm:flex-row items-center gap-5">
+        <img id="qr-encuesta" alt="QR de la encuesta" class="w-32 h-32 border border-gray-200 rounded-lg shrink-0">
+        <div class="flex-1 min-w-0">
+          <p id="url-encuesta" class="text-xs text-gray-400 break-all mb-3"></p>
+          <button onclick="descargarEncuestaExcel()" class="bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+            📥 Descargar respuestas (Excel)
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- QR / enlace -->
     <section class="bg-white rounded-xl shadow-sm p-5">
       <div class="flex gap-1 border-b border-gray-200 mb-4" id="tabs">
