@@ -81,7 +81,7 @@ async function cargarPanel() {
     TODAS_LAS_POSTULACIONES = data.postulaciones;
     renderKpis(data.resumen_estados);
     renderCupos(data.cargos);
-    renderEstadoSistema(data.cierre_remuneraciones_activo, data.modulos);
+    renderEstadoSistema(data.cierre_remuneraciones_activo, data.modulos, data.cierre_remuneraciones_desde, data.cierre_remuneraciones_hasta);
     renderTabla();
   } catch (err) {
     mostrarAlerta('alerta', err.message);
@@ -97,12 +97,15 @@ function renderKpis(resumen) {
     </div>`).join('');
 }
 
-function renderEstadoSistema(cierreActivo, modulos) {
+function renderEstadoSistema(cierreActivo, modulos, cierreDesde, cierreHasta) {
   const el = document.getElementById('estado-sistema');
   if (!el) return;
   const chips = [];
+  // v10.14 (pedido explícito del usuario, item 15): muestra las fechas
+  // programadas, no solo si está activo o no.
+  const rangoTexto = cierreDesde && cierreHasta ? ` (${cierreDesde} al ${cierreHasta})` : '';
   chips.push(cierreActivo
-    ? '<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Cierre de remuneraciones ACTIVO: no se pueden finalizar contrataciones</span>'
+    ? `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Cierre de remuneraciones ACTIVO${rangoTexto}: no se pueden finalizar contrataciones</span>`
     : '<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Remuneraciones abiertas</span>');
   if (!modulos.prevencion) {
     chips.push('<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Prevención: pausada en esta demo</span>');

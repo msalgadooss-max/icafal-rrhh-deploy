@@ -25,6 +25,7 @@ let CHART_DONUT = null;
   LISTAS = (await apiFetch('/public/listas.php')).listas;
   await cargarLista();
   await cargarEstadisticas();
+  await cargarCierre();
   configurarTabs();
   iniciarEstadoVivo();
 })();
@@ -37,6 +38,7 @@ document.getElementById('rango-estadisticas').addEventListener('change', cargarE
 function actualizarTodo() {
   cargarLista();
   cargarEstadisticas();
+  cargarCierre();
   cargarEstadoVivo();
   mostrarAlerta('alerta', 'Actualizado.', 'exito');
 }
@@ -392,22 +394,53 @@ function renderBadgeCierre() {
   const badge = document.getElementById('badge-cierre');
   if (CIERRE_ACTIVO) {
     badge.textContent = 'Activo: contrataciones bloqueadas';
-    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 shrink-0';
   } else {
     badge.textContent = 'Abierto';
-    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 shrink-0';
   }
 }
 
-async function alternarCierre() {
-  const nuevoValor = !CIERRE_ACTIVO;
-  const confirmacion = nuevoValor
-    ? '¿Activar el cierre de remuneraciones? Se bloqueará "Finalizar Contratación" hasta que lo reabras.'
-    : '¿Reabrir remuneraciones? Se volverá a poder finalizar contrataciones.';
-  if (!confirm(confirmacion)) return;
+// v10.14 (pedido explícito del usuario, item 15): carga el estado real
+// (con fechas) apenas arranca el panel -- listar.php solo entrega el
+// booleano, así que se pide aparte a cierre_remuneraciones.php.
+async function cargarCierre() {
   try {
-    const data = await apiFetch('/admin_general/cierre_remuneraciones.php', { method: 'POST', body: { activo: nuevoValor } });
+    const data = await apiFetch('/admin_general/cierre_remuneraciones.php');
     CIERRE_ACTIVO = data.activo;
+    document.getElementById('cierre-desde').value = data.desde || '';
+    document.getElementById('cierre-hasta').value = data.hasta || '';
+    renderBadgeCierre();
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
+async function guardarCierre() {
+  const desde = document.getElementById('cierre-desde').value;
+  const hasta = document.getElementById('cierre-hasta').value;
+  if (!desde || !hasta) {
+    mostrarAlerta('alerta', 'Completa ambas fechas.');
+    return;
+  }
+  if (!confirm(`¿Programar cierre de remuneraciones del ${desde} al ${hasta}? "Finalizar Contratación" quedará bloqueado en ese rango.`)) return;
+  try {
+    const data = await apiFetch('/admin_general/cierre_remuneraciones.php', { method: 'POST', body: { activo: false, desde, hasta } });
+    CIERRE_ACTIVO = data.activo;
+    renderBadgeCierre();
+    mostrarAlerta('alerta', data.mensaje, 'exito');
+  } catch (err) {
+    mostrarAlerta('alerta', err.message);
+  }
+}
+
+async function limpiarCierre() {
+  if (!confirm('¿Quitar el cierre de remuneraciones? Se volverá a poder finalizar contrataciones y solicitar cupos con normalidad.')) return;
+  try {
+    const data = await apiFetch('/admin_general/cierre_remuneraciones.php', { method: 'POST', body: { activo: false, desde: '', hasta: '' } });
+    CIERRE_ACTIVO = data.activo;
+    document.getElementById('cierre-desde').value = '';
+    document.getElementById('cierre-hasta').value = '';
     renderBadgeCierre();
     mostrarAlerta('alerta', data.mensaje, 'exito');
   } catch (err) {

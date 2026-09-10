@@ -762,10 +762,47 @@ function exigirModuloActivo(bool $activo, string $nombreModulo): void
 }
 
 /** true si el cierre de remuneraciones (Buk u otro) esta activo hoy. */
+/**
+ * v10.14 (pedido explícito del usuario, item 15): ya no es solo el
+ * interruptor manual `activo` -- también cuenta como cierre activo si
+ * la fecha de hoy cae dentro de la ventana `desde`/`hasta` que
+ * programó el JAO.
+ */
 function cierreRemuneracionesActivo(PDO $pdo): bool
 {
-    $stmt = $pdo->query('SELECT activo FROM cierre_remuneraciones WHERE id = 1');
-    return (bool)$stmt->fetchColumn();
+    $stmt = $pdo->query('SELECT activo, desde, hasta FROM cierre_remuneraciones WHERE id = 1');
+    $fila = $stmt->fetch();
+    if (!$fila) {
+        return false;
+    }
+    if ((bool)$fila['activo']) {
+        return true;
+    }
+    if ($fila['desde'] !== null && $fila['hasta'] !== null) {
+        $hoy = date('Y-m-d');
+        return $hoy >= $fila['desde'] && $hoy <= $fila['hasta'];
+    }
+    return false;
+}
+
+/**
+ * v10.14: "considerar que estos cupos serán liberados el día primero
+ * del mes siguiente" -- el mensaje exacto que pidió el usuario para
+ * cuando Jefe_Terreno solicita cupos estando dentro de la ventana de
+ * cierre. Devuelve null si no hay cierre programado con fecha `hasta`.
+ */
+function mensajeCierreRemuneraciones(PDO $pdo): ?string
+{
+    $stmt = $pdo->query('SELECT activo, desde, hasta FROM cierre_remuneraciones WHERE id = 1');
+    $fila = $stmt->fetch();
+    if (!$fila || !cierreRemuneracionesActivo($pdo)) {
+        return null;
+    }
+    if ($fila['hasta'] === null) {
+        return 'Estamos en cierre de remuneraciones. Tu solicitud queda registrada, pero los cupos que se aprueben podrían demorar en liberarse.';
+    }
+    $liberacion = (new DateTime($fila['hasta']))->modify('first day of next month')->format('d-m-Y');
+    return "Estamos en cierre de remuneraciones hasta el " . (new DateTime($fila['hasta']))->format('d-m-Y') . ". Tu solicitud queda registrada, pero considera que estos cupos serán liberados el {$liberacion}.";
 }
 
 /**

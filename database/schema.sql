@@ -441,6 +441,15 @@ CREATE TABLE trazabilidad_logs (
 CREATE TABLE cierre_remuneraciones (
     id              TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
     activo          TINYINT(1) NOT NULL DEFAULT 0,
+    -- v10.14 (pedido explícito del usuario, item 15): antes era solo un
+    -- interruptor manual on/off. Ahora el JAO puede en cambio programar
+    -- una VENTANA de fechas (desde/hasta) -- mientras la fecha de hoy
+    -- caiga adentro, el cierre se considera activo automáticamente, sin
+    -- que nadie tenga que acordarse de desactivarlo a mano. `activo`
+    -- se mantiene como override manual rápido para un cierre de
+    -- emergencia sin fechas definidas.
+    desde           DATE NULL,
+    hasta           DATE NULL,
     actualizado_por INT UNSIGNED NULL,
     actualizado_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                         ON UPDATE CURRENT_TIMESTAMP,

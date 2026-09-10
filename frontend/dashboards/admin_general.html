@@ -33,14 +33,28 @@
     <div id="alerta"></div>
     <div id="estado-vivo"></div>
 
-    <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex items-center justify-between flex-wrap gap-3">
-      <div>
-        <p class="text-sm font-semibold text-gray-800">Cierre de remuneraciones</p>
-        <p class="text-xs text-gray-500">Mientras esté activo, "Finalizar Contratación" queda bloqueado. El resto del proceso sigue funcionando normalmente.</p>
+    <!-- v10.14 (pedido explícito del usuario, item 15): antes era solo
+         un interruptor manual, sin fechas -- ahora se puede programar
+         una ventana. Mientras hoy caiga dentro de esas fechas (o el
+         interruptor manual esté prendido), "Finalizar Contratación"
+         queda bloqueado, y "Solicitar Cupos" de Jefe de Terreno sigue
+         funcionando pero con un aviso de que los cupos demorarán en
+         liberarse. -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Cierre de remuneraciones</p>
+          <p class="text-xs text-gray-500">Programa la ventana real de tu software de remuneraciones -- el resto del proceso sigue funcionando normalmente, solo "Finalizar Contratación" se bloquea en esas fechas.</p>
+        </div>
+        <span id="badge-cierre" class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 shrink-0">Cargando...</span>
       </div>
-      <div class="flex items-center gap-3">
-        <span id="badge-cierre" class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Cargando...</span>
-        <button id="btn-toggle-cierre" onclick="alternarCierre()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-semibold px-3 py-1.5 rounded-lg">Cambiar</button>
+      <div class="flex flex-wrap items-end gap-3">
+        <div><label class="block text-xs text-gray-600 mb-1">Desde</label>
+          <input type="date" id="cierre-desde" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
+        <div><label class="block text-xs text-gray-600 mb-1">Hasta</label>
+          <input type="date" id="cierre-hasta" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
+        <button onclick="guardarCierre()" class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-lg">Guardar fechas</button>
+        <button onclick="limpiarCierre()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg">Quitar cierre</button>
       </div>
     </div>
 

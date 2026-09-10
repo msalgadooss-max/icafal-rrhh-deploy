@@ -78,4 +78,14 @@ if ($cargoId > 0) {
     }
 }
 
-responderOk(['mensaje' => "Solicitud de $cantidad cupos para \"$nombreParaMensaje\" enviada. Queda pendiente de aprobación del Administrador de Contrato."]);
+// v10.14 (pedido explícito del usuario, item 15): no se bloquea la
+// solicitud durante el cierre de remuneraciones -- solo se avisa con
+// claridad que los cupos, aunque se aprueben, van a demorar en
+// liberarse.
+$avisoCierre = mensajeCierreRemuneraciones($pdo);
+$mensaje = "Solicitud de $cantidad cupos para \"$nombreParaMensaje\" enviada. Queda pendiente de aprobación del Administrador de Contrato.";
+if ($avisoCierre !== null) {
+    $mensaje .= ' ' . $avisoCierre;
+}
+
+responderOk(['mensaje' => $mensaje]);

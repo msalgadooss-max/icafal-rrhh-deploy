@@ -39,11 +39,18 @@ foreach ($postulaciones as $p) {
 // Cupos por cargo, para ver dotación disponible vs. total de un vistazo.
 $stmtCargos = $pdo->query('SELECT nombre_cargo, cupos_totales, cupos_activos FROM cargos WHERE activo = 1 ORDER BY nombre_cargo');
 
+// v10.14 (pedido explícito del usuario, item 15): fechas del cierre de
+// remuneraciones programado, para mostrarlas en el badge.
+$stmtCierre = $pdo->query('SELECT desde, hasta FROM cierre_remuneraciones WHERE id = 1');
+$cierre = $stmtCierre->fetch();
+
 responderOk([
     'postulaciones' => $postulaciones,
     'resumen_estados' => $resumen,
     'cargos' => $stmtCargos->fetchAll(),
     'cierre_remuneraciones_activo' => cierreRemuneracionesActivo($pdo),
+    'cierre_remuneraciones_desde' => $cierre['desde'] ?? null,
+    'cierre_remuneraciones_hasta' => $cierre['hasta'] ?? null,
     'modulos' => [
         'prevencion' => MODULO_PREVENCION_ACTIVO,
         'bodega'     => MODULO_BODEGA_ACTIVO,
