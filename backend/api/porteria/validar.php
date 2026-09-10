@@ -28,7 +28,7 @@ if ($rut === '' || $codigo === '') {
 
 $pdo = obtenerConexion();
 $stmt = $pdo->prepare(
-    'SELECT p.nombre_completo, p.rut, p.estado, c.nombre_cargo
+    'SELECT p.nombre_completo, p.rut, p.estado, p.identidad_verificada_at, c.nombre_cargo
        FROM postulaciones p
        JOIN cargos c ON c.id = p.cargo_id
       WHERE p.rut = :rut AND p.codigo_seguimiento = :codigo
@@ -52,6 +52,14 @@ if ($autorizado) {
     $mensaje = in_array($postulacion['estado'], ['Contratado', 'Proceso_completo'], true)
         ? 'Proceso de contratación completado. Ingreso a la obra autorizado -- su Capataz o Jefe de Terreno lo viene a buscar.'
         : 'Ingreso permitido a la obra.';
+} elseif ($postulacion['estado'] === 'Aprobado_admin' && $postulacion['identidad_verificada_at'] !== null) {
+    // v10.14 (pedido explícito del usuario, item 18): día 2 -- ya se
+    // presentó el día 1 (identidad verificada) y vuelve para su
+    // proceso de contratación (IRL + entrega de EPP). Mismo QR que usó
+    // el día 1, distinto mensaje: se le deja pasar igual, aunque el
+    // trámite formal todavía no cierre.
+    $autorizado = true;
+    $mensaje = 'Se presenta hoy para su proceso de contratación (IRL y entrega de EPP) -- puede pasar a sala de espera.';
 }
 
 responderOk([

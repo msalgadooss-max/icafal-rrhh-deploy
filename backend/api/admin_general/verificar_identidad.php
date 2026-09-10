@@ -7,6 +7,10 @@
  * la cédula) y confirma con este botón -- queda registrado quién y
  * cuándo lo confirmó, y es requisito (junto a datos_jao) para poder
  * "Firmar Contrato" el día 2 (ver firmar_contrato.php).
+ *
+ * v10.14 (pedido explícito del usuario): al verificar, se le avisa al
+ * postulante que avanzó y que debe volver mañana a las 8am (ver
+ * notificarPresentarseManana()) -- antes este paso no le avisaba nada.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -56,5 +60,11 @@ $stmt = $pdo->prepare(
 $stmt->execute(['uid' => $usuario['id'], 'id' => $postulacionId]);
 
 registrarLog($pdo, $postulacionId, $usuario['id'], 'Verificó manualmente que el RUT declarado coincide con la cédula subida.');
+
+try {
+    notificarPresentarseManana($pdo, $postulacionId);
+} catch (\Throwable $e) {
+    error_log('notificarPresentarseManana error: ' . $e->getMessage());
+}
 
 responderOk(['mensaje' => 'Identidad verificada correctamente.']);

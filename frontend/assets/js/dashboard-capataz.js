@@ -158,6 +158,24 @@ async function cargarLista() {
   }
 }
 
+// v10.14 (pedido explícito del usuario: "no me aparece [deshacer]"): el
+// botón de deshacer existía, pero estaba escondido dentro del detalle
+// de "Estado en vivo" -- nadie lo iba a encontrar justo después de
+// arrastrar por error. Ahora aparece de inmediato, junto al aviso de
+// "Seleccionado", con el botón de deshacer ahí mismo, por 15 segundos.
+function mostrarAlertaConDeshacer(postulacionId) {
+  const el = document.getElementById('alerta');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="border rounded-lg px-4 py-3 text-sm bg-green-50 text-green-700 border-green-200 flex items-center justify-between gap-3 flex-wrap">
+      <span>✓ Seleccionado. Ya puede completar su Etapa 2.</span>
+      <button onclick="deshacerSeleccion(${postulacionId})" class="shrink-0 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-semibold rounded-lg px-3 py-1.5">↩ Me equivoqué, deshacer</button>
+    </div>`;
+  setTimeout(() => {
+    if (el.innerHTML.includes(`deshacerSeleccion(${postulacionId})`)) el.innerHTML = '';
+  }, 15000);
+}
+
 // --- v10.6: arrastre real de la tarjeta hasta la caja del cargo -----------
 function iniciarArrastre(handle, card, postulacionId) {
   handle.addEventListener('pointerdown', (e) => {
@@ -218,7 +236,7 @@ function iniciarArrastre(handle, card, postulacionId) {
 async function asignarCargoArrastrado(id, cargoId) {
   try {
     await apiFetch('/terreno/aprobar.php', { method: 'POST', body: { postulacion_id: id, cargo_id: cargoId } });
-    mostrarAlerta('alerta', 'Seleccionado. Pasa a revisión del Administrador de Contrato.', 'exito');
+    mostrarAlertaConDeshacer(id);
     await cargarCargosConCupo();
     await cargarLista();
     // v10.10: destello en la caja del cargo recién usado -- para que la

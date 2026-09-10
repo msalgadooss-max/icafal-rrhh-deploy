@@ -403,11 +403,6 @@ function notificarCuposAprobados(
 function notificarIngresoFaena(PDO $pdo, int $postulacionId): void
 {
     require_once __DIR__ . '/../mailer/Mailer.php';
-    $vendorAutoload = __DIR__ . '/../../vendor/autoload.php';
-    if (!file_exists($vendorAutoload)) {
-        return; // sin Composer no hay libreria de QR -- no se envia este correo
-    }
-    require_once $vendorAutoload;
 
     $stmt = $pdo->prepare(
         'SELECT p.nombre_completo, p.rut, p.correo, p.codigo_seguimiento, c.nombre_cargo
@@ -424,18 +419,15 @@ function notificarIngresoFaena(PDO $pdo, int $postulacionId): void
     $urlValidacion = BASE_URL . '/frontend/public/ingreso_faena.html'
         . '?rut=' . urlencode($postulacion['rut'])
         . '&codigo=' . urlencode($postulacion['codigo_seguimiento']);
-
-    $opciones = new \chillerlan\QRCode\QROptions([
-        'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
-        'outputBase64'    => false,
-        'scale'           => 6,
-    ]);
-    $qrPng = (new \chillerlan\QRCode\QRCode($opciones))->render($urlValidacion);
-    $qrDataUri = 'data:image/png;base64,' . base64_encode($qrPng);
+    // v10.14: la imagen del QR ahora es una URL real (backend/api/public/qr_imagen.php),
+    // no un data: URI incrustado -- Gmail y otros clientes bloquean las
+    // imagenes data: URI en correos HTML por seguridad, asi que antes el
+    // QR simplemente no aparecia.
+    $qrImagenUrl = BASE_URL . '/backend/api/public/qr_imagen.php?u=' . urlencode($urlValidacion);
 
     $nombreCompleto = $postulacion['nombre_completo'];
     $cargo = $postulacion['nombre_cargo'];
-    $html = (function () use ($nombreCompleto, $cargo, $qrDataUri) {
+    $html = (function () use ($nombreCompleto, $cargo, $qrImagenUrl, $urlValidacion) {
         return require __DIR__ . '/../mailer/templates/ingreso_faena_qr.php';
     })();
 
@@ -603,31 +595,17 @@ function traducirAccionLog(string $accion): string
 function notificarContratacionExitosa(PDO $pdo, array $postulacion): void
 {
     require_once __DIR__ . '/../mailer/Mailer.php';
-    $vendorAutoload = __DIR__ . '/../../vendor/autoload.php';
-    if (!file_exists($vendorAutoload)) {
-        return; // sin Composer no hay libreria de QR -- no se envia este correo
-    }
-    require_once $vendorAutoload;
 
     $urlValidacion = BASE_URL . '/frontend/public/porteria_resultado.html'
         . '?rut=' . urlencode($postulacion['rut'])
         . '&codigo=' . urlencode($postulacion['codigo_seguimiento']);
-
-    $opciones = new \chillerlan\QRCode\QROptions([
-        'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
-        'outputBase64'    => false,
-        'scale'           => 6,
-    ]);
-    $qrPng = (new \chillerlan\QRCode\QRCode($opciones))->render($urlValidacion);
-
-    // v6.3: se embebe como data URI en vez de CID -- funciona igual con
-    // PHPMailer/SMTP que con la API HTTPS de Brevo (que no soporta
-    // imagenes referenciadas por CID en un correo transaccional simple).
-    $qrDataUri = 'data:image/png;base64,' . base64_encode($qrPng);
+    // v10.14: URL de imagen real en vez de data: URI -- ver mismo cambio
+    // y motivo en notificarIngresoFaena().
+    $qrImagenUrl = BASE_URL . '/backend/api/public/qr_imagen.php?u=' . urlencode($urlValidacion);
 
     $nombreCompleto = $postulacion['nombre_completo'];
     $cargo = $postulacion['nombre_cargo'];
-    $html = (function () use ($nombreCompleto, $cargo, $qrDataUri) {
+    $html = (function () use ($nombreCompleto, $cargo, $qrImagenUrl, $urlValidacion) {
         return require __DIR__ . '/../mailer/templates/contratacion_exitosa_qr.php';
     })();
 
@@ -887,4 +865,28 @@ function notificarLiberacionTrabajador(PDO $pdo, array $postulacion): void
     foreach ($destinatarios as $destinatario) {
         Mailer::enviar($destinatario['correo'], $destinatario['nombre'], 'Trabajador listo para ingresar a terreno - ICAFAL', $html);
     }
+}
+
+/**
+ * v10.14 (pedido explícito del usuario, item 17 de la lista post-prueba):
+ * correo al postulante apenas el JAO verifica su identidad (día 1) --
+ * antes admin_general/verificar_identidad.php no le avisaba nada. Le
+ * dice que avanzó y qué sigue (volver mañana 8am).
+ */
+function notificarPresentarseManana(PDO $pdo, int $postulacionId): void
+{
+    require_once __DIR__ . '/../mailer/Mailer.php';
+    $stmt = $pdo->prepare('SELECT nombre_completo, correo FROM postulaciones WHERE id = :id');
+    $stmt->execute(['id' => $postulacionId]);
+    $postulacion = $stmt->fetch();
+    if (!$postulacion) {
+        return;
+    }
+
+    $nombreCompleto = $postulacion['nombre_completo'];
+    $html = (function () use ($nombreCompleto) {
+        return require __DIR__ . '/../mailer/templates/notificacion_presentate_manana.php';
+    })();
+
+    Mailer::enviar($postulacion['correo'], $nombreCompleto, 'Avanzaste en tu proceso - preséntate mañana - ICAFAL', $html);
 }
