@@ -9,13 +9,14 @@
  * la pestaña "Estado del proceso" de Admin_Contrato (misma data, vista
  * en tabla completa en vez de widget resumido).
  *
- * La fase se calcula, no se guarda: combina el `estado` con
- * admin_autorizado_at y si ya existe su fila en datos_contratacion.
+ * La fase se calcula, no se guarda: combina el `estado` con si ya
+ * existe su fila en datos_contratacion (Etapa 2 completada o no).
  *
- * v10.9: desde que el link de Etapa 2 sale al seleccionar el Capataz
- * (no al autorizar Admin_Contrato, ver terreno/aprobar.php), estas dos
- * condiciones ya NO tienen un orden fijo entre sí -- el postulante bien
- * puede completar sus datos antes de que Admin_Contrato autorice.
+ * v10.14: Admin_Contrato ya no autoriza postulación por postulación
+ * (su rol termina al aprobar cupos, ver solicitudes_cupo_aprobar.php)
+ * ni el Jefe de Terreno pre-filtra (el Capataz selecciona directo, ver
+ * terreno/aprobar.php) -- se retiraron ambos hitos sintéticos de este
+ * archivo, que habían quedado desactualizados tras esos cambios.
  *
  * v10.10: se agrega el `estado` crudo a la respuesta (antes solo se
  * exponía la fase ya traducida a texto) para que el frontend pueda
@@ -32,7 +33,7 @@ exigirMetodo('GET');
 
 $pdo = obtenerConexion();
 $stmt = $pdo->query(
-    "SELECT p.id, p.nombre_completo, p.estado, p.admin_autorizado_at, p.aprobado_jt_at, c.nombre_cargo,
+    "SELECT p.id, p.nombre_completo, p.estado, c.nombre_cargo,
             (SELECT COUNT(*) FROM datos_contratacion d WHERE d.postulacion_id = p.id) > 0 AS etapa2_completada,
             (SELECT COUNT(*) FROM postulacion_documentos pd
               WHERE pd.postulacion_id = p.id AND pd.rechazado_at IS NOT NULL AND pd.resubido_at IS NULL) > 0 AS documento_observado
@@ -44,10 +45,20 @@ $stmt = $pdo->query(
 );
 $filas = $stmt->fetchAll();
 
+// v10.14 (pedido explícito del usuario, tras ver este mismo panel
+// desactualizado en plena prueba): este archivo no se había tocado en
+// el resto de la sesión, y seguía mostrando dos hitos que ya no existen
+// -- "Aprobado por Jefe de Terreno" (aprobado_jt_at, retirado en
+// terreno/aprobar.php) y "Autorización del Administrador de Contrato"
+// (admin_autorizado_at, retirado en terreno/aprobar.php v10.13). Como
+// admin_autorizado_at ya NUNCA se vuelve a fijar para una postulación
+// nueva, ese paso quedaba marcado "pendiente" para siempre y el widget
+// seguía apuntando a Admin_Contrato como si tuviera algo que aprobar
+// ahí -- exactamente el mismo problema de "sin acción de avanzar" que
+// ya se corrigió para el módulo de inducción.
 function faseVisual(array $p): string
 {
     $completo = (bool)$p['etapa2_completada'];
-    $autorizado = $p['admin_autorizado_at'] !== null;
 
     // v5: un documento observado (rechazado por el JAO, aún sin
     // corregir) manda por sobre la fase normal -- es lo mas urgente que
@@ -57,16 +68,10 @@ function faseVisual(array $p): string
     }
 
     return match ($p['estado']) {
-        // v7: 'Pendiente' ahora tiene dos sub-pasos (ver aprobado_jt_at)
-        // antes de llegar a 'Pre_aprobado_terreno'.
-        'Pendiente' => $p['aprobado_jt_at'] !== null
-            ? 'Aprobado por Jefe de Terreno, esperando selección del Capataz'
-            : 'Postulación recibida, esperando revisión de Jefe de Terreno',
-        'Pre_aprobado_terreno' => match (true) {
-            !$autorizado => 'Esperando autorización del Administrador de Contrato',
-            $completo => 'A punto de pasar a cierre', // caso raro: join aun no corrio
-            default => 'Autorizado, completando datos y documentos (Etapa 2)',
-        },
+        'Pendiente' => 'Postulación recibida, esperando selección del Capataz',
+        'Pre_aprobado_terreno' => $completo
+            ? 'Datos completos, a punto de pasar a revisión del Jefe Administrativo'
+            : 'Seleccionado, completando datos y documentos (Etapa 2)',
         'Aprobado_admin' => 'En revisión Jefe Administrativo',
         'Induccion_ok' => 'Inducción de seguridad realizada',
         'EPP_listo' => 'Kit de EPP listo, cierre final',
@@ -87,11 +92,13 @@ function rolPendiente(array $p): ?string
     if ((bool)$p['documento_observado']) {
         return null; // se espera al postulante, no a un rol interno
     }
-    $autorizado = $p['admin_autorizado_at'] !== null;
 
     return match ($p['estado']) {
-        'Pendiente' => $p['aprobado_jt_at'] !== null ? 'Capataz' : 'Jefe_Terreno',
-        'Pre_aprobado_terreno' => $autorizado ? null : 'Admin_Contrato',
+        'Pendiente' => 'Capataz',
+        // v10.14: mientras se espera que el propio postulante complete
+        // su Etapa 2, ningún rol interno tiene una acción pendiente acá
+        // -- Admin_Contrato ya no autoriza uno por uno.
+        'Pre_aprobado_terreno' => null,
         'Aprobado_admin' => 'Jefe_Administrativo',
         'Induccion_ok' => 'Prevencionista',
         'EPP_listo' => 'Jefe_Bodega',
@@ -109,38 +116,42 @@ function pasosProgreso(array $p): array
 {
     $etiquetas = [
         'Pendiente' => 'Postulación recibida',
-        'Pre_aprobado_terreno' => 'Selección en terreno completa (Jefe de Terreno + Capataz)',
+        'Pre_aprobado_terreno' => 'Seleccionado por el Capataz',
         'Aprobado_admin' => 'En revisión Jefe Administrativo',
         'Induccion_ok' => 'Inducción de seguridad',
         'EPP_listo' => 'Kit de EPP listo',
         'Contratado' => 'Contratado -- EPP entregado',
         'Proceso_completo' => 'Recibido en terreno -- proceso completo',
     ];
-    $orden = ordenEstadosActivos();
+    // v10.14: en Etapa 1 del piloto (MODULO_PREVENCION_ACTIVO=false),
+    // firmar_contrato.php salta directo de 'Aprobado_admin' a
+    // 'Contratado' -- mostrar "Inducción de seguridad"/"Kit de EPP
+    // listo" como pasos por venir es engañoso, porque nadie los va a
+    // marcar mientras Prevención y Bodega sigan sin participar en la
+    // app. Si una postulación vieja igual quedó en alguno de esos dos
+    // estados, se usa la lista completa para no dejarla sin ningún paso
+    // marcado.
+    $orden = MODULO_PREVENCION_ACTIVO
+        ? ordenEstadosActivos()
+        : ['Pendiente', 'Pre_aprobado_terreno', 'Aprobado_admin', 'Contratado', 'Proceso_completo'];
+    if (!in_array($p['estado'], $orden, true)) {
+        $orden = ordenEstadosActivos();
+    }
     $idxActual = array_search($p['estado'], $orden, true);
     $completo = (bool)$p['etapa2_completada'];
-    $autorizadoAdmin = $p['admin_autorizado_at'] !== null;
 
     $pasos = [];
     foreach ($orden as $idx => $estado) {
-        if ($estado === 'Pendiente') {
-            // v7: sub-pasos sintéticos del filtro en dos tiempos -- no
-            // son estados reales (aprobado_jt_at es un sub-gate sobre
-            // 'Pendiente', ver terreno/aprobar.php).
-            $pasos[] = ['etiqueta' => 'Postulación recibida', 'completado' => true];
-            $pasos[] = ['etiqueta' => 'Aprobación Jefe de Terreno', 'completado' => $p['aprobado_jt_at'] !== null || ($idxActual !== false && $idx < $idxActual)];
-            continue;
-        }
         $pasos[] = ['etiqueta' => $etiquetas[$estado] ?? $estado, 'completado' => $idxActual !== false && $idx <= $idxActual];
+        // v10.14: el Jefe de Terreno ya no aprueba (el Capataz filtra
+        // directo cualquier 'Pendiente', ver terreno/aprobar.php) y
+        // Admin_Contrato ya no autoriza postulación por postulación (su
+        // rol termina al aprobar cupos) -- se retiran esos dos hitos
+        // sintéticos. Solo queda "Datos completados" como sub-paso real
+        // dentro de Etapa 2.
         if ($estado === 'Pre_aprobado_terreno') {
-            // v6.5: dos hitos sinteticos (no son estados reales) que
-            // intentarAvanzarAAprobadoAdmin() exige ambos antes de pasar a
-            // 'Aprobado_admin'. v10.9: ya no ocurren en un orden fijo entre
-            // sí -- se listan igual una junto a otra, pero cada una se
-            // completa de forma independiente.
             $yaSuperado = $idxActual !== false && $idx < $idxActual;
             $pasos[] = ['etiqueta' => 'Datos completados por el postulante', 'completado' => $completo || $yaSuperado];
-            $pasos[] = ['etiqueta' => 'Autorización interna (Administrador de Contrato)', 'completado' => $autorizadoAdmin || $yaSuperado];
         }
     }
     return $pasos;
