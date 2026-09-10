@@ -462,6 +462,31 @@ CREATE TABLE cierre_remuneraciones (
 INSERT INTO cierre_remuneraciones (id, activo) VALUES (1, 0);
 
 -- ---------------------------------------------------------------------
+-- Tabla: encuesta_satisfaccion (v10.14)
+-- Encuesta anonima para los trabajadores que prueban el proceso durante
+-- el piloto: 8 preguntas del 1 al 7 (1 = muy dificil/malo, 7 = muy
+-- facil/bueno) sobre distintas aristas del proceso, mas un comentario
+-- abierto opcional. Publica y sin RUT a proposito -- lo que importa es
+-- la percepcion general, no poder rastrear quien respondio (ver
+-- backend/api/public/encuesta_guardar.php y frontend/public/encuesta.html).
+-- ---------------------------------------------------------------------
+CREATE TABLE encuesta_satisfaccion (
+    id                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nombre               VARCHAR(150) NULL,
+    cargo_probado        VARCHAR(100) NULL,
+    claridad_pasos       TINYINT UNSIGNED NOT NULL,
+    facilidad_datos      TINYINT UNSIGNED NOT NULL,
+    facilidad_documentos TINYINT UNSIGNED NOT NULL,
+    claridad_correos     TINYINT UNSIGNED NOT NULL,
+    tiempo_espera        TINYINT UNSIGNED NOT NULL,
+    claridad_seguimiento TINYINT UNSIGNED NOT NULL,
+    dificultad_general   TINYINT UNSIGNED NOT NULL,
+    recomendaria         TINYINT UNSIGNED NOT NULL,
+    comentario           VARCHAR(1000) NULL,
+    creado_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
 -- Tabla: dev_accesos (v5)
 -- Bitacora de cada vez que el rol Desarrollador "entra como" otro
 -- usuario desde el panel de desarrollador, para poder auditar quien

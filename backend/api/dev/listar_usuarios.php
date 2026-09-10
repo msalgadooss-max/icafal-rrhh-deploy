@@ -11,11 +11,24 @@ iniciarSesionSegura();
 requireRol(['Desarrollador']);
 exigirMetodo('GET');
 
+// v10.14 (pedido explícito del usuario): "me aparece aún en el rol
+// entrega EPP, ese sácalo" -- Prevención y Bodega no participan en esta
+// etapa del piloto (ver MODULO_PREVENCION_ACTIVO/MODULO_BODEGA_ACTIVO),
+// así que no tiene sentido ofrecerlos como opción para "entrar como" y
+// hacer parecer que son un paso más del proceso a probar.
+$rolesExcluidos = ["'Desarrollador'"];
+if (!MODULO_PREVENCION_ACTIVO) {
+    $rolesExcluidos[] = "'Prevencionista'";
+}
+if (!MODULO_BODEGA_ACTIVO) {
+    $rolesExcluidos[] = "'Jefe_Bodega'";
+}
+
 $pdo = obtenerConexion();
 $stmt = $pdo->query(
     "SELECT id, nombre, correo, rol
        FROM usuarios
-      WHERE activo = 1 AND rol != 'Desarrollador'
+      WHERE activo = 1 AND rol NOT IN (" . implode(',', $rolesExcluidos) . ")
       ORDER BY FIELD(rol, 'Jefe_Terreno','Capataz','Admin_Contrato','Jefe_Administrativo','Prevencionista','Jefe_Bodega','Porteria','Gerencia'), nombre"
 );
 
