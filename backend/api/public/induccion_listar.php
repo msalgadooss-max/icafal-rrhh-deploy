@@ -14,6 +14,16 @@ require_once __DIR__ . '/../../includes/rut.php';
 
 exigirMetodo('POST');
 
+// v10.14 (pedido explícito del usuario): "elimina el paso Prevencionista
+// para avanzar... me deja sin acción de avanzar". Etapa 1 del piloto no
+// tiene a nadie usando el dashboard de Prevención, así que un postulante
+// que llegara acá (ej. con un código de una postulación de antes de este
+// cambio) podía enviar su evaluación y quedar esperando para siempre una
+// revisión que nunca va a llegar. Se corta acá mismo, con aviso claro.
+if (!MODULO_PREVENCION_ACTIVO) {
+    responderError('Todavía no necesitas hacer esto. Sigue tu proceso desde el módulo de seguimiento -- te avisaremos si se habilita este paso.', 409);
+}
+
 $body = leerJsonBody();
 $documentoCrudo = trim((string)($body['rut'] ?? ''));
 $codigo = strtoupper(limpiarTexto($body['codigo_seguimiento'] ?? '', 10));

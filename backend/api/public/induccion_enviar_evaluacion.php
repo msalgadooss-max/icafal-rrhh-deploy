@@ -13,6 +13,12 @@ require_once __DIR__ . '/../../includes/rut.php';
 
 exigirMetodo('POST');
 
+// v10.14: ver el mismo aviso en induccion_listar.php -- Etapa 1 del
+// piloto, Prevención no participa todavía.
+if (!MODULO_PREVENCION_ACTIVO) {
+    responderError('Todavía no necesitas hacer esto. Sigue tu proceso desde el módulo de seguimiento -- te avisaremos si se habilita este paso.', 409);
+}
+
 $body = leerJsonBody();
 $documentoCrudo = trim((string)($body['rut'] ?? ''));
 $codigo = strtoupper(limpiarTexto($body['codigo_seguimiento'] ?? '', 10));
