@@ -12,6 +12,14 @@
   await cargarLista();
 })();
 
+// v10.13 (pedido explícito del usuario): botón "🔄 Actualizar" en el
+// header -- por si el proceso "parece pegado", refresca sin recargar
+// la página ni salir del panel.
+function actualizarTodo() {
+  cargarLista();
+  mostrarAlerta('alerta', 'Actualizado.', 'exito');
+}
+
 let ULTIMA_LISTA = [];
 
 async function cargarLista() {

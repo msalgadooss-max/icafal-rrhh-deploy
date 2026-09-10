@@ -75,13 +75,11 @@ const GUIA_POR_ROL = {
   admin_contrato: {
     titulo: 'Guía de uso · Administrador de Contrato',
     contenido: `
-      <p class="text-gray-700 mb-4">Tu autorización es el <b>paso que activa la Etapa 2</b>: el postulante no recibe el enlace para completar sus datos hasta que tú autorizas.</p>
+      <p class="text-gray-700 mb-4">Tu tarea es <b>aprobar los cupos</b> que pide Jefe de Terreno -- ahí termina tu parte del proceso. Ya no autorizas contratación por contratación: eso lo maneja el Capataz al seleccionar, y el JAO se entera directo.</p>
       <ul class="space-y-2.5 text-gray-700">
-        <li>• <b>Pestaña "Por Autorizar":</b> lista lo que Jefe de Terreno ya pre-aprobó. Revisa el CV y decide <b>Autorizar Contratación</b> o <b>Rechazar</b>.</li>
-        <li>• Al autorizar, se envía automáticamente el correo al postulante con el enlace para completar la Etapa 2 (datos de contratación + documentos). Antes de tu autorización, ese enlace simplemente no existe.</li>
-        <li>• <b>Pestaña "Personal Autorizado":</b> histórico de todos los que ya autorizaste, con KPIs de tiempo promedio por tramo (tu autorización, el postulante llenando Etapa 2, y el JAO hasta finalizar) y exportación a Excel.</li>
-        <li>• <b>Pestaña "Estado del proceso":</b> cada trabajador activo, individualizado, con la etapa exacta en la que está ahora mismo -- útil para responder "¿cómo va tal persona?" sin tener que preguntarle a otro rol.</li>
-        <li>• <b>Rechazar:</b> igual que en Terreno, el motivo queda solo interno; el postulante recibe el mensaje legal genérico.</li>
+        <li>• <b>Pestaña "Solicitudes de Cupo":</b> Jefe de Terreno pide cupos por cargo. Al aprobar, se abre la vacante (el cargo pasa a mostrar esos cupos como disponibles) y se avisa por correo a Jefe de Terreno, a los Capataz y al JAO.</li>
+        <li>• Puedes abrir una cantidad distinta a la pedida (ej. pidieron 5, solo hay presupuesto para 3) y dejar una observación.</li>
+        <li>• <b>Pestaña "Estado del proceso":</b> cada trabajador activo, individualizado, con la etapa exacta en la que está ahora mismo -- útil para responder "¿cómo va tal persona?" sin tener que preguntarle a otro rol. Arriba, un resumen de tiempos promedio (postulante llenando Etapa 2, JAO hasta finalizar) con filtro por fecha y exportación a Excel.</li>
       </ul>`,
   },
   jao: {

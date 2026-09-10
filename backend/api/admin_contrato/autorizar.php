@@ -9,10 +9,13 @@
  * otorgarAccesoEtapa2()); acá solo se deja registrado admin_autorizado_at
  * como respaldo/trazabilidad interna.
  *
- * Sigue existiendo intentarAvanzarAAprobadoAdmin() porque el paso
- * siguiente (JAO) igual depende de dos condiciones: que Admin_Contrato
- * haya autorizado (admin_autorizado_at) Y que exista datos_contratacion
- * -- ya no importa en qué orden ocurran esas dos.
+ * v10.13 (pedido explícito del usuario, tras describir de nuevo el
+ * proceso completo): "el rol del administrador terminó" al aprobar los
+ * cupos -- este endpoint queda SIN USAR, ningún botón lo llama (se
+ * retiró la pestaña "Por Autorizar" de admin_contrato.html). No se
+ * borra por si hace falta reactivarlo. intentarAvanzarAAprobadoAdmin()
+ * ya NO depende de admin_autorizado_at -- avanza solo con que el
+ * postulante complete su Etapa 2.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';

@@ -1,20 +1,22 @@
 /**
- * v6.5: Admin_Contrato autoriza PRIMERO -- recién en ese momento el
- * postulante recibe el enlace de Etapa 2. Esta lista solo ve lo que
- * Jefe_Terreno ya pre-aprobó: datos básicos + CV. No necesita ver
- * documentos de Etapa 2 (eso lo revisa el JAO más adelante, una vez
- * el postulante los completa).
+ * v10.13 (pedido explícito del usuario, tras describir de nuevo el
+ * proceso completo): el rol de Admin_Contrato termina al aprobar los
+ * cupos de Jefe de Terreno -- ya no autoriza cada postulación una por
+ * una ("el rol del administrador terminó" en sus propias palabras). Se
+ * retiró la pestaña "Por Autorizar" (ver admin_contrato/autorizar.php,
+ * que queda sin usar pero no se borra) y se fusionó "Personal
+ * Autorizado" dentro de "Estado del proceso".
  */
 (async () => {
   const usuario = await protegerDashboard('Admin_Contrato');
   if (!usuario) return;
-  await cargarLista();
   configurarTabs();
+  cargarSolicitudesCupo(); // pestaña inicial
   iniciarEstadoVivo();
 })();
 
 // --- v3.4: pestañas --------------------------------------------------------
-let AUTORIZADO_CARGADO = false;
+let TIEMPOS_CARGADOS = false;
 
 function configurarTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -33,12 +35,12 @@ function cambiarTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('hidden', panel.id !== `panel-${tab}`);
   });
-  if (tab === 'autorizado' && !AUTORIZADO_CARGADO) {
-    AUTORIZADO_CARGADO = true;
-    cargarAutorizados();
-  }
   if (tab === 'estado_proceso') {
     renderEstadoProcesoTabla(); // pinta con lo último que ya cargó el widget "Estado en vivo"
+    if (!TIEMPOS_CARGADOS) {
+      TIEMPOS_CARGADOS = true;
+      cargarAutorizados();
+    }
   }
   if (tab === 'solicitudes_cupo') {
     cargarSolicitudesCupo();
@@ -141,64 +143,8 @@ function renderEstadoProcesoTabla() {
     </tr>`).join('');
 }
 
-async function cargarLista() {
-  const tbody = document.getElementById('tbody-postulaciones');
-  const vacio = document.getElementById('vacio');
-  try {
-    const data = await apiFetch('/admin_contrato/listar.php');
-    if (!data.postulaciones.length) {
-      tbody.innerHTML = '';
-      vacio.classList.remove('hidden');
-      return;
-    }
-    vacio.classList.add('hidden');
-    tbody.innerHTML = data.postulaciones.map(p => `
-      <tr class="border-t">
-        <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
-        <td class="px-4 py-3">${p.nombre_completo}</td>
-        <td class="px-4 py-3">${p.nombre_cargo}</td>
-        <td class="px-4 py-3">${p.correo}</td>
-        <td class="px-4 py-3">${p.tiene_cv
-          ? `<a href="${API_BASE_URL}/documentos/ver.php?postulacion_id=${p.id}&tipo=cv" target="_blank" class="text-blue-600 font-medium underline">Ver CV</a>`
-          : '<span class="text-gray-400 text-xs">Sin CV</span>'}</td>
-        <td class="px-4 py-3 text-right space-x-2">
-          <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="autorizar(${p.id})">Autorizar Contratación</button>
-          <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-lg" onclick="rechazar(${p.id})">Rechazar</button>
-        </td>
-      </tr>`).join('');
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-async function autorizar(id) {
-  // v10.7: esto ya no le envía nada al postulante -- el correo con el
-  // link de Etapa 2 se le manda antes, apenas el Capataz lo selecciona
-  // en portería. Esto queda solo como respaldo/registro interno.
-  if (!confirm('¿Autorizar esta contratación? Es un registro interno -- el postulante ya recibió antes el enlace para completar sus datos, apenas el Capataz lo seleccionó.')) return;
-  try {
-    const data = await apiFetch('/admin_contrato/autorizar.php', { method: 'POST', body: { postulacion_id: id } });
-    mostrarAlerta('alerta', data.mensaje, 'exito');
-    await cargarLista();
-    AUTORIZADO_CARGADO = false; // fuerza recarga la próxima vez que se abra esa pestaña
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-async function rechazar(id) {
-  const motivo = await pedirMotivoRechazo();
-  if (motivo === null) return;
-  try {
-    const data = await apiFetch('/admin_contrato/rechazar.php', { method: 'POST', body: { postulacion_id: id, motivo } });
-    mostrarAlerta('alerta', data.mensaje, 'exito');
-    await cargarLista();
-  } catch (err) {
-    mostrarAlerta('alerta', err.message);
-  }
-}
-
-// --- v3.4: Personal Autorizado (histórico + KPI + export) -----------------
+// --- v10.13: Tiempos del proceso (KPI + export), dentro de "Estado del
+// proceso" -- ver comentario de cabecera de este archivo. ------------------
 function limpiarFiltrosAutorizados() {
   document.getElementById('desde-autorizado').value = '';
   document.getElementById('hasta-autorizado').value = '';
@@ -215,38 +161,27 @@ function paramsRangoAutorizado() {
 }
 
 async function cargarAutorizados() {
-  const tbody = document.getElementById('tbody-autorizado');
-  const vacio = document.getElementById('autorizado-vacio');
   try {
     const data = await apiFetch(`/admin_contrato/historico.php?${paramsRangoAutorizado().toString()}`);
 
     document.getElementById('kpi-promedio').textContent = data.kpi_promedio_total ?? '-';
     document.getElementById('kpi-cantidad').textContent = data.kpi_cantidad_contratados;
     document.getElementById('kpi-promedio-postulante').textContent = data.kpi_promedio_postulante ?? '-';
-    document.getElementById('kpi-promedio-admin').textContent = data.kpi_promedio_admin ?? '-';
     document.getElementById('kpi-promedio-jao').textContent = data.kpi_promedio_jao ?? '-';
-
-    if (!data.postulaciones.length) {
-      tbody.innerHTML = '';
-      vacio.classList.remove('hidden');
-      return;
-    }
-    vacio.classList.add('hidden');
-    tbody.innerHTML = data.postulaciones.map(p => `
-      <tr class="border-t">
-        <td class="px-4 py-3 font-mono">${celdaDocumento(p)}</td>
-        <td class="px-4 py-3">${p.nombre_completo}</td>
-        <td class="px-4 py-3">${p.nombre_cargo}</td>
-        <td class="px-4 py-3">${p.estado}</td>
-        <td class="px-4 py-3 text-gray-500">${new Date(p.admin_autorizado_at).toLocaleString('es-CL')}</td>
-        <td class="px-4 py-3">${p.tiempo_postulante ?? '-'}</td>
-        <td class="px-4 py-3">${p.tiempo_admin ?? '-'}</td>
-        <td class="px-4 py-3">${p.tiempo_jao ?? '-'}</td>
-        <td class="px-4 py-3 font-medium">${p.tiempo_total ?? '-'}</td>
-      </tr>`).join('');
   } catch (err) {
     mostrarAlerta('alerta', err.message);
   }
+}
+
+// v10.13 (pedido explícito del usuario): botón "🔄 Actualizar" en el
+// header -- por si el proceso "parece pegado", refresca todo sin
+// recargar la página ni salir del panel.
+function actualizarTodo() {
+  cargarSolicitudesCupo();
+  renderEstadoProcesoTabla();
+  cargarAutorizados();
+  cargarEstadoVivo();
+  mostrarAlerta('alerta', 'Actualizado.', 'exito');
 }
 
 async function exportarAutorizadosExcel() {

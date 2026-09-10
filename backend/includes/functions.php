@@ -139,25 +139,23 @@ function ordenEstadosActivos(): array
 }
 
 /**
- * v6.5: se llama cuando el postulante termina su Etapa 2 (también se
- * intenta desde el lado de Admin_Contrato, por si el orden fue al
- * revés). Solo avanza a 'Aprobado_admin' cuando AMBAS condiciones ya
- * ocurrieron: Admin_Contrato autorizó (admin_autorizado_at) Y el
- * postulante completó sus datos.
+ * v6.5: se llama cuando el postulante termina su Etapa 2.
  *
- * v10.7: el orden entre esas dos ya NO está fijo. Antes (flujo
- * SECUENCIAL) el postulante no podía ni empezar Etapa 2 sin que
- * Admin_Contrato autorizara primero, porque esa autorización era lo
- * que le entregaba el link por correo. Ahora el link sale antes,
- * apenas el Capataz lo selecciona (ver terreno/aprobar.php) -- así que
- * el postulante bien puede completar sus datos ANTES de que
- * Admin_Contrato autorice. Por eso esta función sigue revisando ambas
- * condiciones sin asumir cuál ocurrió primero.
+ * v10.13 (pedido explícito del usuario, tras describir de nuevo el
+ * proceso completo): ya NO exige que Admin_Contrato haya autorizado
+ * (admin_autorizado_at). Su explicación fue textual: "el rol del
+ * administrador terminó" al aprobar los cupos -- no necesita autorizar
+ * de nuevo, uno por uno, a cada postulante. Ese botón/pestaña
+ * "Autorizar Contratación" se retira de su panel (ver
+ * admin_contrato.html); admin_contrato/autorizar.php queda sin usar
+ * pero no se borra, por si hace falta reactivarlo. Ahora esta función
+ * avanza a 'Aprobado_admin' apenas el postulante completa sus datos,
+ * sin depender de ningún otro gatillo.
  */
 function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
 {
     $stmt = $pdo->prepare(
-        'SELECT p.estado, p.admin_autorizado_at, p.nombre_completo, p.rut, p.correo, p.codigo_seguimiento, c.nombre_cargo,
+        'SELECT p.estado, p.nombre_completo, p.rut, p.correo, p.codigo_seguimiento, c.nombre_cargo,
                 d.talla_calzado, d.talla_overol,
                 (SELECT COUNT(*) FROM datos_contratacion d2 WHERE d2.postulacion_id = p.id) AS tiene_datos
            FROM postulaciones p
@@ -172,11 +170,8 @@ function intentarAvanzarAAprobadoAdmin(PDO $pdo, int $postulacionId): void
     if (!$postulacion || $postulacion['estado'] !== 'Pre_aprobado_terreno') {
         return; // ya avanzo (u otro caso) -- nada que hacer.
     }
-    $adminYaAutorizo = $postulacion['admin_autorizado_at'] !== null;
-    $postulanteYaCompleto = (int)$postulacion['tiene_datos'] > 0;
-
-    if (!$adminYaAutorizo || !$postulanteYaCompleto) {
-        return; // falta uno de los dos caminos -- se espera sin bloquear al otro.
+    if ((int)$postulacion['tiene_datos'] === 0) {
+        return; // todavia no completa su Etapa 2 -- se espera.
     }
 
     $stmtUpdate = $pdo->prepare('UPDATE postulaciones SET estado = "Aprobado_admin" WHERE id = :id AND estado = "Pre_aprobado_terreno"');
@@ -243,10 +238,13 @@ function otorgarAccesoEtapa2(PDO $pdo, int $postulacionId, ?int $usuarioId): voi
 }
 
 /**
- * v3: al autorizar la contratacion (Admin_Contrato), notifica a todos
- * los Jefe_Administrativo con nombre, RUT y cargo de la persona recien
- * aprobada -- para que sepan que ya viene en camino sin tener que
- * revisar el dashboard a cada rato.
+ * v3: notifica a todos los Jefe_Administrativo con nombre, RUT y cargo
+ * de la persona recien aprobada -- para que sepan que ya pueden
+ * revisarla sin tener que entrar al dashboard a cada rato.
+ *
+ * v10.13: ya no se llama "al autorizar Admin_Contrato" (ese paso se
+ * retiró) -- ahora se llama desde intentarAvanzarAAprobadoAdmin(),
+ * apenas el postulante completa su Etapa 2.
  */
 function notificarAprobacionAJao(PDO $pdo, array $postulacion): void
 {
@@ -265,7 +263,50 @@ function notificarAprobacionAJao(PDO $pdo, array $postulacion): void
     })();
 
     foreach ($destinatarios as $jao) {
-        Mailer::enviar($jao['correo'], $jao['nombre'], 'Nueva contratación autorizada - ICAFAL', $html);
+        Mailer::enviar($jao['correo'], $jao['nombre'], 'Postulante listo para tu revisión - ICAFAL', $html);
+    }
+}
+
+/**
+ * v10.13 (pedido explícito del usuario, tras describir de nuevo el
+ * proceso completo): aviso temprano a cada Jefe_Administrativo apenas
+ * el Capataz selecciona a alguien en portería -- "viene en camino",
+ * antes de que complete su Etapa 2. Se llama desde
+ * terreno/aprobar.php (rama Capataz), junto con otorgarAccesoEtapa2()
+ * y notificarIngresoFaena(). Distinto de notificarAprobacionAJao(), que
+ * sigue avisando más adelante cuando esa misma persona ya está lista
+ * para revisión.
+ */
+function notificarSeleccionAJao(PDO $pdo, int $postulacionId): void
+{
+    require_once __DIR__ . '/../mailer/Mailer.php';
+    $stmt = $pdo->query("SELECT nombre, correo FROM usuarios WHERE rol = 'Jefe_Administrativo' AND activo = 1");
+    $destinatarios = $stmt->fetchAll();
+    if (!$destinatarios) {
+        return;
+    }
+
+    $stmtPostulacion = $pdo->prepare(
+        'SELECT p.nombre_completo, p.rut, c.nombre_cargo
+           FROM postulaciones p
+           JOIN cargos c ON c.id = p.cargo_id
+          WHERE p.id = :id'
+    );
+    $stmtPostulacion->execute(['id' => $postulacionId]);
+    $postulacion = $stmtPostulacion->fetch();
+    if (!$postulacion) {
+        return;
+    }
+
+    $nombreCompleto = $postulacion['nombre_completo'];
+    $rut = $postulacion['rut'];
+    $cargo = $postulacion['nombre_cargo'];
+    $html = (function () use ($nombreCompleto, $rut, $cargo) {
+        return require __DIR__ . '/../mailer/templates/notificacion_seleccion_jao.php';
+    })();
+
+    foreach ($destinatarios as $jao) {
+        Mailer::enviar($jao['correo'], $jao['nombre'], 'Postulante seleccionado - viene en camino - ICAFAL', $html);
     }
 }
 
@@ -278,6 +319,10 @@ function notificarAprobacionAJao(PDO $pdo, array $postulacion): void
  * admin_contrato/solicitudes_cupo_aprobar.php, fuera de su transacción
  * (igual que el resto de los "notificar*", para no hacer fallar la
  * aprobación si el envío de correo falla).
+ *
+ * v10.13: también al JAO -- con esto termina la parte de Admin_Contrato
+ * en el proceso, así que el JAO se entera de una vez que hay cupos
+ * habilitados, sin esperar a una autorización aparte por cada persona.
  */
 function notificarCuposAprobados(
     PDO $pdo,
@@ -298,9 +343,12 @@ function notificarCuposAprobados(
             $destinatarios[] = $solicitante;
         }
     }
-    $stmtCapataces = $pdo->query("SELECT nombre, correo FROM usuarios WHERE rol = 'Capataz' AND activo = 1");
-    foreach ($stmtCapataces->fetchAll() as $capataz) {
-        $destinatarios[] = $capataz;
+    // v10.13: tambien al JAO -- pedido explicito del usuario ("una vez
+    // autoriza el administrador el JAO ya sabe que hay cupos
+    // habilitados"), asi sabe con anticipacion que viene gente en camino.
+    $stmtDestinatarios = $pdo->query("SELECT nombre, correo FROM usuarios WHERE rol IN ('Capataz', 'Jefe_Administrativo') AND activo = 1");
+    foreach ($stmtDestinatarios->fetchAll() as $destinatario) {
+        $destinatarios[] = $destinatario;
     }
     if (!$destinatarios) {
         return;

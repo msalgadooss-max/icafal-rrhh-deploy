@@ -39,6 +39,12 @@
  *     el postulante ya había completado su Etapa 2 a distancia), lo que
  *     no calzaba con una sola visita continua: portería no podía dejarlo
  *     entrar a llenar sus datos porque ese QR todavía no existía.
+ *
+ *   - v10.13 (mismo pedido, tras describir de nuevo el proceso): el JAO
+ *     recibe acá un aviso temprano de que esta persona viene en camino
+ *     (notificarSeleccionAJao()) -- el rol de Admin_Contrato termina al
+ *     aprobar los cupos (ver solicitudes_cupo_aprobar.php), ya no
+ *     autoriza cada postulación una por una.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -143,6 +149,16 @@ try {
         notificarIngresoFaena($pdo, $postulacionId);
     } catch (\Throwable $e) {
         error_log('notificarIngresoFaena error: ' . $e->getMessage());
+    }
+
+    // v10.13: aviso temprano al JAO ("viene en camino") -- el rol de
+    // Admin_Contrato ya terminó su parte al aprobar los cupos, así que
+    // el JAO se entera directamente acá, no por una autorización manual
+    // aparte por cada postulante (ver notificarSeleccionAJao()).
+    try {
+        notificarSeleccionAJao($pdo, $postulacionId);
+    } catch (\Throwable $e) {
+        error_log('notificarSeleccionAJao error: ' . $e->getMessage());
     }
 
     $pdo->commit();

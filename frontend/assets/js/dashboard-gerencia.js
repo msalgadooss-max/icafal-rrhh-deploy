@@ -41,6 +41,16 @@ let TODAS_LAS_POSTULACIONES = [];
   iniciarEstadoVivo();
 })();
 
+// v10.13 (pedido explícito del usuario): botón "🔄 Actualizar" en el
+// header -- por si el proceso "parece pegado", refresca todo sin
+// recargar la página ni salir del panel.
+function actualizarTodo() {
+  cargarPanel();
+  cargarBitacora();
+  cargarEstadoVivo();
+  mostrarAlerta('alerta', 'Actualizado.', 'exito');
+}
+
 // --- v5: bitácora de actividad en lenguaje natural -------------------------
 async function cargarBitacora() {
   const lista = document.getElementById('lista-bitacora');

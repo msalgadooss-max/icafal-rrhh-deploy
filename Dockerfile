@@ -14,9 +14,19 @@
 # compitiendo con MariaDB en el mismo contenedor chico del plan gratuito.
 FROM php:8.3-apache-bookworm
 
+# v10.12 (pedido explicito del usuario): fija el huso horario del
+# contenedor a Chile continental. Sin esto, tanto MySQL (NOW()/
+# CURRENT_TIMESTAMP, con time_zone=SYSTEM por defecto -- que sigue la
+# hora del sistema operativo del contenedor) como PHP corren en UTC:
+# cada fecha que ve cualquier rol (creado_at, la bitacora de
+# trazabilidad_logs, los KPI de tiempo hasta contratacion, etc.) quedaba
+# desfasada respecto a la hora real en terreno.
+ENV TZ=America/Santiago
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        default-mysql-server default-mysql-client \
+        default-mysql-server default-mysql-client tzdata \
         libpng-dev libjpeg-dev libfreetype6-dev libzip-dev unzip git \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd zip pdo_mysql \
     && rm -rf /var/lib/apt/lists/*
@@ -62,6 +72,7 @@ RUN { \
         echo 'max_file_uploads=20'; \
         echo 'memory_limit=256M'; \
         echo 'max_execution_time=60'; \
+        echo 'date.timezone=America/Santiago'; \
     } > /usr/local/etc/php/conf.d/uploads.ini
 
 # mpm_prefork acotado: suficiente paralelismo real para no volver a la fila

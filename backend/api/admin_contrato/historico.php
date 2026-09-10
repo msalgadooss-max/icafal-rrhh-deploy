@@ -1,26 +1,18 @@
 <?php
 /**
- * v3.4 - "Personal Autorizado": historico de todo lo que Admin_Contrato
- * ha autorizado, con filtro por rango de fecha/hora (sobre
- * admin_autorizado_at) y el KPI de tiempo hasta la contratación,
- * medido desde que Jefe_Terreno aprobó (no desde que Admin_Contrato
- * autorizó) hasta que el JAO finalizó -- ese es el ciclo completo que
- * pidió el usuario.
+ * v3.4 - "Personal Autorizado": historico con el KPI de tiempo hasta la
+ * contratación.
  *
- * v6.5 - Desglose en 3 tramos SECUENCIALES (todos en horas Y minutos,
- * no solo horas, para trazar el tiempo con precisión):
- *   - "admin": desde que Terreno aprobó hasta que Admin_Contrato
- *     autorizó (admin_autorizado_at). Es justo esa autorización la que
- *     le da al postulante el acceso a Etapa 2.
- *   - "postulante": desde que Admin_Contrato autorizó hasta que el
- *     postulante completó su Etapa 2 (datos_contratacion.creado_at).
- *     Antes (v3.1-v6.4, flujo en paralelo) este tramo se medía desde
- *     la aprobación de Terreno; ahora se mide desde la autorización del
- *     Administrador porque el postulante no puede ni empezar antes.
- *   - "jao": desde que la postulación entró a 'Aprobado_admin' hasta
- *     que se finalizó la contratación.
- * La fecha de aprobación de Terreno y la de entrada a 'Aprobado_admin'
- * se leen de trazabilidad_logs (mismo patrón que terreno/historico.php).
+ * v10.13 (pedido explícito del usuario, tras describir de nuevo el
+ * proceso completo): Admin_Contrato ya no autoriza postulación por
+ * postulación (ver admin_contrato/autorizar.php, retirado del panel) --
+ * su tarea termina al aprobar los cupos. Por eso el filtro de fecha y
+ * el punto de partida del reporte dejan de ser admin_autorizado_at y
+ * pasan a ser el momento en que el Capataz selecciona a la persona en
+ * portería (fecha_aprobacion_terreno, leída de trazabilidad_logs, igual
+ * que antes). El tramo "Administrador autorizando" desaparece del
+ * desglose por no tener ya sentido; quedan dos tramos: postulante
+ * llenando Etapa 2, y JAO hasta finalizar.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -35,7 +27,7 @@ $hasta = limpiarTexto($_GET['hasta'] ?? '', 19);
 $pdo = obtenerConexion();
 
 $sql = "SELECT p.id, p.tipo_documento, p.rut, p.nombre_completo, p.estado,
-               c.nombre_cargo, p.admin_autorizado_at,
+               c.nombre_cargo,
                ap.fecha_hora AS fecha_aprobacion_terreno,
                d.creado_at AS fecha_datos_completados,
                aa.fecha_hora AS fecha_aprobado_admin,
@@ -72,18 +64,18 @@ $sql = "SELECT p.id, p.tipo_documento, p.rut, p.nombre_completo, p.estado,
                  WHERE accion = 'Cambio de estado: Induccion_ok -> Contratado'
                  GROUP BY postulacion_id
                ) co ON co.postulacion_id = p.id
-         WHERE p.admin_autorizado_at IS NOT NULL";
+         WHERE ap.fecha_hora IS NOT NULL";
 
 $params = [];
 if ($desde !== '') {
-    $sql .= ' AND p.admin_autorizado_at >= ?';
+    $sql .= ' AND ap.fecha_hora >= ?';
     $params[] = $desde;
 }
 if ($hasta !== '') {
-    $sql .= ' AND p.admin_autorizado_at <= ?';
+    $sql .= ' AND ap.fecha_hora <= ?';
     $params[] = $hasta;
 }
-$sql .= ' ORDER BY p.admin_autorizado_at DESC';
+$sql .= ' ORDER BY ap.fecha_hora DESC';
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -112,23 +104,20 @@ function formatearDuracion(?float $minutos): ?string
     return "{$m}min";
 }
 
-$acumTotal = $acumPostulante = $acumAdmin = $acumJao = 0;
-$nTotal = $nPostulante = $nAdmin = $nJao = 0;
+$acumTotal = $acumPostulante = $acumJao = 0;
+$nTotal = $nPostulante = $nJao = 0;
 
 foreach ($filas as &$f) {
     $minTotal = minutosEntre($f['fecha_aprobacion_terreno'], $f['fecha_contratado']);
-    $minPostulante = minutosEntre($f['admin_autorizado_at'], $f['fecha_datos_completados']);
-    $minAdmin = minutosEntre($f['fecha_aprobacion_terreno'], $f['admin_autorizado_at']);
+    $minPostulante = minutosEntre($f['fecha_aprobacion_terreno'], $f['fecha_datos_completados']);
     $minJao = minutosEntre($f['fecha_aprobado_admin'], $f['fecha_contratado']);
 
     $f['tiempo_total'] = formatearDuracion($minTotal);
     $f['tiempo_postulante'] = formatearDuracion($minPostulante);
-    $f['tiempo_admin'] = formatearDuracion($minAdmin);
     $f['tiempo_jao'] = formatearDuracion($minJao);
 
     if ($minTotal !== null) { $acumTotal += $minTotal; $nTotal++; }
     if ($minPostulante !== null) { $acumPostulante += $minPostulante; $nPostulante++; }
-    if ($minAdmin !== null) { $acumAdmin += $minAdmin; $nAdmin++; }
     if ($minJao !== null) { $acumJao += $minJao; $nJao++; }
 }
 unset($f);
@@ -138,6 +127,5 @@ responderOk([
     'kpi_cantidad_contratados' => $nTotal,
     'kpi_promedio_total' => $nTotal > 0 ? formatearDuracion($acumTotal / $nTotal) : null,
     'kpi_promedio_postulante' => $nPostulante > 0 ? formatearDuracion($acumPostulante / $nPostulante) : null,
-    'kpi_promedio_admin' => $nAdmin > 0 ? formatearDuracion($acumAdmin / $nAdmin) : null,
     'kpi_promedio_jao' => $nJao > 0 ? formatearDuracion($acumJao / $nJao) : null,
 ]);

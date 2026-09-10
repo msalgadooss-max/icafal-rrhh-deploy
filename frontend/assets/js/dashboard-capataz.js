@@ -51,6 +51,17 @@ function onDeshacerSeleccion() {
   if (TAB_ACTIVA === 'seleccion') cargarLista();
 }
 
+// v10.13 (pedido explícito del usuario): botón "🔄 Actualizar" en el
+// header -- por si el proceso "parece pegado", refresca todo sin
+// recargar la página ni salir del panel.
+function actualizarTodo() {
+  cargarCargosConCupo();
+  cargarLista();
+  cargarRecepcion();
+  cargarEstadoVivo();
+  mostrarAlerta('alerta', 'Actualizado.', 'exito');
+}
+
 async function cargarCargosConCupo() {
   try {
     const data = await apiFetch('/public/cargos_disponibles.php');

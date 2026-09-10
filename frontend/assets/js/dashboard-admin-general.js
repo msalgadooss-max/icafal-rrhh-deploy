@@ -31,6 +31,16 @@ let CHART_DONUT = null;
 
 document.getElementById('rango-estadisticas').addEventListener('change', cargarEstadisticas);
 
+// v10.13 (pedido explícito del usuario): botón "🔄 Actualizar" en el
+// header -- por si el proceso "parece pegado", refresca todo sin
+// recargar la página ni salir del panel.
+function actualizarTodo() {
+  cargarLista();
+  cargarEstadisticas();
+  cargarEstadoVivo();
+  mostrarAlerta('alerta', 'Actualizado.', 'exito');
+}
+
 // --- v6: pestañas Pendientes / Contratados / Rechazados --------------------
 let CONTRATADOS_TAB_CARGADO = false;
 let RECHAZADOS_TAB_CARGADO = false;

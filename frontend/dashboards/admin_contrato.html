@@ -13,13 +13,14 @@
       <img src="../assets/img/logo-icafal.png" alt="ICAFAL" class="h-9">
       <div>
         <h1 class="font-bold text-gray-900">Dashboard Administrador de Contrato</h1>
-        <p class="text-xs text-gray-500">Autoriza primero: recién ahí el postulante recibe la Etapa 2</p>
+        <p class="text-xs text-gray-500">Aprueba las solicitudes de cupo de Jefe de Terreno -- ahí termina tu parte del proceso</p>
       </div>
     </div>
     <div class="flex items-center gap-4">
       <button onclick="abrirGuia('admin_contrato')" class="text-sm text-blue-600 font-medium border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg">📘 Guía de uso</button>
       <button onclick="abrirFlujo()" class="text-sm text-indigo-600 font-medium border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg">🔀 Ver flujo</button>
       <span class="text-sm text-gray-600" data-usuario-nombre></span>
+      <button onclick="actualizarTodo()" class="text-sm text-gray-600 font-medium border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg" title="Refresca los datos sin recargar la página">🔄 Actualizar</button>
       <button onclick="cerrarSesion()" class="text-sm text-red-600 font-medium">Cerrar sesión</button>
     </div>
   </header>
@@ -29,34 +30,12 @@
     <div id="estado-vivo"></div>
 
     <div class="flex gap-1 border-b border-gray-200 mb-6" id="tabs">
-      <button data-tab="por_autorizar" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Por Autorizar</button>
-      <button data-tab="solicitudes_cupo" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Solicitudes de Cupo</button>
-      <button data-tab="autorizado" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Autorizado</button>
+      <button data-tab="solicitudes_cupo" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">Solicitudes de Cupo</button>
       <button data-tab="estado_proceso" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">Estado del proceso</button>
     </div>
 
-    <!-- Tab: Por Autorizar -->
-    <section id="panel-por_autorizar" class="tab-panel">
-      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-gray-500 text-left">
-            <tr>
-              <th class="px-4 py-3">RUT</th>
-              <th class="px-4 py-3">Nombre</th>
-              <th class="px-4 py-3">Cargo</th>
-              <th class="px-4 py-3">Correo</th>
-              <th class="px-4 py-3">CV</th>
-              <th class="px-4 py-3 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-postulaciones"></tbody>
-        </table>
-        <p id="vacio" class="text-center text-gray-400 text-sm py-10 hidden">No hay postulaciones pre-aprobadas por revisar.</p>
-      </div>
-    </section>
-
     <!-- Tab: Solicitudes de Cupo -->
-    <section id="panel-solicitudes_cupo" class="tab-panel hidden">
+    <section id="panel-solicitudes_cupo" class="tab-panel">
       <p class="text-xs text-gray-500 mb-4 max-w-2xl">
         Jefe de Terreno solicita cupos por cargo; recién cuando apruebas aquí se abre
         la vacante (el cargo pasa a mostrar esos cupos como disponibles para postular).
@@ -78,70 +57,51 @@
       </div>
     </section>
 
-    <!-- Tab: Personal Autorizado -->
-    <section id="panel-autorizado" class="tab-panel hidden">
-      <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
-        <div class="flex items-center gap-8 flex-wrap">
-          <div>
-            <p class="text-2xl font-bold text-gray-900" id="kpi-promedio">-</p>
-            <p class="text-xs text-gray-500">Promedio total hasta la contratación (desde que Terreno aprueba)</p>
-          </div>
-          <div>
-            <p class="text-2xl font-bold text-gray-900" id="kpi-cantidad">-</p>
-            <p class="text-xs text-gray-500">Contratados en el rango filtrado</p>
-          </div>
-        </div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-4 mb-2">Promedio por tramo del proceso</p>
-        <div class="grid grid-cols-3 gap-3">
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-sm font-bold text-gray-900" id="kpi-promedio-admin">-</p>
-            <p class="text-[11px] text-gray-500">Administrador autorizando</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-sm font-bold text-gray-900" id="kpi-promedio-postulante">-</p>
-            <p class="text-[11px] text-gray-500">Postulante llenando Etapa 2</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-sm font-bold text-gray-900" id="kpi-promedio-jao">-</p>
-            <p class="text-[11px] text-gray-500">JAO hasta finalizar</p>
-          </div>
-        </div>
-        <p class="text-[11px] text-gray-400 mt-2">Los tramos son secuenciales: primero autoriza el Administrador, recién ahí el postulante completa Etapa 2, y al terminar empieza la revisión del JAO.</p>
-      </div>
-
-      <div class="flex flex-wrap items-end gap-3 mb-4">
-        <div><label class="block text-xs text-gray-600 mb-1">Desde</label>
-          <input type="datetime-local" id="desde-autorizado" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
-        <div><label class="block text-xs text-gray-600 mb-1">Hasta</label>
-          <input type="datetime-local" id="hasta-autorizado" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"></div>
-        <button class="bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="cargarAutorizados()">Filtrar</button>
-        <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg" onclick="limpiarFiltrosAutorizados()">Limpiar</button>
-        <button class="ml-auto bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="exportarAutorizadosExcel()">Exportar Excel</button>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-gray-500 text-left">
-            <tr>
-              <th class="px-4 py-3">RUT</th>
-              <th class="px-4 py-3">Nombre</th>
-              <th class="px-4 py-3">Cargo</th>
-              <th class="px-4 py-3">Estado actual</th>
-              <th class="px-4 py-3">Autorizado el</th>
-              <th class="px-4 py-3">Postulante</th>
-              <th class="px-4 py-3">Admin.</th>
-              <th class="px-4 py-3">JAO</th>
-              <th class="px-4 py-3">Total</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-autorizado"></tbody>
-        </table>
-        <p id="autorizado-vacio" class="text-center text-gray-400 text-sm py-10 hidden">Nadie autorizado todavía en este rango.</p>
-      </div>
-    </section>
-
     <!-- Tab: Estado del proceso -->
+    <!-- v10.13 (pedido explicito del usuario): se fusiona acá lo que
+         antes era la pestaña "Personal Autorizado" -- Admin_Contrato ya
+         no autoriza postulación por postulación, así que esa pestaña
+         aparte dejó de tener sentido. El resumen de tiempos queda como
+         encabezado de esta misma vista, con una presentación más
+         profesional (tarjetas con icono en vez de números sueltos). -->
     <section id="panel-estado_proceso" class="tab-panel hidden">
+      <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h2 class="text-sm font-bold text-gray-900">Tiempos del proceso</h2>
+            <p class="text-xs text-gray-500">Desde que el Capataz selecciona a alguien en portería, hasta que queda contratado.</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-2">
+            <div><label class="block text-[11px] text-gray-500 mb-1">Desde</label>
+              <input type="datetime-local" id="desde-autorizado" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs"></div>
+            <div><label class="block text-[11px] text-gray-500 mb-1">Hasta</label>
+              <input type="datetime-local" id="hasta-autorizado" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs"></div>
+            <button class="bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="cargarAutorizados()">Filtrar</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg" onclick="limpiarFiltrosAutorizados()">Limpiar</button>
+            <button class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-lg" onclick="exportarAutorizadosExcel()">⬇ Excel</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-gray-50 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-gray-900" id="kpi-cantidad">-</p>
+            <p class="text-[11px] text-gray-500 mt-1">Contratados en el rango</p>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-gray-900" id="kpi-promedio">-</p>
+            <p class="text-[11px] text-gray-500 mt-1">Tiempo total promedio</p>
+          </div>
+          <div class="bg-blue-50 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-blue-900" id="kpi-promedio-postulante">-</p>
+            <p class="text-[11px] text-blue-700 mt-1">Postulante llenando Etapa 2</p>
+          </div>
+          <div class="bg-indigo-50 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-indigo-900" id="kpi-promedio-jao">-</p>
+            <p class="text-[11px] text-indigo-700 mt-1">JAO hasta finalizar</p>
+          </div>
+        </div>
+      </div>
+
       <p class="text-xs text-gray-500 mb-4">Cada trabajador activo, individualizado, con la etapa exacta en la que está su proceso ahora mismo. Se marca en ámbar cuando el paso pendiente depende de ti.</p>
       <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
         <table class="w-full text-sm">

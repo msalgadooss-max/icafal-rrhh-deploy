@@ -3,6 +3,12 @@
  * v3.4 - Exporta a Excel el "Personal Autorizado" por Admin_Contrato,
  * con el mismo filtro de fecha/hora que la vista, incluyendo el tiempo
  * hasta la contratación de cada uno.
+ *
+ * v10.13 (pedido explícito del usuario): el filtro y el punto de
+ * partida dejan de ser admin_autorizado_at (Admin_Contrato ya no
+ * autoriza postulación por postulación) y pasan a ser el momento en
+ * que el Capataz selecciona a la persona en portería -- ver el mismo
+ * cambio en historico.php.
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -23,7 +29,7 @@ $hasta = limpiarTexto($_GET['hasta'] ?? '', 19);
 $pdo = obtenerConexion();
 
 $sql = "SELECT p.tipo_documento, p.rut, p.nombre_completo, p.estado,
-               c.nombre_cargo, p.admin_autorizado_at,
+               c.nombre_cargo,
                ap.fecha_hora AS fecha_aprobacion_terreno,
                co.fecha_hora AS fecha_contratado
           FROM postulaciones p
@@ -47,11 +53,11 @@ $sql = "SELECT p.tipo_documento, p.rut, p.nombre_completo, p.estado,
                  WHERE accion = 'Cambio de estado: Induccion_ok -> Contratado'
                  GROUP BY postulacion_id
                ) co ON co.postulacion_id = p.id
-         WHERE p.admin_autorizado_at IS NOT NULL";
+         WHERE ap.fecha_hora IS NOT NULL";
 $params = [];
-if ($desde !== '') { $sql .= ' AND p.admin_autorizado_at >= ?'; $params[] = $desde; }
-if ($hasta !== '') { $sql .= ' AND p.admin_autorizado_at <= ?'; $params[] = $hasta; }
-$sql .= ' ORDER BY p.admin_autorizado_at DESC';
+if ($desde !== '') { $sql .= ' AND ap.fecha_hora >= ?'; $params[] = $desde; }
+if ($hasta !== '') { $sql .= ' AND ap.fecha_hora <= ?'; $params[] = $hasta; }
+$sql .= ' ORDER BY ap.fecha_hora DESC';
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -65,7 +71,7 @@ $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
 $hoja = $spreadsheet->getActiveSheet();
 $hoja->setTitle('Personal Autorizado');
 
-$encabezados = ['Tipo Doc.', 'RUT', 'Nombre', 'Cargo', 'Estado actual', 'Aprobado por Terreno', 'Autorizado por Admin', 'Fecha Contratación', 'Horas hasta contratación'];
+$encabezados = ['Tipo Doc.', 'RUT', 'Nombre', 'Cargo', 'Estado actual', 'Seleccionado por Capataz', 'Fecha Contratación', 'Horas hasta contratación'];
 foreach ($encabezados as $i => $h) {
     $hoja->setCellValue([$i + 1, 1], $h);
 }
@@ -84,7 +90,6 @@ foreach ($filas as $idx => $f) {
         $f['nombre_cargo'],
         $f['estado'],
         $f['fecha_aprobacion_terreno'] ?? '',
-        $f['admin_autorizado_at'] ?? '',
         $f['fecha_contratado'] ?? '',
         $horas ?? '',
     ];

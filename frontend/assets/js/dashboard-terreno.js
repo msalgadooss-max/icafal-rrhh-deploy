@@ -7,6 +7,16 @@
   iniciarEstadoVivo();
 })();
 
+// v10.13 (pedido explícito del usuario): botón "🔄 Actualizar" en el
+// header -- por si el proceso "parece pegado", refresca todo sin
+// recargar la página ni salir del panel.
+function actualizarTodo() {
+  cargarLista();
+  cargarBanco();
+  cargarEstadoVivo();
+  mostrarAlerta('alerta', 'Actualizado.', 'exito');
+}
+
 // --- v4: límite diario de aprobaciones ------------------------------------
 function renderLimiteAprobaciones(usadas, limite) {
   const cont = document.getElementById('limite-aprobaciones');

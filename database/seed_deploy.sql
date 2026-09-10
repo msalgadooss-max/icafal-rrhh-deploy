@@ -3,7 +3,8 @@
 -- de schema.sql en cada arranque del contenedor (disco efimero -- no
 -- incluye ninguna postulacion de prueba real, solo lo minimo para que
 -- el equipo pueda loguearse y postular).
--- Clave de todos los usuarios: Clave123!
+-- Clave de todos los usuarios: Clave123 (v10.12: antes era "Clave123!",
+-- se le quito el simbolo por pedido explicito del usuario)
 -- =====================================================================
 -- v9.1: SET NAMES explícito -- ver la misma nota en schema.sql.
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -13,15 +14,15 @@ USE icafal_rrhh;
 DELETE FROM usuarios WHERE correo = 'admin@icafal.cl';
 
 INSERT INTO usuarios (nombre, correo, password, rol) VALUES
-    ('Juan Perez', 'jterreno@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Terreno'),
-    ('Roberto Capataz', 'capataz@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Capataz'),
-    ('Jaime Maturana', 'administrador@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Admin_Contrato'),
-    ('Luis Lopez', 'msalgadoo@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Administrativo'),
-    ('Pedro Rios', 'pedro@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Prevencionista'),
-    ('Ana Diaz', 'ana@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Jefe_Bodega'),
-    ('Jose Molina', 'gerencia@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Gerencia'),
-    ('Carlos Rivas', 'porteria@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Porteria'),
-    ('Desarrollador ICAFAL', 'dev@icafal.cl', '$2y$10$7MmTUu6q5icczbMgoV/FzuoDE4lzIUsUA55XA2rMThuze2YgXJbW.', 'Desarrollador');
+    ('Juan Perez', 'jterreno@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Jefe_Terreno'),
+    ('Roberto Capataz', 'capataz@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Capataz'),
+    ('Jaime Maturana', 'administrador@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Admin_Contrato'),
+    ('Luis Lopez', 'msalgadoo@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Jefe_Administrativo'),
+    ('Pedro Rios', 'pedro@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Prevencionista'),
+    ('Ana Diaz', 'ana@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Jefe_Bodega'),
+    ('Jose Molina', 'gerencia@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Gerencia'),
+    ('Carlos Rivas', 'porteria@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Porteria'),
+    ('Desarrollador ICAFAL', 'dev@icafal.cl', '$2y$10$oX7oFEtP8vkNR.1V3p9Vduwgp1KRGu9pklBitfHyiiAMUb6jC6s2m', 'Desarrollador');
 
 -- Se abren algunos cupos de partida para que la demo no arranque vacia.
 UPDATE cargos SET cupos_totales = 5, cupos_activos = 5 WHERE nombre_cargo IN ('Jornal Concretero', 'Albañil', 'Carpintero');

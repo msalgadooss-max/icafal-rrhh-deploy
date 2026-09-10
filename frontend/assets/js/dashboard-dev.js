@@ -21,7 +21,10 @@ const ETIQUETAS_ROL = {
   Prevencionista: 'Prevencionista',
   Jefe_Bodega: 'Jefe de Bodega',
   Porteria: 'Portería',
-  Gerencia: 'Gerencia',
+  // v10.12 (pedido explicito del usuario): el rol interno sigue siendo
+  // 'Gerencia' (columna rol en la BD, requireRol(['Gerencia']) en cada
+  // endpoint) -- esto solo cambia la ETIQUETA que ve la gente.
+  Gerencia: 'Subgerente',
 };
 
 (async () => {
